@@ -4,13 +4,14 @@ import { sameIngredient } from '@/data/catalog';
 import { analyzePeriod, goalProgress, lastNDays } from './analysis';
 import { daysSince, daysUntil, eul, euro, toDateKey } from './dates';
 import { rankRecipes, type RecipeMatch } from './inventory';
+import { rankContext, topReasons } from './recommend';
 
 /**
  * "먼저 제안하는 AI"의 두뇌.
  * 사용자가 묻기 전에, 쌓인 데이터(재고·소비기한·식사 기록·목표)를 보고 할 일을 제안한다.
  * 모든 제안에는 '왜 이 제안을 하는지(reason)'가 붙는다.
  */
-export type SuggestionKind = 'expiring' | 'unused' | 'today_menu' | 'shopping' | 'variety' | 'goal' | 'record';
+export type SuggestionKind = 'leftover' | 'expiring' | 'unused' | 'today_menu' | 'shopping' | 'variety' | 'goal' | 'record';
 
 export interface Suggestion {
   id: string; // 같은 제안을 하루에 한 번만 숨길 수 있게 하는 키
@@ -33,14 +34,9 @@ export function recentMealNames(s: AppState, days = 3): string[] {
   return s.meals.filter((m) => m.mealDate >= start).flatMap((m) => m.items.map((i) => i.foodName));
 }
 
-export function rankForUser(s: AppState, opts?: { useHistory?: boolean }): RecipeMatch[] {
-  const useHistory = opts?.useHistory ?? s.consents.personalization;
-  return rankRecipes(allRecipes(s), s.ingredients, {
-    allergies: s.preferences.allergies,
-    disliked: s.preferences.dislikedFoods,
-    maxMinutes: s.preferences.maxCookMinutes,
-    recentRecipeNames: useHistory ? recentMealNames(s) : [],
-  });
+/** 사용자 맞춤 레시피 순위(점수·이유 포함). 개인화 동의가 없으면 기록은 쓰지 않는다. */
+export function rankForUser(s: AppState): RecipeMatch[] {
+  return rankRecipes(allRecipes(s), s.ingredients, rankContext(s));
 }
 
 function recipeUsing(ranked: RecipeMatch[], ing: Ingredient) {
@@ -59,6 +55,22 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
   const n = s.notifications;
   const personal = s.consents.personalization;
   const ranked = rankForUser(s);
+
+  // 0) 남은 음식 먼저 (1인 가구 핵심: 만들어 둔 음식부터)
+  for (const lo of s.ingredients.filter((i) => i.kind === 'leftover').slice(0, 2)) {
+    const d = lo.expiryDate ? daysUntil(lo.expiryDate) : null;
+    out.push({
+      id: `leftover:${lo.id}`,
+      kind: 'leftover',
+      emoji: lo.emoji,
+      title: `남은 ${lo.name} ${lo.quantity}인분 있어요`,
+      body: d !== null && d < 0 ? '기한이 지났어요. 상태를 확인해 주세요.' : '다시 요리하지 않고 바로 한 끼 해결!',
+      reason: d === null ? `${daysSince(lo.addedAt, now)}일 전에 만든 음식` : `${lo.expiryDate}까지 드시기로 함`,
+      action: { label: '먹기', href: '/fridge' },
+      recipeId: lo.recipeId,
+      usesHistory: false,
+    });
+  }
 
   // 1) 소비기한 임박 재료 활용
   if (n.expiry) {
@@ -87,7 +99,8 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
       (i) =>
         (!i.expiryDate || daysUntil(i.expiryDate) > n.expiryDaysBefore) &&
         daysSince(i.lastUsedAt ?? i.addedAt, now) >= 7 &&
-        i.category !== '양념',
+        i.category !== '양념' &&
+        i.kind !== 'leftover',
     );
     if (stale) {
       const r = recipeUsing(ranked, stale);
@@ -111,19 +124,16 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
     if (best && s.ingredients.length) {
       const h = now.getHours();
       const when = h < 10 ? '아침' : h < 15 ? '점심' : '저녁';
-      const reasons = [`필수 재료 ${best.haveCount}/${best.requiredCount}개 보유`];
-      if (best.usesExpiring.length) reasons.push(`임박 재료 ${best.usesExpiring.map((i) => i.name).join(', ')} 사용`);
-      if (best.recipe.timeMinutes <= s.preferences.maxCookMinutes) reasons.push(`${best.recipe.timeMinutes}분 이내`);
       out.push({
         id: `today:${best.recipe.id}`,
         kind: 'today_menu',
         emoji: '🍽️',
         title: `오늘 ${when}은 ${best.recipe.name} 어때요?`,
         body: best.missingRequired.length ? `${best.missingRequired.map((i) => i.name).join(', ')}만 있으면 돼요.` : '냉장고 재료로 바로 만들 수 있어요.',
-        reason: reasons.join(' · '),
+        reason: topReasons(best, 2).join(' · '),
         action: { label: '레시피 보기', href: `/recipe/${best.recipe.id}` },
         recipeId: best.recipe.id,
-        usesHistory: personal,
+        usesHistory: best.reasons.some((r) => r.personal && r.text),
       });
     }
   }
@@ -210,7 +220,7 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
   }
 
   // 중요한 순서: 기한 지난/임박 → 오늘 메뉴 → 기억 기반 → 목표 → 오래 안 쓴 재료 → 장보기 → 기록 안내
-  const order: SuggestionKind[] = ['expiring', 'today_menu', 'variety', 'goal', 'unused', 'shopping', 'record'];
+  const order: SuggestionKind[] = ['leftover', 'expiring', 'today_menu', 'variety', 'goal', 'unused', 'shopping', 'record'];
   return out
     .filter((x) => s.dismissedSuggestions[x.id] !== today)
     .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));

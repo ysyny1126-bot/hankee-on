@@ -1,5 +1,6 @@
 import type { AppState, MealPlanEntry, MealType } from '@/data/types';
 import { addDays, daysUntil, newId } from './dates';
+import { topReasons } from './recommend';
 import { rankForUser } from './suggestions';
 
 /**
@@ -25,11 +26,8 @@ export function generatePlan(s: AppState, startDate: string, days: number, mealT
       slot++;
       if (!pick) continue;
       used.add(pick.recipe.id);
-      const reasons: string[] = [];
-      if (pick.usesExpiring.length) reasons.push(`${pick.usesExpiring.map((i) => i.name).join('·')} 먼저 쓰기`);
-      reasons.push(pick.missingRequired.length ? `${pick.missingRequired.map((i) => i.name).join('·')} 사면 가능` : '보유 재료로 가능');
-      if (pick.recipe.timeMinutes <= s.preferences.maxCookMinutes) reasons.push(`${pick.recipe.timeMinutes}분`);
-      out.push({ id: newId('plan_'), date, mealType: type, recipeId: pick.recipe.id, reason: reasons.join(' · ') });
+      const reason = topReasons(pick, 2).join(' · ');
+      out.push({ id: newId('plan_'), date, mealType: type, recipeId: pick.recipe.id, reason });
     }
   }
   return out;

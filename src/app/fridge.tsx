@@ -2,17 +2,18 @@ import { router, Stack as RStack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { confirmAsync } from '@/components/dialog';
+import { confirmAsync, notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Stepper, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { sameIngredient } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { Ingredient, StorageType } from '@/data/types';
-import { addDays, dDayLabel, daysUntil, isValidDateKey, toDateKey } from '@/logic/dates';
+import { addDays, dDayLabel, daysUntil, guessMealType, isValidDateKey, toDateKey } from '@/logic/dates';
 import { rankForUser } from '@/logic/suggestions';
 
-const SHELVES: { key: StorageType; label: string; emoji: string }[] = [
+const SHELVES: { key: StorageType | 'leftover'; label: string; emoji: string }[] = [
+  { key: 'leftover', label: '남은 음식', emoji: '🥡' },
   { key: 'fridge', label: '냉장', emoji: '🧊' },
   { key: 'freezer', label: '냉동', emoji: '❄️' },
   { key: 'pantry', label: '실온', emoji: '🧺' },
@@ -38,8 +39,9 @@ export default function Fridge() {
       ) : (
         SHELVES.map((sh) => {
           const items = s.ingredients
-            .filter((i) => i.storage === sh.key)
+            .filter((i) => (sh.key === 'leftover' ? i.kind === 'leftover' : i.kind !== 'leftover' && i.storage === sh.key))
             .sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999'));
+          if (sh.key === 'leftover' && items.length === 0) return null;
           return (
             <View key={sh.key} style={{ ...clay, overflow: 'hidden' }}>
               <Row style={{ paddingHorizontal: space.md, paddingVertical: space.sm, backgroundColor: color.surfaceAlt }}>
@@ -125,8 +127,11 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         </>
       )}
 
+      {i.kind === 'leftover' && (
+        <Button title={`🍽️ 한 끼 먹기 (${Math.min(1, i.quantity)}인분)`} kind="fresh" onPress={() => { actions.eatLeftover(i.id, 1, guessMealType() === 'snack' ? 'dinner' : guessMealType()); onClose(); notify('맛있게 드세요!', '식사 기록에 남겼어요.'); }} />
+      )}
       <Row gap={space.sm}>
-        <Button title="다 먹음" kind="secondary" style={{ flex: 1 }} onPress={() => { actions.useUpIngredient(i.id); onClose(); }} />
+        <Button title={i.kind === 'leftover' ? '다 먹음(기록 없이)' : '다 먹음'} kind="secondary" style={{ flex: 1 }} onPress={() => { actions.useUpIngredient(i.id); onClose(); }} />
         <Button
           title="버림"
           kind="danger"
@@ -140,7 +145,7 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         />
       </Row>
 
-      {recipe ? (
+      {recipe && i.kind !== 'leftover' ? (
         <Pressable onPress={() => { onClose(); router.push(`/recipe/${recipe.recipe.id}`); }} style={{ backgroundColor: color.brandSoft, borderRadius: radius.md, padding: space.md }}>
           <T v="bodyBold" c={color.brandDark}>이 재료로 → {recipe.recipe.emoji} {recipe.recipe.name} ›</T>
         </Pressable>

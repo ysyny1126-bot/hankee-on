@@ -6,6 +6,7 @@ import { findCatalog } from './catalog';
 import { BUILTIN_RECIPES } from './recipes';
 import type {
   AppState,
+  CookRating,
   CookRecord,
   DietaryGoal,
   Ingredient,
@@ -166,10 +167,27 @@ export const actions = {
     setState((s) => ({ ...s, customRecipes: [r, ...s.customRecipes.filter((x) => x.id !== r.id)] }));
   },
 
-  /** 요리 완료: 사용자가 확인한 양만큼 재고 차감 + 요리 기록. */
-  completeCooking(recipe: Recipe, deductions: { ingredientId: string; amount: number }[]): CookRecord {
+  /**
+   * 요리 완료: 사용자가 확인한 양만큼 재고 차감 + 요리 기록(맛 평가 포함).
+   * 만든 양보다 적게 먹었으면 그 차이를 '남은 음식'으로 냉장고에 넣는다.
+   * 남은 음식의 기한은 사용자가 고른 값만 쓴다(없으면 비워 둠).
+   */
+  completeCooking(
+    recipe: Recipe,
+    deductions: { ingredientId: string; amount: number }[],
+    extra: { rating?: CookRating; servingsMade?: number; servingsEaten?: number; leftoverExpiry?: string | null } = {},
+  ): CookRecord {
     const used: CookRecord['usedIngredients'] = [];
-    const rec: CookRecord = { id: newId('cook_'), recipeId: recipe.id, recipeName: recipe.name, date: toDateKey(), usedIngredients: used };
+    const rec: CookRecord = {
+      id: newId('cook_'),
+      recipeId: recipe.id,
+      recipeName: recipe.name,
+      date: toDateKey(),
+      usedIngredients: used,
+      rating: extra.rating,
+      servingsMade: extra.servingsMade,
+      servingsEaten: extra.servingsEaten,
+    };
     setState((s) => {
       const now = new Date().toISOString();
       const ingredients = s.ingredients
@@ -180,9 +198,69 @@ export const actions = {
           return { ...x, quantity: round(Math.max(0, x.quantity - d.amount)), lastUsedAt: now };
         })
         .filter((x) => x.quantity > 0);
+      const left = round((extra.servingsMade ?? 0) - (extra.servingsEaten ?? 0));
+      if (left > 0) {
+        ingredients.push({
+          id: newId('left_'),
+          name: `${recipe.name}`,
+          category: '남은 음식',
+          emoji: recipe.emoji,
+          quantity: left,
+          unit: '인분',
+          storage: 'fridge',
+          location: 'fridge',
+          expiryDate: extra.leftoverExpiry ?? null,
+          expirySource: extra.leftoverExpiry ? 'user' : null,
+          addedAt: now,
+          lastUsedAt: null,
+          source: 'user',
+          kind: 'leftover',
+          recipeId: recipe.id,
+        });
+      }
       return { ...s, ingredients, cooks: [rec, ...s.cooks] };
     });
     return rec;
+  },
+
+  /** 요리 기록의 맛 평가를 나중에 바꾸기 */
+  rateCook(cookId: string, rating: CookRating) {
+    setState((s) => ({ ...s, cooks: s.cooks.map((c) => (c.id === cookId ? { ...c, rating } : c)) }));
+  },
+
+  /** 남은 음식 한 끼 먹기: 남은 양에서 빼고 식사 기록에 남긴다 */
+  eatLeftover(id: string, servings = 1, mealType: MealRecord['mealType'] = 'dinner') {
+    const st = getState();
+    const it = st.ingredients.find((x) => x.id === id);
+    if (!it) return;
+    const eat = Math.min(servings, it.quantity);
+    const recipe = it.recipeId ? findRecipe(st, it.recipeId) : undefined;
+    const now = new Date();
+    actions.addMeal({
+      mealDate: toDateKey(now),
+      mealType,
+      mealTime: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      imageUri: null,
+      description: '남은 음식',
+      sourceType: 'home',
+      recipeId: it.recipeId,
+      items: [
+        {
+          id: newId('item_'),
+          foodName: it.name,
+          quantity: eat,
+          unit: '인분',
+          nutrition: recipe?.nutrition ?? null,
+          dataConfidence: recipe?.nutrition ? 'medium' : 'none',
+          nutritionSource: recipe?.nutrition ? (recipe.origin === 'builtin' ? 'reference_estimated' : 'ai_estimated') : null,
+          ingredients: recipe?.ingredients.filter((i) => !i.optional).map((i) => i.name),
+        },
+      ],
+    });
+    setState((s) => ({
+      ...s,
+      ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, quantity: round(x.quantity - eat) } : x)).filter((x) => x.quantity > 0),
+    }));
   },
 
   addMeal(m: Omit<MealRecord, 'id' | 'createdAt'>): MealRecord {

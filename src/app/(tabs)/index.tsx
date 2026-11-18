@@ -10,7 +10,8 @@ import { MEAL_LABEL } from '@/logic/analysis';
 import { dDayLabel, daysUntil, formatKoreanDate, toDateKey } from '@/logic/dates';
 import { mealEmoji } from '@/logic/food-emoji';
 import type { RecipeMatch } from '@/logic/inventory';
-import { buildSuggestions, expiringIngredients, rankForUser, recentMealNames } from '@/logic/suggestions';
+import { topReasons } from '@/logic/recommend';
+import { buildSuggestions, expiringIngredients, rankForUser } from '@/logic/suggestions';
 
 /**
  * HOME
@@ -41,7 +42,6 @@ export default function Home() {
   }, [ranked, s.mealPlan, today]);
   const [pick, setPick] = useState(0);
   const menu = candidates.length ? candidates[pick % candidates.length] : null;
-  const recentNames = s.consents.personalization ? recentMealNames(s, 7) : [];
 
   const hour = new Date().getHours();
   const when = hour < 10 ? '아침' : hour < 15 ? '점심' : hour < 21 ? '저녁' : '야식';
@@ -96,7 +96,7 @@ export default function Home() {
               </Row>
             </View>
           </Row>
-          <T v="small" c={color.textSub}>💡 {menuReason(menu, recentNames, s.mealPlan.some((p) => p.date === today && p.recipeId === menu.recipe.id))}</T>
+          <T v="small" c={color.textSub}>💡 {menuReason(menu, s.mealPlan.some((p) => p.date === today && p.recipeId === menu.recipe.id))}</T>
           <Row gap={space.sm}>
             <Button title="다른 메뉴" kind="secondary" style={{ flex: 1 }} onPress={() => setPick((p) => p + 1)} disabled={candidates.length < 2} />
             <Button title="요리하기" style={{ flex: 2 }} onPress={() => router.push(`/recipe/${menu.recipe.id}`)} />
@@ -175,15 +175,9 @@ export default function Home() {
   );
 }
 
-/** 추천 이유 한 줄(실제 데이터 기준) */
-function menuReason(m: RecipeMatch, recentNames: string[], planned: boolean): string {
-  const r: string[] = [];
-  if (planned) r.push('오늘 식단에 넣은 메뉴');
-  if (m.usesExpiring.length) r.push(`${m.usesExpiring.map((i) => i.name).join('·')} 먼저 쓰기`);
-  if (!m.missingRequired.length) r.push('냉장고 재료로 바로');
-  else r.push(`${m.missingRequired.map((i) => i.name).join('·')}만 있으면 돼요`);
-  if (recentNames.length && !recentNames.includes(m.recipe.name)) r.push('최근 안 먹은 메뉴');
-  return r.slice(0, 2).join(' · ');
+/** 추천 이유 한 줄 — recommend.ts의 공통 이유를 그대로 쓴다 */
+function menuReason(m: RecipeMatch, planned: boolean): string {
+  return [planned ? '오늘 식단에 넣은 메뉴' : null, ...topReasons(m, planned ? 1 : 2)].filter(Boolean).join(' · ');
 }
 
 function Stat({ value, label, unit = '개', tone, onPress }: { value: number; label: string; unit?: string; tone?: 'warn'; onPress: () => void }) {

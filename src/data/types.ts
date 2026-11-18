@@ -26,6 +26,9 @@ export interface Ingredient {
   addedAt: string; // ISO
   lastUsedAt: string | null; // 마지막으로 요리에 쓴 시각
   source: DataSource; // 등록 경로(직접 입력 또는 AI 인식 후 사용자 확인)
+  /** 'leftover' = 요리하고 남은 음식(재료 비교에는 쓰지 않음) */
+  kind?: 'ingredient' | 'leftover';
+  recipeId?: string; // 남은 음식이면 어떤 레시피에서 나왔는지
 }
 
 export interface RecipeIngredient {
@@ -150,12 +153,17 @@ export interface WasteRecord {
   date: string; // YYYY-MM-DD
 }
 
+export type CookRating = 'good' | 'ok' | 'bad'; // 😋 맛있어요 · 🙂 괜찮아요 · 😕 별로
+
 export interface CookRecord {
   id: string;
   recipeId: string;
   recipeName: string;
   date: string;
   usedIngredients: { name: string; amount: number; unit: string }[];
+  rating?: CookRating; // 요리 후 맛 평가(다음 추천에 반영)
+  servingsMade?: number; // 만든 양(인분)
+  servingsEaten?: number; // 먹은 양 — 차이만큼 남은 음식
 }
 
 export interface MealPlanEntry {

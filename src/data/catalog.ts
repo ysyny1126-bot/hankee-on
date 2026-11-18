@@ -79,6 +79,12 @@ export function findCatalog(name: string): CatalogEntry | undefined {
   );
 }
 
+/** 이름이 사전의 재료명·별칭과 '정확히' 같을 때만 찾기(부분 일치 없음) */
+export function findCatalogExact(name: string): CatalogEntry | undefined {
+  const n = norm(name);
+  return INGREDIENT_CATALOG.find((c) => norm(c.name) === n || c.aliases?.some((a) => norm(a) === n));
+}
+
 /** 재고 이름과 레시피 재료 이름이 같은 재료인지 판단(예: "삼겹살" = "돼지고기"). */
 export function sameIngredient(a: string, b: string): boolean {
   if (norm(a) === norm(b)) return true;

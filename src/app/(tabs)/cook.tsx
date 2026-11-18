@@ -12,7 +12,7 @@ import { addDays, toDateKey } from '@/logic/dates';
 import type { RecipeMatch } from '@/logic/inventory';
 import { generatePlan } from '@/logic/planner';
 import { aiRecipeToRecipe } from '@/logic/recipe-convert';
-import { rankForUser, recentMealNames } from '@/logic/suggestions';
+import { rankForUser } from '@/logic/suggestions';
 
 const ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -26,7 +26,6 @@ export default function Cook() {
   const [aiLoading, setAiLoading] = useState(false);
   const aiOn = hasAIKey() && s.consents.externalAI;
   const today = toDateKey();
-  const recent = s.consents.personalization ? recentMealNames(s, 7) : [];
 
   const ranked = useMemo(() => rankForUser(s), [s]);
   const pool = ranked.filter((m) => {
@@ -76,7 +75,7 @@ export default function Cook() {
 
       {three.length ? (
         <Row gap={space.sm} style={{ alignItems: 'stretch' }}>
-          {three.map((m) => <MenuCard key={m.recipe.id} m={m} fresh={recent.length > 0 && !recent.includes(m.recipe.name)} />)}
+          {three.map((m) => <MenuCard key={m.recipe.id} m={m} />)}
           {three.length < 3 && Array.from({ length: 3 - three.length }).map((_, i) => <View key={i} style={{ flex: 1 }} />)}
         </Row>
       ) : (
@@ -112,7 +111,8 @@ export default function Cook() {
   );
 }
 
-function MenuCard({ m, fresh }: { m: RecipeMatch; fresh: boolean }) {
+function MenuCard({ m }: { m: RecipeMatch }) {
+  const why = m.reasons.find((r) => r.text && ['liked', 'preferred', 'fresh', 'skill'].includes(r.key))?.text;
   const ok = m.missingRequired.length === 0;
   return (
     <Pressable onPress={() => router.push(`/recipe/${m.recipe.id}`)} style={({ pressed }) => ({ flex: 1, ...clay, paddingVertical: space.lg, paddingHorizontal: 6, alignItems: 'center', gap: 4, opacity: pressed ? 0.7 : 1 })}>
@@ -121,7 +121,7 @@ function MenuCard({ m, fresh }: { m: RecipeMatch; fresh: boolean }) {
       <T v="bodyBold" numberOfLines={1} style={{ textAlign: 'center' }}>{m.recipe.name}</T>
       <T v="tiny" c={color.textSub}>⏱ {m.recipe.timeMinutes}분</T>
       <T v="tiny" c={ok ? color.fresh : color.textMuted} style={{ fontWeight: '700' }}>{ok ? '✓ 재료 있음' : `${m.missingRequired.length}개 부족`}</T>
-      {fresh ? <T v="tiny" c={color.brandDark}>새로운 메뉴</T> : null}
+      {why ? <T v="tiny" c={color.brandDark} numberOfLines={1}>{why}</T> : null}
     </Pressable>
   );
 }
