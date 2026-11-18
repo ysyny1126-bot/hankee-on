@@ -78,7 +78,7 @@ export default function Home() {
       {/* 3. 오늘 요약 */}
       <Row gap={space.sm}>
         <Stat value={s.ingredients.length} label="냉장고 재료" onPress={() => router.push('/fridge')} />
-        <Stat value={todayMeals.length} label="오늘 기록" unit="끼" onPress={() => router.push('/meals')} />
+        <Stat value={todayMeals.length} label="오늘 기록" unit="끼" onPress={() => router.push('/log')} />
         <Stat value={expiring.length} label="먼저 쓸 재료" tone={expiring.length ? 'warn' : undefined} onPress={() => router.push('/fridge')} />
       </Row>
 

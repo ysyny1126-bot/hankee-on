@@ -37,8 +37,7 @@ export default function Meal() {
   };
 
   return (
-    <Screen>
-      <T v="h1" style={{ marginTop: space.sm }}>식단</T>
+    <Screen edges={['bottom']}>
       <Segmented options={[{ key: 'today', label: '오늘' }, { key: 'week', label: '이번 주(7일)' }]} value={view} onChange={setView} />
       <Row>
         <Chip label="아침 포함" selected={withBreakfast} onPress={() => setWithBreakfast(!withBreakfast)} />

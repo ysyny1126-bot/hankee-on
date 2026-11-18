@@ -1,4 +1,4 @@
-import { findFoodReference } from '@/data/catalog';
+import { findCatalog, findFoodReference } from '@/data/catalog';
 import type { AppState, DietaryGoal, MealRecord, MealType, NutritionInfo } from '@/data/types';
 import { addDays, toDateKey, weekStart } from './dates';
 
@@ -227,4 +227,19 @@ export function wasteStats(s: AppState, monthKey = toDateKey().slice(0, 7)) {
   const wasteValue = waste.reduce((a, w) => a + (w.price ?? 0), 0);
   const cooks = s.cooks.filter((c) => c.date.startsWith(monthKey));
   return { wasteCount: waste.length, wasteValue, cookCount: cooks.length, waste };
+}
+
+/**
+ * 요리에 써서 버리지 않은 재료의 대략적인 값(이번 달).
+ * 재료 사전의 평균 가격 × 사용량, 단위가 사전과 같을 때만 센다(아니면 0 → 과장하지 않음).
+ */
+export function usedValue(s: AppState, monthKey = toDateKey().slice(0, 7)): number {
+  let sum = 0;
+  for (const c of s.cooks.filter((x) => x.date.startsWith(monthKey))) {
+    for (const u of c.usedIngredients) {
+      const cat = findCatalog(u.name);
+      if (cat?.avgPrice && cat.unit === u.unit) sum += cat.avgPrice * u.amount;
+    }
+  }
+  return Math.round(sum / 10) * 10;
 }

@@ -1,43 +1,55 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { hasAIKey, recipeFromName } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Emoji, Empty, Field, ListItem, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { color, space } from '@/constants/tokens';
-import { actions, useAppState } from '@/data/store';
-import { aiRecipeToRecipe } from '@/logic/recipe-convert';
-import { rankForUser } from '@/logic/suggestions';
+import { Button, Chip, Field, Row, Screen, SectionHeader, T } from '@/components/ui';
+import { color, radius, space } from '@/constants/tokens';
+import { actions, findRecipe, useAppState } from '@/data/store';
+import { MEAL_LABEL } from '@/logic/analysis';
+import { addDays, toDateKey } from '@/logic/dates';
 import type { RecipeMatch } from '@/logic/inventory';
+import { generatePlan } from '@/logic/planner';
+import { aiRecipeToRecipe } from '@/logic/recipe-convert';
+import { rankForUser, recentMealNames } from '@/logic/suggestions';
 
+const ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+/** 요리: "오늘 뭐 먹지?" 추천 3개 + 이번 주 식단 */
 export default function Cook() {
   const s = useAppState();
+  const [page, setPage] = useState(0);
+  const [filter, setFilter] = useState<'all' | 'expiring' | 'quick'>('all');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
-  const [filter, setFilter] = useState<'all' | 'now' | 'expiring' | 'quick'>('all');
   const [aiLoading, setAiLoading] = useState(false);
   const aiOn = hasAIKey() && s.consents.externalAI;
+  const today = toDateKey();
+  const recent = s.consents.personalization ? recentMealNames(s, 7) : [];
 
   const ranked = useMemo(() => rankForUser(s), [s]);
-  const shown = ranked.filter((m) => {
-    if (q.trim() && !m.recipe.name.includes(q.trim()) && !m.recipe.ingredients.some((i) => i.name.includes(q.trim()))) return false;
-    if (filter === 'now') return m.missingRequired.length === 0;
+  const pool = ranked.filter((m) => {
+    if (q.trim()) return m.recipe.name.includes(q.trim()) || m.recipe.ingredients.some((i) => i.name.includes(q.trim()));
     if (filter === 'expiring') return m.usesExpiring.length > 0;
     if (filter === 'quick') return m.recipe.timeMinutes <= 15;
     return true;
   });
+  const pages = Math.max(1, Math.ceil(pool.length / 3));
+  const three = pool.slice((page % pages) * 3, (page % pages) * 3 + 3);
+
+  const plan = s.mealPlan.filter((p) => p.date === today || p.date === addDays(today, 1)).sort((a, b) => a.date.localeCompare(b.date) || ORDER.indexOf(a.mealType) - ORDER.indexOf(b.mealType));
 
   const searchAI = async () => {
-    if (!q.trim()) return;
     setAiLoading(true);
     try {
       const r = await recipeFromName(q.trim(), { allergies: s.preferences.allergies, skill: s.preferences.cookingSkill, maxMinutes: s.preferences.maxCookMinutes });
-      if (!r.name) return notify('레시피를 찾지 못했어요', '음식 이름을 다시 확인해 주세요.');
+      if (!r.name) return notify('레시피를 찾지 못했어요');
       const recipe = aiRecipeToRecipe(r, 'user');
       actions.saveRecipe(recipe);
       router.push(`/recipe/${recipe.id}`);
     } catch (e) {
-      notify('AI 레시피 생성 실패', (e as Error).message);
+      notify('AI 레시피 실패', (e as Error).message);
     } finally {
       setAiLoading(false);
     }
@@ -45,65 +57,71 @@ export default function Cook() {
 
   return (
     <Screen>
-      <T v="h1" style={{ marginTop: space.sm }}>COOK</T>
-
-      <Card tone="brand">
-        <Row>
-          <T v="h1">📸</T>
-          <View style={{ flex: 1 }}>
-            <T v="bodyBold">먹고 싶은 음식 사진 한 장으로</T>
-            <T v="small" c={color.textSub}>레시피 → 내 냉장고와 비교 → 부족한 재료 장보기 → 요리 후 기록까지</T>
-          </View>
-        </Row>
-        <Button title="음식 사진 올리기" href="/scan/food" />
-      </Card>
-
-      <Field placeholder="요리·재료 검색 (예: 김치, 파스타)" value={q} onChangeText={setQ} returnKeyType="search" />
-      <Row wrap>
-        <Chip label="전체" selected={filter === 'all'} onPress={() => setFilter('all')} />
-        <Chip label="지금 바로 가능" selected={filter === 'now'} onPress={() => setFilter('now')} />
-        <Chip label="⏰ 냉장고 파먹기" selected={filter === 'expiring'} onPress={() => setFilter('expiring')} />
-        <Chip label="15분 이내" selected={filter === 'quick'} onPress={() => setFilter('quick')} />
+      <Row style={{ justifyContent: 'space-between', marginTop: space.sm }}>
+        <T v="h1">오늘 뭐 먹지?</T>
+        <Pressable onPress={() => { setSearchOpen(!searchOpen); setQ(''); }} hitSlop={10} accessibilityLabel="검색">
+          <Text style={{ fontSize: 22 }}>{searchOpen ? '✕' : '🔍'}</Text>
+        </Pressable>
       </Row>
-      {s.preferences.allergies.length > 0 && (
-        <T v="tiny" c={color.textMuted}>알레르기({s.preferences.allergies.join(', ')})가 들어간 레시피는 목록에서 뺐어요.</T>
+
+      {searchOpen ? (
+        <Field placeholder="요리·재료 이름" value={q} onChangeText={(t) => { setQ(t); setPage(0); }} autoFocus />
+      ) : (
+        <Row>
+          <Chip label="전체" selected={filter === 'all'} onPress={() => { setFilter('all'); setPage(0); }} />
+          <Chip label="⏰ 임박 재료" selected={filter === 'expiring'} onPress={() => { setFilter('expiring'); setPage(0); }} />
+          <Chip label="⚡ 15분" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
+        </Row>
       )}
 
-      <SectionHeader title={q.trim() ? `‘${q.trim()}’ 검색 결과` : '내 냉장고로 만들 수 있는 요리'} />
-      {shown.length === 0 ? (
-        <Empty emoji="🔍" title="맞는 레시피가 없어요" body={q.trim() ? (aiOn ? 'HANKEE AI에게 레시피를 만들어 달라고 해 보세요.' : 'AI가 연결되면 없는 레시피도 만들어 드려요.') : '냉장고에 재료를 등록해 보세요.'}>
-          {q.trim() && aiOn ? <Button title={`AI로 ‘${q.trim()}’ 레시피 만들기`} small onPress={searchAI} loading={aiLoading} /> : null}
-        </Empty>
+      {three.length ? (
+        <Row gap={space.sm} style={{ alignItems: 'stretch' }}>
+          {three.map((m) => <MenuCard key={m.recipe.id} m={m} fresh={recent.length > 0 && !recent.includes(m.recipe.name)} />)}
+          {three.length < 3 && Array.from({ length: 3 - three.length }).map((_, i) => <View key={i} style={{ flex: 1 }} />)}
+        </Row>
       ) : (
-        <Card>
-          {shown.slice(0, 20).map((m) => <RecipeRow key={m.recipe.id} m={m} />)}
-        </Card>
+        <View style={{ alignItems: 'center', paddingVertical: space.xl, gap: space.sm }}>
+          <Text style={{ fontSize: 36 }}>🔍</Text>
+          <T c={color.textSub}>맞는 메뉴가 없어요</T>
+        </View>
       )}
-      {!!q.trim() && aiOn && shown.length > 0 && <Button title={`AI로 ‘${q.trim()}’ 새 레시피 만들기`} kind="secondary" small onPress={searchAI} loading={aiLoading} />}
+
+      {pool.length > 3 && <Button title="다른 추천 보기 ↻" kind="secondary" onPress={() => setPage(page + 1)} />}
+      {q.trim() && aiOn ? <Button title={`AI로 ‘${q.trim()}’ 만들기`} kind="ghost" small onPress={searchAI} loading={aiLoading} /> : null}
+
+      <SectionHeader title="이번 주 식단" action="전체" href="/plan" />
+      {plan.length ? (
+        <View style={{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, padding: space.sm }}>
+          {plan.map((p) => {
+            const r = findRecipe(s, p.recipeId);
+            if (!r) return null;
+            return (
+              <Pressable key={p.id} onPress={() => router.push(`/recipe/${r.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.sm }}>
+                <Text style={{ fontSize: 24 }}>{r.emoji}</Text>
+                <T v="small" c={color.textMuted} style={{ width: 64 }}>{p.date === today ? '오늘' : '내일'} {MEAL_LABEL[p.mealType]}</T>
+                <T v="bodyBold" style={{ flex: 1 }}>{r.name}</T>
+                <T c={color.textMuted}>›</T>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <Button title="7일 식단 짜기 ✨" kind="secondary" onPress={() => { actions.setMealPlan(generatePlan(s, today, 7), Array.from({ length: 7 }, (_, i) => addDays(today, i))); }} />
+      )}
     </Screen>
   );
 }
 
-function RecipeRow({ m }: { m: RecipeMatch }) {
-  const r = m.recipe;
+function MenuCard({ m, fresh }: { m: RecipeMatch; fresh: boolean }) {
+  const ok = m.missingRequired.length === 0;
   return (
-    <View style={{ paddingVertical: 4 }}>
-      <ListItem
-        href={`/recipe/${r.id}`}
-        left={<Emoji>{r.emoji}</Emoji>}
-        title={r.name}
-        sub={`${r.timeMinutes}분 · ${r.difficulty}${m.missingRequired.length ? ` · 부족: ${m.missingRequired.map((i) => i.name).join(', ')}` : ' · 재료 다 있어요'}`}
-        right={
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            {m.usesExpiring.length > 0 && <Badge label="임박 재료 활용" tone="warn" />}
-            {r.origin !== 'builtin' && <Badge label="AI 레시피" tone="info" />}
-          </View>
-        }
-      />
-      <Row>
-        <View style={{ flex: 1 }}><ProgressBar ratio={m.coverage} tone={m.coverage >= 1 ? 'fresh' : 'brand'} /></View>
-        <T v="tiny" c={color.textSub}>재료 {m.haveCount}/{m.requiredCount}</T>
-      </Row>
-    </View>
+    <Pressable onPress={() => router.push(`/recipe/${m.recipe.id}`)} style={({ pressed }) => ({ flex: 1, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, paddingVertical: space.lg, paddingHorizontal: 6, alignItems: 'center', gap: 4, opacity: pressed ? 0.7 : 1 })}>
+      {m.usesExpiring.length > 0 && <View style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: color.warn }} />}
+      <Text style={{ fontSize: 40 }}>{m.recipe.emoji}</Text>
+      <T v="bodyBold" numberOfLines={1} style={{ textAlign: 'center' }}>{m.recipe.name}</T>
+      <T v="tiny" c={color.textSub}>⏱ {m.recipe.timeMinutes}분</T>
+      <T v="tiny" c={ok ? color.fresh : color.textMuted} style={{ fontWeight: '700' }}>{ok ? '✓ 재료 있음' : `${m.missingRequired.length}개 부족`}</T>
+      {fresh ? <T v="tiny" c={color.brandDark}>새로운 메뉴</T> : null}
+    </Pressable>
   );
 }

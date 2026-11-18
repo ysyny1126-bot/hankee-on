@@ -22,7 +22,7 @@ import { color, font, MAX_WIDTH, radius, shadow, space } from '@/constants/token
  */
 
 export function Screen({ children, scroll = true, edges = ['top'] as ('top' | 'bottom')[], footer }: { children: ReactNode; scroll?: boolean; edges?: ('top' | 'bottom')[]; footer?: ReactNode }) {
-  const inner = <View style={styles.inner}>{children}</View>;
+  const inner = <View style={[styles.inner, !scroll && { flex: 1 }]}>{children}</View>;
   return (
     <SafeAreaView style={styles.screen} edges={edges}>
       {scroll ? (

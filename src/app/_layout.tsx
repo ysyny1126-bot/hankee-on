@@ -47,6 +47,9 @@ export default function RootLayout() {
         <Stack.Screen name="goals" options={{ title: '식생활 목표' }} />
         <Stack.Screen name="shopping" options={{ title: '장보기 목록' }} />
         <Stack.Screen name="settings" options={{ title: '설정' }} />
+        <Stack.Screen name="fridge" options={{ title: '내 냉장고' }} />
+        <Stack.Screen name="plan" options={{ title: '이번 주 식단' }} />
+        <Stack.Screen name="cook-mode/[id]" options={{ title: '요리 모드' }} />
       </Stack>
     </StoreProvider>
   );

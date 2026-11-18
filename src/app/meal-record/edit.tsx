@@ -29,12 +29,12 @@ function itemFromName(name: string, prev?: MealItem): MealItem {
 }
 
 export default function MealRecordEdit() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, type, date: dateParam } = useLocalSearchParams<{ id?: string; type?: MealType; date?: string }>();
   const s = useAppState();
   const existing = id ? s.meals.find((m) => m.id === id) : undefined;
 
-  const [date, setDate] = useState(existing?.mealDate ?? toDateKey());
-  const [mealType, setMealType] = useState<MealType>(existing?.mealType ?? guessMealType());
+  const [date, setDate] = useState(existing?.mealDate ?? dateParam ?? toDateKey());
+  const [mealType, setMealType] = useState<MealType>(existing?.mealType ?? type ?? guessMealType());
   const [time, setTime] = useState(existing?.mealTime ?? nowTime());
   const [source, setSource] = useState<MealSourceType>(existing?.sourceType ?? 'home');
   const [imageUri, setImageUri] = useState<string | null>(existing?.imageUri ?? null);

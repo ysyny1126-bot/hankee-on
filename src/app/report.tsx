@@ -8,13 +8,10 @@ import type { NutritionInfo } from '@/data/types';
 import { analyzePeriod, buildInsights, DAILY_REFERENCE, goalProgress, MEAL_LABEL, SOURCE_LABEL, wasteStats } from '@/logic/analysis';
 import { addDays, formatKoreanDate, fromDateKey, toDateKey, weekStart } from '@/logic/dates';
 
+// 시연판은 에너지·단백질만 보여 준다(인터뷰 결정). 나트륨·당류 등은 데이터는 있지만 화면에서 뺐다.
 const NUT_ROWS: { key: keyof NutritionInfo; label: string; unit: string }[] = [
+  { key: 'calories', label: '에너지', unit: 'kcal' },
   { key: 'protein', label: '단백질', unit: 'g' },
-  { key: 'carbohydrates', label: '탄수화물', unit: 'g' },
-  { key: 'fat', label: '지방', unit: 'g' },
-  { key: 'fiber', label: '식이섬유', unit: 'g' },
-  { key: 'sodium', label: '나트륨', unit: 'mg' },
-  { key: 'sugar', label: '당류', unit: 'g' },
 ];
 
 /** 일간·주간·월간 식생활 리포트. 모든 수치에 근거와 한계를 함께 표시한다. */
