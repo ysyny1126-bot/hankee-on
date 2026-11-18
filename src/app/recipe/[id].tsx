@@ -106,7 +106,7 @@ function IngredientRow({ x, rs }: { x: IngredientMatch; rs: Restrictions }) {
   const subs = x.status === 'missing' || x.status === 'low' ? safeSubstitutes(x.need.substitute, rs) : [];
   const mark =
     x.status === 'have' || x.status === 'unknown_amount' ? { t: '✓', c: color.fresh } :
-    x.status === 'low' ? { t: '△', c: '#B07A00' } :
+    x.status === 'low' ? { t: '△', c: color.warnDark } :
     x.status === 'staple' || x.need.optional ? { t: '·', c: color.textMuted } :
     { t: '✕', c: color.danger };
   return (

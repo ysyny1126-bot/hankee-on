@@ -1,23 +1,88 @@
 import { Redirect, router, type Href } from 'expo-router';
-import { Tabs } from 'expo-router/tabs';
+import { Tabs, type BottomTabBarProps } from 'expo-router/tabs';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Sheet } from '@/components/sheet';
 import { T } from '@/components/ui';
-import { color, radius, shadow, space } from '@/constants/tokens';
+import { color, pastel, radius, shadow, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 
-const icon = (e: string) =>
-  function TabIcon({ focused }: { focused: boolean }) {
-    return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{e}</Text>;
-  };
+const TAB_ICON: Record<string, string> = { index: '🏠', cook: '🍳', log: '📒', my: '🙂' };
 
-const ADD_ITEMS: { emoji: string; label: string; href: Href }[] = [
-  { emoji: '🧊', label: '냉장고 찍기', href: '/scan/fridge' },
-  { emoji: '🍽️', label: '식사 찍기', href: '/meal-record/edit' },
-  { emoji: '🍜', label: '음식 → 레시피', href: '/scan/food' },
-  { emoji: '✏️', label: '재료 직접 추가', href: '/ingredient/edit' },
+/**
+ * 떠 있는 알약형 하단 탭(캠퍼스메이트 스타일).
+ * 반투명 흰 유리 바탕, 선택된 탭만 보라 알약으로 커지며 이름이 보인다. 가운데는 만들기(+).
+ */
+function PillTabBar({ state, descriptors, emitter, navigateToTab, onAdd }: BottomTabBarProps & { onAdd: () => void }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 14, paddingBottom: Math.max(14, insets.bottom + 6) }}>
+      <View
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          alignSelf: 'center',
+          height: 66,
+          borderRadius: radius.pill,
+          backgroundColor: 'rgba(255,255,255,0.78)',
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.9)',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 7,
+          ...shadow.float,
+          ...(Platform.OS === 'web' ? ({ backdropFilter: 'saturate(1.8) blur(18px)' } as object) : null),
+        }}>
+        {state.routes.map((route, i) => {
+          if (route.name === 'add') {
+            return (
+              <Pressable key={route.key} onPress={onAdd} accessibilityRole="button" accessibilityLabel="만들기" style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: color.navy, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: color.onBrand, fontSize: 26, lineHeight: 28, fontWeight: '500' }}>+</Text>
+              </Pressable>
+            );
+          }
+          const focused = state.index === i;
+          const label = descriptors[route.key].options.title ?? route.name;
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={label}
+              onPress={() => {
+                const e = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                if (!focused && !e.defaultPrevented) navigateToTab(route.key);
+              }}
+              style={{
+                height: 52,
+                minWidth: 52,
+                paddingHorizontal: focused ? 16 : 0,
+                borderRadius: radius.pill,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                backgroundColor: focused ? color.brand : 'transparent',
+                ...(focused ? shadow.button : null),
+              }}>
+              <Text style={{ fontSize: 19, opacity: focused ? 1 : 0.55 }}>{TAB_ICON[route.name]}</Text>
+              {focused ? <T v="small" c={color.onBrand} style={{ fontWeight: '800' }}>{label}</T> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const ADD_ITEMS: { emoji: string; label: string; href: Href; bg: string }[] = [
+  { emoji: '🧊', label: '냉장고 찍기', href: '/scan/fridge', bg: pastel.sky },
+  { emoji: '🍽️', label: '식사 찍기', href: '/meal-record/edit', bg: pastel.peach },
+  { emoji: '🍜', label: '음식 → 레시피', href: '/scan/food', bg: pastel.pink },
+  { emoji: '✏️', label: '재료 직접 추가', href: '/ingredient/edit', bg: pastel.mint },
 ];
 
 /** 하단 탭: 홈 · 요리 · ⊕ · 기록 · 나 */
@@ -29,32 +94,13 @@ export default function TabLayout() {
   return (
     <>
       <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: color.brandDark,
-          tabBarInactiveTintColor: color.textMuted,
-          tabBarStyle: { backgroundColor: color.surface, borderTopWidth: 0, height: 66, paddingTop: 6, ...shadow.card },
-          tabBarLabelStyle: { fontSize: 11, fontFamily: 'Pretendard-Bold' },
-          sceneStyle: { backgroundColor: color.bg },
-        }}>
-        <Tabs.Screen name="index" options={{ title: '홈', tabBarIcon: icon('🏠') }} />
-        <Tabs.Screen name="cook" options={{ title: '요리', tabBarIcon: icon('🍳') }} />
-        <Tabs.Screen
-          name="add"
-          options={{
-            title: '',
-            tabBarAccessibilityLabel: '만들기',
-            tabBarButton: () => (
-              <Pressable onPress={() => setAddOpen(true)} accessibilityRole="button" accessibilityLabel="만들기" style={{ flex: 1, alignItems: 'center' }}>
-                <View style={{ width: 54, height: 54, marginTop: -14, borderRadius: 27, backgroundColor: color.brand, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.surface, ...shadow.button }}>
-                  <Text style={{ color: color.onBrand, fontSize: 28, lineHeight: 30, fontWeight: '600' }}>+</Text>
-                </View>
-              </Pressable>
-            ),
-          }}
-        />
-        <Tabs.Screen name="log" options={{ title: '기록', tabBarIcon: icon('📒') }} />
-        <Tabs.Screen name="my" options={{ title: '나', tabBarIcon: icon('🙂') }} />
+        tabBar={(props) => <PillTabBar {...props} onAdd={() => setAddOpen(true)} />}
+        screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: color.bg } }}>
+        <Tabs.Screen name="index" options={{ title: '홈' }} />
+        <Tabs.Screen name="cook" options={{ title: '요리' }} />
+        <Tabs.Screen name="add" options={{ title: '만들기' }} />
+        <Tabs.Screen name="log" options={{ title: '기록' }} />
+        <Tabs.Screen name="my" options={{ title: '나' }} />
       </Tabs>
 
       <Sheet visible={addOpen} onClose={() => setAddOpen(false)}>
@@ -66,7 +112,7 @@ export default function TabLayout() {
                 setAddOpen(false);
                 router.push(it.href);
               }}
-              style={({ pressed }) => ({ width: '48%', flexGrow: 1, alignItems: 'center', gap: 6, paddingVertical: space.lg, borderRadius: radius.lg, backgroundColor: pressed ? color.brandSoft : color.surfaceAlt })}>
+              style={({ pressed }) => ({ width: '48%', flexGrow: 1, alignItems: 'flex-start', gap: 6, padding: space.lg, minHeight: 110, borderRadius: radius.lg, backgroundColor: it.bg, opacity: pressed ? 0.85 : 1 })}>
               <Text style={{ fontSize: 30 }}>{it.emoji}</Text>
               <T v="bodyBold">{it.label}</T>
             </Pressable>

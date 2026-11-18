@@ -69,7 +69,7 @@ export default function Fridge() {
 
 function Tile({ item: i, warn, onPress }: { item: Ingredient; warn: number; onPress: () => void }) {
   const d = i.expiryDate ? daysUntil(i.expiryDate) : null;
-  const tone = d === null ? color.textMuted : d < 0 || d === 0 ? color.danger : d <= warn ? '#B07A00' : color.textSub;
+  const tone = d === null ? color.textMuted : d < 0 || d === 0 ? color.danger : d <= warn ? color.warnDark : color.textSub;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ width: '25%', alignItems: 'center', paddingVertical: space.sm, gap: 2, opacity: pressed ? 0.6 : 1 })} accessibilityLabel={`${i.name} ${d === null ? '기한 없음' : dDayLabel(i.expiryDate!)}`}>
       <Text style={{ fontSize: 30 }}>{i.emoji}</Text>

@@ -390,7 +390,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       listeners.delete(l);
     };
   }, []);
-  if (!ready) return <View style={{ flex: 1, backgroundColor: '#FAF8F5' }} />; // 불러오는 동안 빈 배경
+  if (!ready) return <View style={{ flex: 1, backgroundColor: '#F5F4FA' }} />; // 불러오는 동안 빈 배경
   return <Ctx.Provider value={snap}>{children}</Ctx.Provider>;
 }
 

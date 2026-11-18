@@ -79,13 +79,13 @@ export function Stack({ children, gap = space.md, style }: { children: ReactNode
 
 type BtnKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'fresh';
 export function Button({ title, onPress, kind = 'primary', small, disabled, loading, icon, style, href }: { title: string; onPress?: () => void; kind?: BtnKind; small?: boolean; disabled?: boolean; loading?: boolean; icon?: string; style?: StyleProp<ViewStyle>; href?: Href }) {
-  // bd = 버튼 아래 두께(클레이 느낌)
+  // 알약 버튼: 주요 = 네이비, 완료 = 민트, 보조 = 흰 바탕 + 테두리
   const palette = {
-    primary: { bg: color.brand, fg: color.onBrand, bd: color.brandShade },
-    fresh: { bg: color.fresh, fg: color.onBrand, bd: color.freshShade },
-    secondary: { bg: color.surface, fg: color.text, bd: color.border },
-    ghost: { bg: 'transparent', fg: color.brandDark, bd: 'transparent' },
-    danger: { bg: color.dangerSoft, fg: color.danger, bd: '#F2CFC8' },
+    primary: { bg: color.navy, fg: color.onBrand, bd: 'transparent' },
+    fresh: { bg: '#5EE0B7', fg: color.navyDeep, bd: 'transparent' },
+    secondary: { bg: color.surface, fg: color.navy, bd: color.borderStrong },
+    ghost: { bg: 'transparent', fg: color.textSub, bd: 'transparent' },
+    danger: { bg: color.dangerSoft, fg: color.dangerDark, bd: 'transparent' },
   }[kind];
   const body = (
     <Pressable
@@ -95,10 +95,8 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
       style={({ pressed }) => [
         styles.btn,
         small && styles.btnSmall,
-        { backgroundColor: palette.bg, borderBottomColor: palette.bd, opacity: disabled ? 0.4 : 1 },
-        (kind === 'primary' || kind === 'fresh') && !disabled && shadow.button,
-        kind === 'ghost' && { borderBottomWidth: 0 },
-        pressed && { transform: [{ translateY: 2 }], borderBottomWidth: kind === 'ghost' ? 0 : 1 },
+        { backgroundColor: palette.bg, borderColor: palette.bd, opacity: disabled ? 0.45 : 1 },
+        pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 },
         style,
       ]}>
       {loading ? (
@@ -115,7 +113,8 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
 }
 
 export function Chip({ label, selected, onPress, tone }: { label: string; selected?: boolean; onPress?: () => void; tone?: 'warn' | 'danger' | 'fresh' }) {
-  const toneColor = tone ? { warn: color.warn, danger: color.danger, fresh: color.fresh }[tone] : color.brand;
+  // 선택된 칩: 네이비(알레르기는 코랄, 기피는 노랑, 완료는 민트)
+  const toneColor = tone ? { warn: color.warnDark, danger: color.danger, fresh: color.freshDark }[tone] : color.navy;
   return (
     <Pressable
       onPress={onPress}
@@ -130,9 +129,9 @@ export function Badge({ label, tone = 'muted', center }: { label: string; tone?:
   const map = {
     muted: [color.surfaceAlt, color.textSub],
     brand: [color.brandSoft, color.brandDark],
-    fresh: [color.freshSoft, color.fresh],
-    warn: [color.warnSoft, '#9A6A00'],
-    danger: [color.dangerSoft, color.danger],
+    fresh: [color.freshSoft, color.freshDark],
+    warn: [color.warnSoft, color.warnDark],
+    danger: [color.dangerSoft, color.dangerDark],
     info: [color.infoSoft, color.info],
   }[tone];
   return (
@@ -153,16 +152,16 @@ export function EstimateBadge({ source }: { source: 'ai_estimated' | 'reference_
 
 export function SectionHeader({ title, action, href, onPress }: { title: string; action?: string; href?: Href; onPress?: () => void }) {
   return (
-    <Row style={{ justifyContent: 'space-between', marginTop: space.sm }}>
-      <T v="h3">{title}</T>
+    <Row style={{ justifyContent: 'space-between', marginTop: space.lg }}>
+      <T v="h2">{title}</T>
       {action ? (
         href ? (
           <Link href={href}>
-            <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>{action} ›</T>
+            <T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action} ›</T>
           </Link>
         ) : (
           <Pressable onPress={onPress}>
-            <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>{action} ›</T>
+            <T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action} ›</T>
           </Pressable>
         )
       ) : null}
@@ -238,7 +237,7 @@ export function Bars({ data, height = 110, unit = '', refLine }: { data: { label
         {data.map((d, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height }}>
             {d.value > 0 ? <T v="tiny" c={color.textSub}>{Math.round(d.value)}{unit}</T> : null}
-            <View style={{ width: '70%', height: Math.max(2, (d.value / max) * (height - 18)), borderRadius: 6, backgroundColor: d.highlight ? color.brand : '#F3C7AE' }} />
+            <View style={{ width: '70%', height: Math.max(2, (d.value / max) * (height - 18)), borderRadius: 6, backgroundColor: d.highlight ? color.brand : '#D8D0FF' }} />
           </View>
         ))}
       </View>
@@ -293,20 +292,20 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   scroll: { paddingBottom: 120 },
   inner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: space.lg, paddingTop: space.md, gap: space.md },
-  footer: { backgroundColor: color.bg, paddingVertical: space.md, ...shadow.card },
+  footer: { backgroundColor: 'rgba(245,244,250,0.92)', paddingVertical: space.md, borderTopWidth: 1, borderTopColor: color.border },
   footerInner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: space.lg, gap: space.sm },
-  card: { ...clay, padding: space.lg, gap: space.sm },
-  btn: { minHeight: 52, borderRadius: radius.pill, paddingHorizontal: space.xl, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 4 },
-  btnSmall: { minHeight: 36, paddingHorizontal: space.md, borderBottomWidth: 3 },
-  chip: { paddingHorizontal: space.md, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: color.border, backgroundColor: color.surface },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, alignSelf: 'flex-start' },
-  input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: 11, minHeight: 46 },
-  seg: { flexDirection: 'row', backgroundColor: color.surfaceAlt, borderRadius: radius.pill, padding: 4 },
+  card: { ...clay, padding: 20, gap: space.sm },
+  btn: { minHeight: 50, borderRadius: radius.pill, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  btnSmall: { minHeight: 36, paddingHorizontal: 14 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, alignSelf: 'flex-start' },
+  input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48 },
+  seg: { flexDirection: 'row', backgroundColor: '#ECEBF3', borderRadius: radius.pill, padding: 3 },
   segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: radius.pill },
   segActive: { backgroundColor: color.surface, ...shadow.soft },
-  stepBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: color.border },
-  track: { height: 10, borderRadius: 5, backgroundColor: color.surfaceAlt, overflow: 'hidden' },
-  fill: { height: 10, borderRadius: 5 },
+  stepBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  track: { height: 8, borderRadius: 4, backgroundColor: '#E9E8F2', overflow: 'hidden' },
+  fill: { height: 8, borderRadius: 4 },
   refLine: { position: 'absolute', left: 0, right: 0, height: 0, borderTopWidth: 1, borderStyle: 'dashed', borderColor: color.textMuted },
   listItem: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm },
 });
