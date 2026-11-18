@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Sheet } from '@/components/sheet';
 import { T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { color, radius, shadow, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 
 const icon = (e: string) =>
@@ -33,8 +33,8 @@ export default function TabLayout() {
           headerShown: false,
           tabBarActiveTintColor: color.brandDark,
           tabBarInactiveTintColor: color.textMuted,
-          tabBarStyle: { backgroundColor: color.surface, borderTopColor: color.border, height: 64, paddingTop: 6 },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+          tabBarStyle: { backgroundColor: color.surface, borderTopWidth: 0, height: 66, paddingTop: 6, ...shadow.card },
+          tabBarLabelStyle: { fontSize: 11, fontFamily: 'Pretendard-Bold' },
           sceneStyle: { backgroundColor: color.bg },
         }}>
         <Tabs.Screen name="index" options={{ title: '홈', tabBarIcon: icon('🏠') }} />
@@ -46,7 +46,7 @@ export default function TabLayout() {
             tabBarAccessibilityLabel: '만들기',
             tabBarButton: () => (
               <Pressable onPress={() => setAddOpen(true)} accessibilityRole="button" accessibilityLabel="만들기" style={{ flex: 1, alignItems: 'center' }}>
-                <View style={{ width: 54, height: 54, marginTop: -14, borderRadius: 27, backgroundColor: color.brand, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.surface }}>
+                <View style={{ width: 54, height: 54, marginTop: -14, borderRadius: 27, backgroundColor: color.brand, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.surface, ...shadow.button }}>
                   <Text style={{ color: color.onBrand, fontSize: 28, lineHeight: 30, fontWeight: '600' }}>+</Text>
                 </View>
               </Pressable>

@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { Bars, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import { analyzePeriod, goalProgress, thisWeek, usedValue, wasteStats } from '@/logic/analysis';
 import { addDays, fromDateKey, toDateKey } from '@/logic/dates';
@@ -96,7 +96,7 @@ export default function My() {
 
 function Box({ children, onPress, style }: { children: React.ReactNode; onPress?: () => void; style?: object }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, padding: space.lg, gap: space.sm, opacity: pressed ? 0.8 : 1 }, style]}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [{ ...clay, padding: space.lg, gap: space.sm, opacity: pressed ? 0.8 : 1 }, style]}>
       {children}
     </Pressable>
   );

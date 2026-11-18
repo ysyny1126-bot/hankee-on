@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Character } from '@/components/character';
-import { Button, Chip, Row, Screen, T } from '@/components/ui';
+import { Button, Chip, Row, Screen, T , OnOff } from '@/components/ui';
 import { CHARACTERS, type CharacterId } from '@/constants/characters';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
 import { buildDemoState } from '@/data/demo';
 import { actions, getState } from '@/data/store';
@@ -53,10 +53,10 @@ export default function Onboarding() {
         ))}
       </Row>
 
-      <View style={{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, padding: space.md, gap: space.sm, marginTop: space.md }}>
+      <View style={{ ...clay, padding: space.md, gap: space.sm, marginTop: space.md }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <T v="bodyBold" style={{ flex: 1 }}>내 기록으로 맞춤 추천받기</T>
-          <Switch value={agree} onValueChange={setAgree} trackColor={{ true: color.brand, false: color.border }} thumbColor={color.surface} />
+          <OnOff value={agree} onValueChange={setAgree} />
         </Row>
         <Pressable onPress={() => setDetail(!detail)}>
           <T v="tiny" c={color.textMuted}>{detail ? '접기 ▲' : '무엇에 동의하나요? ▼'}</T>

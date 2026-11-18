@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -18,9 +19,19 @@ function NotificationSync() {
 }
 
 export default function RootLayout() {
+  // Pretendard: 굵기마다 이름을 따로 등록한다(모든 기기에서 같은 굵기가 나오게)
+  const [fontsLoaded, fontError] = useFonts({
+    'Pretendard-Regular': require('@/assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-Medium': require('@/assets/fonts/Pretendard-Medium.otf'),
+    'Pretendard-SemiBold': require('@/assets/fonts/Pretendard-SemiBold.otf'),
+    'Pretendard-Bold': require('@/assets/fonts/Pretendard-Bold.otf'),
+    'Pretendard-ExtraBold': require('@/assets/fonts/Pretendard-ExtraBold.otf'),
+  });
+  const ready = fontsLoaded || !!fontError; // 글꼴을 못 읽어도 기본 글꼴로 앱은 연다
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+  if (!ready) return null;
   return (
     <StoreProvider>
       <StatusBar style="dark" />
@@ -30,7 +41,7 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: color.bg },
           headerShadowVisible: false,
           headerTintColor: color.text,
-          headerTitleStyle: { fontWeight: '700' },
+          headerTitleStyle: { fontFamily: 'Pretendard-Bold', fontSize: 17 },
           headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: color.bg },
         }}>

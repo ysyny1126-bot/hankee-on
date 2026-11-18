@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Row, Screen, T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { useAllRecipes, useAppState } from '@/data/store';
 import type { MealType } from '@/data/types';
 import { addDays, formatKoreanDate, toDateKey } from '@/logic/dates';
@@ -38,7 +38,7 @@ export default function Log() {
       {SLOTS.map((slot) => {
         const list = meals.filter((m) => m.mealType === slot.type).sort((a, b) => a.mealTime.localeCompare(b.mealTime));
         return (
-          <View key={slot.type} style={{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, padding: space.md, gap: space.sm }}>
+          <View key={slot.type} style={{ ...clay, padding: space.md, gap: space.sm }}>
             <Row style={{ justifyContent: 'space-between' }}>
               <T v="bodyBold">{slot.emoji} {slot.label}</T>
               {list.length > 0 && (

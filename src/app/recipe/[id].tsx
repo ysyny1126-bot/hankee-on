@@ -7,7 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { youtubeSearchUrl } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Badge, Button, Chip, Empty, Row, Screen, T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { formatAmount, matchRecipe, type IngredientMatch } from '@/logic/inventory';
 
@@ -73,7 +73,7 @@ export default function RecipeDetail() {
         <T v="h3">재료</T>
         <Row gap={4}>{[1, 2, 3].map((n) => <Chip key={n} label={`${n}인분`} selected={scale === n} onPress={() => setScale(n)} />)}</Row>
       </Row>
-      <View style={{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, paddingVertical: space.xs }}>
+      <View style={{ ...clay, paddingVertical: space.xs }}>
         {m.matches.map((x, i) => <IngredientRow key={i} x={x} />)}
       </View>
 

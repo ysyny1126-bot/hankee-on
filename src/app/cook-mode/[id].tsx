@@ -2,7 +2,7 @@ import { router, Stack as RStack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { Button, Empty, Row, Screen, T } from '@/components/ui';
+import { Button, Empty, Row, Screen, T, tx } from '@/components/ui';
 import { color, MAX_WIDTH, radius, space } from '@/constants/tokens';
 import { findRecipe, useAppState } from '@/data/store';
 
@@ -31,7 +31,7 @@ export default function CookMode() {
 
         {/* 단계 */}
         <Pressable onPress={() => !last && setI(i + 1)} style={{ flex: 1, justifyContent: 'center' }}>
-          <Text style={{ fontSize: 28, lineHeight: 42, fontWeight: '700', color: color.text }}>{recipe.steps[i]}</Text>
+          <Text style={tx({ fontSize: 28, lineHeight: 42, fontWeight: '700', color: color.text })}>{recipe.steps[i]}</Text>
         </Pressable>
 
         <Row gap={space.sm}>

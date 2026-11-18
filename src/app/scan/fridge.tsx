@@ -1,12 +1,12 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { analyzeFridgePhoto, hasAIKey } from '@/ai/gemini';
 import { pickPhoto } from '@/ai/photo';
 import { notify } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Field, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
+import { Badge, Button, Card, Chip, Field, Row, Screen, Segmented, Stepper, T , OnOff } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { findCatalog, INGREDIENT_CATALOG } from '@/data/catalog';
 import { actions, useAppState, type NewIngredient } from '@/data/store';
@@ -134,7 +134,7 @@ export default function ScanFridge() {
                   <T v="h3">{findCatalog(c.name)?.emoji ?? '🥫'}</T>
                   <Field value={c.name} onChangeText={(t) => update(c.key, { name: t })} />
                 </Row>
-                <Switch value={c.checked} onValueChange={(v) => update(c.key, { checked: v })} trackColor={{ true: color.brand, false: color.border }} />
+                <OnOff value={c.checked} onValueChange={(v) => update(c.key, { checked: v })} />
               </Row>
               <Row style={{ justifyContent: 'space-between' }} wrap>
                 <Row>

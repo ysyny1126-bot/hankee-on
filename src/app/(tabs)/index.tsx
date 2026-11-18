@@ -4,7 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { HomeScene } from '@/components/home-scene';
 import { Badge, Button, Card, Emoji, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, useAllRecipes, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
 import { dDayLabel, daysUntil, formatKoreanDate, toDateKey } from '@/logic/dates';
@@ -124,7 +124,7 @@ export default function Home() {
             {expiring.map((i) => {
               const d = daysUntil(i.expiryDate!);
               return (
-                <Pressable key={i.id} onPress={() => router.push(`/ingredient/edit?id=${i.id}`)} style={{ width: 84, alignItems: 'center', gap: 4, paddingVertical: space.md, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border }}>
+                <Pressable key={i.id} onPress={() => router.push(`/ingredient/edit?id=${i.id}`)} style={{ width: 84, alignItems: 'center', gap: 4, paddingVertical: space.md, ...clay }}>
                   <T v="h2">{i.emoji}</T>
                   <T v="small" numberOfLines={1} style={{ fontWeight: '600' }}>{i.name}</T>
                   <Badge label={dDayLabel(i.expiryDate!)} tone={d < 0 ? 'danger' : 'warn'} center />
@@ -140,7 +140,7 @@ export default function Home() {
       {recent.length ? (
         <Row gap={space.sm}>
           {recent.map((m) => (
-            <Pressable key={m.id} onPress={() => router.push(`/meal-record/edit?id=${m.id}`)} style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: space.md, paddingHorizontal: 4, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border }}>
+            <Pressable key={m.id} onPress={() => router.push(`/meal-record/edit?id=${m.id}`)} style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: space.md, paddingHorizontal: 4, ...clay }}>
               <T v="h2">{mealEmoji(m, recipes)}</T>
               <T v="small" numberOfLines={1} style={{ fontWeight: '600' }}>{m.items[0]?.foodName ?? '식사'}</T>
               <T v="tiny" c={color.textMuted}>{m.mealDate === today ? '오늘' : m.mealDate.slice(5).replace('-', '/')} {MEAL_LABEL[m.mealType]}</T>
@@ -188,7 +188,7 @@ function menuReason(m: RecipeMatch, recentNames: string[], planned: boolean): st
 
 function Stat({ value, label, unit = '개', tone, onPress }: { value: number; label: string; unit?: string; tone?: 'warn'; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ flex: 1, alignItems: 'center', paddingVertical: space.md, backgroundColor: tone === 'warn' ? color.warnSoft : color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: tone === 'warn' ? 'transparent' : color.border }}>
+    <Pressable onPress={onPress} style={{ ...clay, flex: 1, alignItems: 'center', paddingVertical: space.md, backgroundColor: tone === 'warn' ? color.warnSoft : color.surface, borderBottomColor: tone === 'warn' ? '#F3DFA9' : color.border }}>
       <T v="h2">{value}<T v="small" c={color.textSub}>{unit}</T></T>
       <T v="tiny" c={color.textSub}>{label}</T>
     </Pressable>
@@ -197,7 +197,7 @@ function Stat({ value, label, unit = '개', tone, onPress }: { value: number; la
 
 function Quick({ emoji, label, onPress }: { emoji: string; label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 4, paddingVertical: space.md, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, opacity: pressed ? 0.7 : 1 })}>
+    <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 4, paddingVertical: space.md, ...clay, opacity: pressed ? 0.7 : 1 })}>
       <T v="h2">{emoji}</T>
       <T v="small" style={{ fontWeight: '700' }}>{label}</T>
     </Pressable>

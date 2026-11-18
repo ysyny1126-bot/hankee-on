@@ -1,9 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Switch, View } from 'react-native';
+import { View } from 'react-native';
 
 import { notify } from '@/components/dialog';
-import { Badge, Button, Card, Empty, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
+import { Badge, Button, Card, Empty, Row, Screen, Segmented, Stepper, T , OnOff } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import type { MealType } from '@/data/types';
@@ -90,7 +90,7 @@ export default function CookComplete() {
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <T v="h3">식사 기록에도 저장</T>
-          <Switch value={saveMeal} onValueChange={setSaveMeal} trackColor={{ true: color.brand, false: color.border }} />
+          <OnOff value={saveMeal} onValueChange={setSaveMeal} />
         </Row>
         {saveMeal && (
           <>

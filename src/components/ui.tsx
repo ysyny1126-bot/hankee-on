@@ -2,20 +2,23 @@ import { Link, router, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
   type StyleProp,
+  type SwitchProps,
   type TextInputProps,
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { color, font, MAX_WIDTH, radius, shadow, space } from '@/constants/tokens';
+import { clay, color, familyFor, font, MAX_WIDTH, radius, shadow, space } from '@/constants/tokens';
 
 /**
  * 한끼온 공용 UI 부품. 모든 화면이 이 부품만 쓰므로 디자인을 바꿀 때 여기와 tokens.ts만 고치면 된다.
@@ -37,10 +40,25 @@ export function Screen({ children, scroll = true, edges = ['top'] as ('top' | 'b
   );
 }
 
+/**
+ * 글자 스타일 마무리: fontWeight에 맞는 Pretendard 굵기를 고르고,
+ * 웹에서는 한국어 단어 중간에서 줄이 바뀌지 않게(keep-all) 한다.
+ */
+export function tx(style: StyleProp<TextStyle>): TextStyle {
+  const f = StyleSheet.flatten(style) ?? {};
+  const { fontWeight, ...rest } = f as TextStyle;
+  const out: Record<string, unknown> = { ...rest, fontFamily: familyFor(fontWeight) };
+  if (Platform.OS === 'web') {
+    out.fontWeight = fontWeight; // 웹은 굵기도 함께 둬도 안전
+    out.wordBreak = 'keep-all'; // 한국어 단어 중간 줄바꿈 방지
+  } // 휴대폰에서는 굵기를 글꼴 이름으로만 정한다(안드로이드 이중 굵기 방지)
+  return out as TextStyle;
+}
+
 type TVariant = keyof typeof font;
 export function T({ v = 'body', c, style, children, numberOfLines }: { v?: TVariant; c?: string; style?: StyleProp<TextStyle>; children: ReactNode; numberOfLines?: number }) {
   return (
-    <Text numberOfLines={numberOfLines} style={[font[v], { color: c ?? color.text }, style]}>
+    <Text numberOfLines={numberOfLines} style={tx([font[v], { color: c ?? color.text }, style])}>
       {children}
     </Text>
   );
@@ -61,12 +79,13 @@ export function Stack({ children, gap = space.md, style }: { children: ReactNode
 
 type BtnKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'fresh';
 export function Button({ title, onPress, kind = 'primary', small, disabled, loading, icon, style, href }: { title: string; onPress?: () => void; kind?: BtnKind; small?: boolean; disabled?: boolean; loading?: boolean; icon?: string; style?: StyleProp<ViewStyle>; href?: Href }) {
+  // bd = 버튼 아래 두께(클레이 느낌)
   const palette = {
-    primary: { bg: color.brand, fg: color.onBrand, bd: color.brand },
-    fresh: { bg: color.fresh, fg: color.onBrand, bd: color.fresh },
+    primary: { bg: color.brand, fg: color.onBrand, bd: color.brandShade },
+    fresh: { bg: color.fresh, fg: color.onBrand, bd: color.freshShade },
     secondary: { bg: color.surface, fg: color.text, bd: color.border },
     ghost: { bg: 'transparent', fg: color.brandDark, bd: 'transparent' },
-    danger: { bg: color.dangerSoft, fg: color.danger, bd: color.dangerSoft },
+    danger: { bg: color.dangerSoft, fg: color.danger, bd: '#F2CFC8' },
   }[kind];
   const body = (
     <Pressable
@@ -76,13 +95,16 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
       style={({ pressed }) => [
         styles.btn,
         small && styles.btnSmall,
-        { backgroundColor: palette.bg, borderColor: palette.bd, opacity: disabled ? 0.4 : pressed ? 0.75 : 1 },
+        { backgroundColor: palette.bg, borderBottomColor: palette.bd, opacity: disabled ? 0.4 : 1 },
+        (kind === 'primary' || kind === 'fresh') && !disabled && shadow.button,
+        kind === 'ghost' && { borderBottomWidth: 0 },
+        pressed && { transform: [{ translateY: 2 }], borderBottomWidth: kind === 'ghost' ? 0 : 1 },
         style,
       ]}>
       {loading ? (
         <ActivityIndicator color={palette.fg} />
       ) : (
-        <Text style={[small ? font.small : font.bodyBold, { color: palette.fg, fontWeight: '700' }]}>
+        <Text style={tx([small ? font.small : font.bodyBold, { color: palette.fg, fontWeight: '700' }])}>
           {icon ? `${icon}  ` : ''}
           {title}
         </Text>
@@ -99,7 +121,7 @@ export function Chip({ label, selected, onPress, tone }: { label: string; select
       onPress={onPress}
       disabled={!onPress}
       style={[styles.chip, selected && { backgroundColor: toneColor, borderColor: toneColor }]}>
-      <Text style={[font.small, { color: selected ? color.onBrand : color.textSub, fontWeight: '600' }]}>{label}</Text>
+      <Text style={tx([font.small, { color: selected ? color.onBrand : color.textSub, fontWeight: '600' }])}>{label}</Text>
     </Pressable>
   );
 }
@@ -115,7 +137,7 @@ export function Badge({ label, tone = 'muted', center }: { label: string; tone?:
   }[tone];
   return (
     <View style={[styles.badge, { backgroundColor: map[0] }, center && { alignSelf: 'center' }]}>
-      <Text style={[font.tiny, { color: map[1], fontWeight: '700' }]}>{label}</Text>
+      <Text style={tx([font.tiny, { color: map[1], fontWeight: '700' }])}>{label}</Text>
     </View>
   );
 }
@@ -163,7 +185,7 @@ export function Field({ label, hint, ...props }: TextInputProps & { label?: stri
   return (
     <View style={{ gap: space.xs, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
       {label ? <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>{label}</T> : null}
-      <TextInput placeholderTextColor={color.textMuted} {...props} style={[styles.input, { width: '100%', minWidth: 0 }, props.multiline && { minHeight: 72, textAlignVertical: 'top' }, props.style]} />
+      <TextInput placeholderTextColor={color.textMuted} {...props} style={[tx(styles.input), { width: '100%', minWidth: 0 }, props.multiline && { minHeight: 72, textAlignVertical: 'top' }, props.style]} />
       {hint ? <T v="tiny" c={color.textMuted}>{hint}</T> : null}
     </View>
   );
@@ -174,7 +196,7 @@ export function Segmented<K extends string>({ options, value, onChange }: { opti
     <View style={styles.seg}>
       {options.map((o) => (
         <Pressable key={o.key} onPress={() => onChange(o.key)} style={[styles.segItem, value === o.key && styles.segActive]}>
-          <Text style={[font.small, { fontWeight: '700', color: value === o.key ? color.text : color.textMuted }]}>{o.label}</Text>
+          <Text style={tx([font.small, { fontWeight: '700', color: value === o.key ? color.text : color.textMuted }])}>{o.label}</Text>
         </Pressable>
       ))}
     </View>
@@ -185,14 +207,14 @@ export function Stepper({ value, onChange, step = 1, min = 0 }: { value: number;
   const set = (n: number) => onChange(Math.max(min, Math.round(n * 100) / 100));
   return (
     <Row gap={space.xs}>
-      <Pressable style={styles.stepBtn} onPress={() => set(value - step)}><Text style={font.h3}>−</Text></Pressable>
+      <Pressable style={styles.stepBtn} onPress={() => set(value - step)}><Text style={tx(font.h3)}>−</Text></Pressable>
       <TextInput
         value={String(value)}
         onChangeText={(t) => { const n = Number(t.replace(/[^0-9.]/g, '')); if (!Number.isNaN(n)) set(n); }}
         keyboardType="decimal-pad"
-        style={[styles.input, { width: 56, textAlign: 'center', paddingHorizontal: 4 }]}
+        style={[tx(styles.input), { width: 56, textAlign: 'center', paddingHorizontal: 4 }]}
       />
-      <Pressable style={styles.stepBtn} onPress={() => set(value + step)}><Text style={font.h3}>+</Text></Pressable>
+      <Pressable style={styles.stepBtn} onPress={() => set(value + step)}><Text style={tx(font.h3)}>+</Text></Pressable>
     </Row>
   );
 }
@@ -216,7 +238,7 @@ export function Bars({ data, height = 110, unit = '', refLine }: { data: { label
         {data.map((d, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height }}>
             {d.value > 0 ? <T v="tiny" c={color.textSub}>{Math.round(d.value)}{unit}</T> : null}
-            <View style={{ width: '70%', height: Math.max(2, (d.value / max) * (height - 18)), borderRadius: 6, backgroundColor: d.highlight ? color.brand : '#FFC9A8' }} />
+            <View style={{ width: '70%', height: Math.max(2, (d.value / max) * (height - 18)), borderRadius: 6, backgroundColor: d.highlight ? color.brand : '#F3C7AE' }} />
           </View>
         ))}
       </View>
@@ -226,6 +248,18 @@ export function Bars({ data, height = 110, unit = '', refLine }: { data: { label
         ))}
       </View>
     </View>
+  );
+}
+
+/** 켜기/끄기 스위치 — 웹에서도 손잡이를 흰색으로 맞춘다 */
+export function OnOff(props: SwitchProps) {
+  return (
+    <Switch
+      trackColor={{ true: color.brand, false: color.border }}
+      thumbColor={color.surface}
+      {...({ activeThumbColor: color.surface } as object)}
+      {...props}
+    />
   );
 }
 
@@ -259,20 +293,20 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   scroll: { paddingBottom: 120 },
   inner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: space.lg, paddingTop: space.md, gap: space.md },
-  footer: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.border, backgroundColor: color.surface, paddingVertical: space.md },
+  footer: { backgroundColor: color.bg, paddingVertical: space.md, ...shadow.card },
   footerInner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: space.lg, gap: space.sm },
-  card: { backgroundColor: color.surface, borderRadius: radius.lg, padding: space.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: color.border, gap: space.sm, ...shadow.card },
-  btn: { minHeight: 48, borderRadius: radius.md, paddingHorizontal: space.lg, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  btnSmall: { minHeight: 34, paddingHorizontal: space.md, borderRadius: radius.sm },
-  chip: { paddingHorizontal: space.md, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface },
-  badge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.pill, alignSelf: 'flex-start' },
-  input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: 10, minHeight: 44 },
-  seg: { flexDirection: 'row', backgroundColor: color.surfaceAlt, borderRadius: radius.md, padding: 3 },
-  segItem: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: radius.sm },
-  segActive: { backgroundColor: color.surface, ...shadow.card },
-  stepBtn: { width: 36, height: 36, borderRadius: radius.sm, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 8, borderRadius: 4, backgroundColor: color.surfaceAlt, overflow: 'hidden' },
-  fill: { height: 8, borderRadius: 4 },
+  card: { ...clay, padding: space.lg, gap: space.sm },
+  btn: { minHeight: 52, borderRadius: radius.pill, paddingHorizontal: space.xl, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 4 },
+  btnSmall: { minHeight: 36, paddingHorizontal: space.md, borderBottomWidth: 3 },
+  chip: { paddingHorizontal: space.md, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: color.border, backgroundColor: color.surface },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, alignSelf: 'flex-start' },
+  input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1.5, borderColor: color.border, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: 11, minHeight: 46 },
+  seg: { flexDirection: 'row', backgroundColor: color.surfaceAlt, borderRadius: radius.pill, padding: 4 },
+  segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: radius.pill },
+  segActive: { backgroundColor: color.surface, ...shadow.soft },
+  stepBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: color.border },
+  track: { height: 10, borderRadius: 5, backgroundColor: color.surfaceAlt, overflow: 'hidden' },
+  fill: { height: 10, borderRadius: 5 },
   refLine: { position: 'absolute', left: 0, right: 0, height: 0, borderTopWidth: 1, borderStyle: 'dashed', borderColor: color.textMuted },
   listItem: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm },
 });

@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, Switch, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { CHARACTERS } from '@/constants/characters';
 
 import { AI_MODEL_NAME, hasAIKey } from '@/ai/gemini';
 import { confirmAsync, notify } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Field, Row, Screen, SectionHeader, Segmented, Stepper, T } from '@/components/ui';
+import { Badge, Button, Card, Chip, Field, Row, Screen, SectionHeader, Segmented, Stepper, T , OnOff } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
 import { buildDemoState } from '@/data/demo';
@@ -135,7 +135,7 @@ function Toggle({ label, value, onChange, sub }: { label: string; value: boolean
         <T>{label}</T>
         {sub ? <T v="tiny" c={color.textMuted}>{sub}</T> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: color.brand, false: color.border }} />
+      <OnOff value={value} onValueChange={onChange} />
     </Row>
   );
 }

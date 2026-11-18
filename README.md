@@ -4,6 +4,7 @@
 
 - 기술: React Native + Expo (SDK 58), Expo Router, TypeScript
 - 저장: 기기 안(AsyncStorage). 로그인·서버는 다음 단계
+- 글꼴: Pretendard (SIL OFL 1.1, assets/fonts/Pretendard-LICENSE.txt)
 - AI: Google Gemini (무료 등급, 시연용) — 키가 없으면 AI 기능만 꺼지고 나머지는 동작
 
 ## 실행

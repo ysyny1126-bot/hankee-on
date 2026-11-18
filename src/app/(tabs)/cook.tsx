@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { hasAIKey, recipeFromName } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Button, Chip, Field, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
 import { addDays, toDateKey } from '@/logic/dates';
@@ -91,7 +91,7 @@ export default function Cook() {
 
       <SectionHeader title="이번 주 식단" action="전체" href="/plan" />
       {plan.length ? (
-        <View style={{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, padding: space.sm }}>
+        <View style={{ ...clay, padding: space.sm }}>
           {plan.map((p) => {
             const r = findRecipe(s, p.recipeId);
             if (!r) return null;
@@ -115,7 +115,7 @@ export default function Cook() {
 function MenuCard({ m, fresh }: { m: RecipeMatch; fresh: boolean }) {
   const ok = m.missingRequired.length === 0;
   return (
-    <Pressable onPress={() => router.push(`/recipe/${m.recipe.id}`)} style={({ pressed }) => ({ flex: 1, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, paddingVertical: space.lg, paddingHorizontal: 6, alignItems: 'center', gap: 4, opacity: pressed ? 0.7 : 1 })}>
+    <Pressable onPress={() => router.push(`/recipe/${m.recipe.id}`)} style={({ pressed }) => ({ flex: 1, ...clay, paddingVertical: space.lg, paddingHorizontal: 6, alignItems: 'center', gap: 4, opacity: pressed ? 0.7 : 1 })}>
       {m.usesExpiring.length > 0 && <View style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: color.warn }} />}
       <Text style={{ fontSize: 40 }}>{m.recipe.emoji}</Text>
       <T v="bodyBold" numberOfLines={1} style={{ textAlign: 'center' }}>{m.recipe.name}</T>

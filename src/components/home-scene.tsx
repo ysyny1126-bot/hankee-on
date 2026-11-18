@@ -2,7 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { color, radius, shadow, space } from '@/constants/tokens';
 import type { Ingredient } from '@/data/types';
 import { daysUntil } from '@/logic/dates';
 
@@ -49,14 +49,14 @@ export function HomeScene({
 
         {/* 냉장고 */}
         <Pressable onPress={onPressFridge} accessibilityRole="button" accessibilityLabel={`냉장고 열기, 재료 ${ingredients.length}개`} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
-          <View style={{ width: 150, height: 196, backgroundColor: '#FFFFFF', borderRadius: 22, borderWidth: 2, borderColor: '#EADFD3', padding: 8, gap: 6 }}>
+          <View style={{ width: 150, height: 196, backgroundColor: '#FFFDF9', borderRadius: 26, borderWidth: 2, borderColor: '#F1E3D2', borderBottomWidth: 6, borderBottomColor: '#E8D3BC', padding: 8, gap: 6, ...shadow.card }}>
             {/* 냉동칸 */}
-            <View style={{ height: 34, borderRadius: 12, backgroundColor: '#F4F8FB', justifyContent: 'center', paddingHorizontal: 10 }}>
+            <View style={{ height: 34, borderRadius: 12, backgroundColor: '#EEF4F6', justifyContent: 'center', paddingHorizontal: 10 }}>
               <View style={{ position: 'absolute', right: 10, top: 10, width: 4, height: 14, borderRadius: 2, backgroundColor: '#D9CFC4' }} />
               <Text style={{ fontSize: 11, color: color.textMuted }}>❄︎</Text>
             </View>
             {/* 냉장칸: 재료 */}
-            <View style={{ flex: 1, borderRadius: 14, backgroundColor: '#FBF8F4', padding: 8, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start', gap: 4 }}>
+            <View style={{ flex: 1, borderRadius: 14, backgroundColor: '#FBF4EA', padding: 8, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start', gap: 4 }}>
               {shown.length === 0 ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', height: 120 }}>
                   <Text style={{ fontSize: 22, opacity: 0.35 }}>🫙</Text>
@@ -85,7 +85,7 @@ export function HomeScene({
         </Pressable>
       </View>
       {/* 바닥 */}
-      <View style={{ height: 14, marginHorizontal: -space.lg, backgroundColor: '#F7DCC8' }} />
+      <View style={{ height: 16, marginHorizontal: -space.lg, backgroundColor: '#F6D9C3' }} />
     </View>
   );
 }

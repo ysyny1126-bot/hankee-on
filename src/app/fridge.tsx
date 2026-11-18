@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { confirmAsync } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Stepper, T } from '@/components/ui';
-import { color, radius, space } from '@/constants/tokens';
+import { clay, color, radius, space } from '@/constants/tokens';
 import { sameIngredient } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { Ingredient, StorageType } from '@/data/types';
@@ -41,7 +41,7 @@ export default function Fridge() {
             .filter((i) => i.storage === sh.key)
             .sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999'));
           return (
-            <View key={sh.key} style={{ backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.border, overflow: 'hidden' }}>
+            <View key={sh.key} style={{ ...clay, overflow: 'hidden' }}>
               <Row style={{ paddingHorizontal: space.md, paddingVertical: space.sm, backgroundColor: color.surfaceAlt }}>
                 <T v="bodyBold">{sh.emoji} {sh.label}</T>
                 <T v="small" c={color.textMuted}>{items.length}</T>
