@@ -118,6 +118,7 @@ export interface DietaryGoal {
 
 export interface FoodPreferences {
   nickname: string;
+  characterId?: string; // 선택한 캐릭터(constants/characters.ts)
   preferredFoods: string[];
   dislikedFoods: string[];
   allergies: string[];

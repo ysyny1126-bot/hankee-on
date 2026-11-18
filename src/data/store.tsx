@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { View } from 'react-native';
 
 import { findCatalog } from './catalog';
 import { BUILTIN_RECIPES } from './recipes';
@@ -29,6 +30,7 @@ export const initialState: AppState = {
   onboarded: false,
   preferences: {
     nickname: '',
+    characterId: 'sprout',
     preferredFoods: [],
     dislikedFoods: [],
     allergies: [],
@@ -266,7 +268,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       listeners.delete(l);
     };
   }, []);
-  if (!ready) return null;
+  if (!ready) return <View style={{ flex: 1, backgroundColor: '#FAF8F5' }} />; // 불러오는 동안 빈 배경
   return <Ctx.Provider value={snap}>{children}</Ctx.Provider>;
 }
 

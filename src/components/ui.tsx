@@ -104,7 +104,7 @@ export function Chip({ label, selected, onPress, tone }: { label: string; select
   );
 }
 
-export function Badge({ label, tone = 'muted' }: { label: string; tone?: 'muted' | 'brand' | 'fresh' | 'warn' | 'danger' | 'info' }) {
+export function Badge({ label, tone = 'muted', center }: { label: string; tone?: 'muted' | 'brand' | 'fresh' | 'warn' | 'danger' | 'info'; center?: boolean }) {
   const map = {
     muted: [color.surfaceAlt, color.textSub],
     brand: [color.brandSoft, color.brandDark],
@@ -114,7 +114,7 @@ export function Badge({ label, tone = 'muted' }: { label: string; tone?: 'muted'
     info: [color.infoSoft, color.info],
   }[tone];
   return (
-    <View style={[styles.badge, { backgroundColor: map[0] }]}>
+    <View style={[styles.badge, { backgroundColor: map[0] }, center && { alignSelf: 'center' }]}>
       <Text style={[font.tiny, { color: map[1], fontWeight: '700' }]}>{label}</Text>
     </View>
   );

@@ -1,11 +1,14 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Switch, View } from 'react-native';
+import { Platform, Pressable, Switch, View } from 'react-native';
+
+import { Character } from '@/components/character';
+import { CHARACTERS } from '@/constants/characters';
 
 import { AI_MODEL_NAME, hasAIKey } from '@/ai/gemini';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Badge, Button, Card, Chip, Field, Row, Screen, SectionHeader, Segmented, Stepper, T } from '@/components/ui';
-import { color, space } from '@/constants/tokens';
+import { color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
 import { buildDemoState } from '@/data/demo';
 import { actions, getState, initialState, useAppState } from '@/data/store';
@@ -24,6 +27,20 @@ export default function Settings() {
 
   return (
     <Screen edges={['bottom']}>
+      <SectionHeader title="내 캐릭터" />
+      <Row gap={space.sm}>
+        {CHARACTERS.map((c) => {
+          const on = (p.characterId ?? 'sprout') === c.id;
+          return (
+            <Pressable key={c.id} onPress={() => actions.updatePreferences({ characterId: c.id })} style={{ flex: 1, alignItems: 'center', paddingVertical: space.md, borderRadius: radius.lg, borderWidth: 2, borderColor: on ? color.brand : color.border, backgroundColor: on ? color.brandSoft : color.surface }}>
+              <Character id={c.id} size={64} />
+              <T v="tiny" c={on ? color.brandDark : color.textSub}>{c.name}</T>
+            </Pressable>
+          );
+        })}
+      </Row>
+      <T v="tiny" c={color.textMuted}>지금은 임시 캐릭터예요. 완성 캐릭터가 나오면 바뀌어요.</T>
+
       <SectionHeader title="나의 취향" />
       <Card>
         <Field label="이름" value={p.nickname} onChangeText={(t) => actions.updatePreferences({ nickname: t })} />
