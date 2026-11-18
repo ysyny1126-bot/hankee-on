@@ -130,6 +130,38 @@ export interface FoodPreferences {
   maxCookMinutes: number; // 평일 조리 가능 시간
   cookingSkill: '초보' | '보통' | '능숙';
   householdSize: number;
+
+  // ── 온보딩 프로필(모두 '대략적인 값'으로 시작, 설정에서 언제든 수정) ──
+  /** 생활 유형 id 목록(constants/profile.ts). 여러 개 고를 수 있고, 추천의 기본값으로만 쓴다. */
+  lifestyles: string[];
+  /** 월간 식비(원). 구간을 고르면 구간의 대표값, 직접 입력하면 그 값. 모르면 null */
+  monthlyBudget: number | null;
+  budgetBand: string | null; // 고른 구간 id(직접 입력이면 'custom')
+  fridgeSize: FridgeSize | null;
+  fridgeSpace: FridgeSpace | null;
+  /** 홈을 '오늘 한 끼' 중심으로 볼지, '이번 주 식단' 중심으로 볼지 */
+  planHabit: 'today' | 'week';
+  /** AI 코치 말투(constants/profile.ts). 캐릭터 외형(characterId)과는 따로 고른다. */
+  coachId: string;
+  /** 고른 목표(예시 선택 + 직접 입력). 비워도 앱은 모두 쓸 수 있다. */
+  profileGoals: string[];
+  /** 알레르기·기피 음식을 '나중에 설정'으로 넘겼는지 */
+  restrictionsLater: boolean;
+  /** 실제 냉장고 사진(이 기기에만 저장). showFridgePhoto가 켜져 있을 때만 홈에 보인다. */
+  fridgePhotoUri: string | null;
+  showFridgePhoto: boolean;
+  /** 맞춤 영양 계산용 신체 정보(선택). 가입 때 묻지 않는다. */
+  body: BodyInfo | null;
+}
+
+export type FridgeSize = 'mini' | 'single' | 'standard' | 'large';
+export type FridgeSpace = 'full' | 'some' | 'lots';
+
+export interface BodyInfo {
+  heightCm: number | null;
+  weightKg: number | null;
+  birthYear: number | null;
+  updatedAt: string;
 }
 
 export interface ShoppingItem {
@@ -151,6 +183,15 @@ export interface WasteRecord {
   price?: number;
   reason: 'expired' | 'spoiled' | 'other';
   date: string; // YYYY-MM-DD
+}
+
+/** 재료를 들일 때의 지출 기록. 재료를 다 먹어도 남는다(식비는 '산 시점' 기준) */
+export interface SpendRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  name: string;
+  amount: number; // 원
+  estimated: boolean; // true = 가격을 안 적어서 재료 사전 평균가로 추정
 }
 
 export type CookRating = 'good' | 'ok' | 'bad'; // 😋 맛있어요 · 🙂 괜찮아요 · 😕 별로
@@ -179,6 +220,8 @@ export interface NotificationSettings {
   unusedIngredient: boolean; // 오래 안 쓴 재료
   menuSuggestion: boolean; // 오늘의 메뉴
   shopping: boolean; // 장보기 제안
+  mealReminder: boolean; // 식사 기록 리마인더
+  mealReminderTimes: string[]; // 'HH:MM' 목록
   expiryDaysBefore: number; // 며칠 전에 알릴지
   maxPerDay: number; // 하루 최대 알림 수
 }
@@ -214,8 +257,11 @@ export interface AppState {
   goals: DietaryGoal[];
   shopping: ShoppingItem[];
   waste: WasteRecord[];
+  spend: SpendRecord[];
   cooks: CookRecord[];
   mealPlan: MealPlanEntry[];
   reports: DietaryReport[];
   dismissedSuggestions: Record<string, string>; // 제안 id → 숨긴 날짜
+  /** 앱을 연 기록. previous는 이번에 열기 직전의 마지막 방문(오랜만에 돌아온 사용자 반기기용) */
+  visit: { last: string | null; previous: string | null };
 }

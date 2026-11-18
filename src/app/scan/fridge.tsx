@@ -1,10 +1,10 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { analyzeFridgePhoto, hasAIKey } from '@/ai/gemini';
-import { pickPhoto } from '@/ai/photo';
+import { analyzeFridgePhoto, hasAIKey, type FridgeScanResult } from '@/ai/gemini';
+import { photoKB, pickPhoto, storableUri, takePendingPhoto, type PickedPhoto } from '@/ai/photo';
 import { notify } from '@/components/dialog';
 import { Badge, Button, Card, Chip, Field, Row, Screen, Segmented, Stepper, T , OnOff } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
@@ -34,15 +34,37 @@ export default function ScanFridge() {
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<Candidate[]>([]);
   const [error, setError] = useState('');
+  const [picked, setPicked] = useState<PickedPhoto | null>(null);
+  const [stat, setStat] = useState<{ kb: number; sec: number; found: number } | null>(null);
+
+  // 온보딩에서 찍어 온 사진이 있으면 바로 분석
+  useEffect(() => {
+    const p = takePendingPhoto();
+    if (p) analyze(p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const run = async (src: 'camera' | 'library') => {
     setError('');
     try {
       const p = await pickPhoto(src);
       if (!p) return;
-      setPhoto(p.uri);
+      await analyze(p);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const analyze = async (p: PickedPhoto) => {
+    setError('');
+    setPhoto(p.uri);
+    setPicked(p);
+    if (!aiOn) return;
+    const t0 = Date.now();
+    try {
       setLoading(true);
-      const items = await analyzeFridgePhoto(p);
+      const { items, quality } = await analyzeFridgePhoto(p);
+      setStat({ kb: photoKB(p), sec: Math.round((Date.now() - t0) / 100) / 10, found: items.length });
       setList((prev) => [
         ...prev,
         ...items.map((it, i) => {
@@ -59,7 +81,9 @@ export default function ScanFridge() {
           };
         }),
       ]);
-      if (!items.length) setError('사진에서 식재료를 찾지 못했어요. 더 밝게 찍거나 직접 추가해 주세요.');
+      const tip = QUALITY_TIP[quality];
+      if (!items.length) setError(tip ?? '사진에서 식재료를 찾지 못했어요. 한 칸씩 가까이 다시 찍거나 아래에서 직접 추가해 주세요.');
+      else if (tip) setError(`일부만 찾았을 수 있어요. ${tip}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -67,6 +91,14 @@ export default function ScanFridge() {
     }
   };
 
+  const remove = (key: string) => setList((l) => l.filter((c) => c.key !== key));
+  const useAsHome = () => {
+    if (!picked) return;
+    const uri = storableUri(picked);
+    if (!uri) return notify('사진이 커서 저장하지 못했어요', '웹에서는 1MB 이하 사진만 홈 그림으로 쓸 수 있어요.');
+    actions.updatePreferences({ fridgePhotoUri: uri, showFridgePhoto: true });
+    notify('홈 냉장고를 이 사진으로 바꿨어요', '이 기기에만 저장돼요. 설정에서 언제든 기본 그림으로 되돌릴 수 있어요.');
+  };
   const update = (key: string, patch: Partial<Candidate>) => setList((l) => l.map((c) => (c.key === key ? { ...c, ...patch } : c)));
   const addManual = (name: string) => {
     const c = findCatalog(name);
@@ -101,27 +133,29 @@ export default function ScanFridge() {
         <Card tone="warn">
           <T v="bodyBold">AI 사진 분석이 꺼져 있어요</T>
           <T v="small" c={color.textSub}>
-            {hasAIKey() ? '설정에서 ‘사진을 AI로 분석하기’에 동의하면 사용할 수 있어요.' : 'AI 키가 아직 연결되지 않았어요(개발 중). 아래에서 자주 쓰는 재료를 눌러 빠르게 등록할 수 있어요.'}
+            {hasAIKey() ? '사진은 동의 없이 밖으로 보내지 않아요. 설정의 ‘사진을 AI로 분석하기’를 켜면 사용할 수 있어요.' : 'AI 키가 아직 연결되지 않았어요(개발 중). 아래에서 직접 등록할 수 있어요.'}
           </T>
         </Card>
       )}
 
-      {aiOn && (
-        <Card>
-          {photo ? <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" /> : (
-            <View style={{ alignItems: 'center', paddingVertical: space.lg, gap: space.xs }}>
-              <T v="h1">🧊📷</T>
-              <T v="small" c={color.textSub} style={{ textAlign: 'center' }}>냉장고 문을 열고 칸이 잘 보이게 찍어 주세요.{'\n'}여러 장을 나눠 찍어도 계속 추가돼요.</T>
-            </View>
-          )}
-          <Row gap={space.sm}>
-            <Button title="촬영" icon="📷" style={{ flex: 1 }} onPress={() => run('camera')} loading={loading} />
-            <Button title="앨범" icon="🖼️" kind="secondary" style={{ flex: 1 }} onPress={() => run('library')} disabled={loading} />
-          </Row>
-          {loading && <T v="small" c={color.textSub} style={{ textAlign: 'center' }}>HANKEE AI가 재료를 찾고 있어요…</T>}
-          {error ? <T v="small" c={color.danger}>{error}</T> : null}
-        </Card>
-      )}
+      {/* 1순위: 사진으로 등록 */}
+      <Card>
+        {photo ? <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" /> : (
+          <View style={{ paddingVertical: space.sm, gap: space.xs }}>
+            <T v="h3">📷 이렇게 찍으면 잘 찾아요</T>
+            <T v="small" c={color.textSub}>· 냉장고 전체 말고 <T v="small" style={{ fontWeight: '700' }}>한 칸씩</T> 가까이{'\n'}· 문을 활짝 열고 밝은 곳에서 정면으로{'\n'}· 봉지 속 재료는 꺼내거나 이름이 보이게{'\n'}· 여러 장 찍으면 결과가 계속 더해져요</T>
+          </View>
+        )}
+        <Row gap={space.sm}>
+          <Button title={photo ? '한 칸 더 찍기' : '촬영'} icon="📷" style={{ flex: 1 }} onPress={() => run('camera')} loading={loading} />
+          <Button title="앨범" icon="🖼️" kind="secondary" style={{ flex: 1 }} onPress={() => run('library')} disabled={loading} />
+        </Row>
+        {loading && <T v="small" c={color.textSub} style={{ textAlign: 'center' }}>사진 속 재료를 찾고 있어요… (보통 수 초~수십 초)</T>}
+        {error ? <T v="small" c={color.danger}>{error}</T> : null}
+        {stat && <T v="tiny" c={color.textMuted}>사진 {stat.kb >= 1024 ? `${(stat.kb / 1024).toFixed(1)}MB` : `${stat.kb}KB`} · 분석 {stat.sec}초 · 후보 {stat.found}개 — 후보는 틀릴 수 있으니 꼭 확인해 주세요</T>}
+        {photo && !aiOn && <T v="small" c={color.textSub}>지금은 AI 분석을 쓸 수 없어서, 사진을 보며 아래에서 직접 추가해 주세요.</T>}
+        {picked && <Button title="이 사진을 홈 냉장고 그림으로 쓰기" kind="ghost" small onPress={useAsHome} />}
+      </Card>
 
       {list.length > 0 && (
         <>
@@ -135,6 +169,7 @@ export default function ScanFridge() {
                   <Field value={c.name} onChangeText={(t) => update(c.key, { name: t })} />
                 </Row>
                 <OnOff value={c.checked} onValueChange={(v) => update(c.key, { checked: v })} />
+                <Pressable onPress={() => remove(c.key)} hitSlop={8} accessibilityLabel={`${c.name} 후보 삭제`}><T v="small" c={color.textMuted}>✕</T></Pressable>
               </Row>
               <Row style={{ justifyContent: 'space-between' }} wrap>
                 <Row>
@@ -144,13 +179,13 @@ export default function ScanFridge() {
                 {c.confidence !== 'user' && <Badge label={c.confidence === 'high' ? 'AI 확신 높음' : c.confidence === 'medium' ? 'AI 확신 보통' : 'AI 확신 낮음 · 확인 필요'} tone={c.confidence === 'low' ? 'warn' : 'info'} />}
               </Row>
               <Segmented options={[{ key: 'fridge', label: '냉장' }, { key: 'freezer', label: '냉동' }, { key: 'pantry', label: '실온' }]} value={c.storage} onChange={(k) => update(c.key, { storage: k })} />
-              <Field placeholder="소비기한 YYYY-MM-DD (알면 입력)" value={c.expiry} onChangeText={(t) => update(c.key, { expiry: t })} />
+              <Field placeholder="소비기한 YYYY-MM-DD · 모르면 비워 두고 나중에" value={c.expiry} onChangeText={(t) => update(c.key, { expiry: t })} />
             </Card>
           ))}
         </>
       )}
 
-      <T v="h3">빠르게 추가</T>
+      <T v="h3">{aiOn ? '직접 추가' : '직접 추가 (자주 쓰는 재료)'}</T>
       <Row wrap>
         {INGREDIENT_CATALOG.filter((c) => c.category !== '양념').slice(0, 30).map((c) => (
           <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => addManual(c.name)} />
@@ -162,3 +197,10 @@ export default function ScanFridge() {
     </Screen>
   );
 }
+
+const QUALITY_TIP: Partial<Record<FridgeScanResult['quality'], string>> = {
+  blurry: '사진이 흐려요. 흔들리지 않게 다시 찍어 주세요.',
+  dark: '사진이 어두워요. 밝은 곳에서 다시 찍어 주세요.',
+  far: '재료가 작게 보여요. 한 칸씩 가까이 찍어 주세요.',
+  not_food: '식재료가 보이지 않아요. 냉장고 칸을 찍어 주세요.',
+};

@@ -243,3 +243,20 @@ export function usedValue(s: AppState, monthKey = toDateKey().slice(0, 7)): numb
   }
   return Math.round(sum / 10) * 10;
 }
+
+/**
+ * 식재료 흐름(기간): 들인 재료 · 요리에 쓴 재료 · 버린 재료, 그리고 지출.
+ * 지출은 재료를 등록한 시점에 남긴 기록(spend)으로 계산한다 — 다 먹어도 줄지 않는다.
+ */
+export function pantryFlow(s: AppState, start: string, end: string) {
+  const inRange = (d: string) => d >= start && d <= end;
+  const added = s.ingredients.filter((i) => i.kind !== 'leftover' && inRange(i.addedAt.slice(0, 10))).length;
+  const cooks = s.cooks.filter((c) => inRange(c.date));
+  const usedNames = new Set(cooks.flatMap((c) => c.usedIngredients.map((u) => u.name)));
+  const wasted = s.waste.filter((w) => inRange(w.date)).length;
+  const spendRecs = (s.spend ?? []).filter((x) => inRange(x.date));
+  const spent = spendRecs.reduce((a, x) => a + x.amount, 0);
+  const estimatedShare = spendRecs.length ? spendRecs.filter((x) => x.estimated).length / spendRecs.length : 0;
+  const leftovers = s.ingredients.filter((i) => i.kind === 'leftover').length;
+  return { added, cookCount: cooks.length, usedKinds: usedNames.size, wasted, spent, estimatedShare, spendCount: spendRecs.length, leftovers };
+}

@@ -74,7 +74,8 @@ export default function CookComplete() {
     if (rating) lines.push('맛 평가 기억');
     notify('맛있게 드세요! 🍽️', lines.join('\n'));
     router.dismissAll();
-    router.replace('/');
+    // 식사 기록을 남겼으면 기록 탭에서 바로 확인
+    router.replace(saveMeal && eaten > 0 ? '/log' : '/');
   };
 
   return (

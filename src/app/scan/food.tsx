@@ -25,7 +25,7 @@ export default function ScanFood() {
       if (!p) return;
       setPhoto(p.uri);
       setLoading(true);
-      const r = await recipeFromFoodPhoto(p, { allergies: s.preferences.allergies, skill: s.preferences.cookingSkill, maxMinutes: s.preferences.maxCookMinutes });
+      const r = await recipeFromFoodPhoto(p, { allergies: s.preferences.allergies, disliked: s.preferences.dislikedFoods, skill: s.preferences.cookingSkill, maxMinutes: s.preferences.maxCookMinutes });
       if (!r.name) throw new Error('음식을 알아보지 못했어요. 음식이 잘 보이게 다시 찍어 주세요.');
       const recipe = { ...aiRecipeToRecipe(r, 'ai_photo'), imageUri: p.uri.startsWith('data:') ? undefined : p.uri };
       actions.saveRecipe(recipe);

@@ -42,7 +42,7 @@ export default function Cook() {
   const searchAI = async () => {
     setAiLoading(true);
     try {
-      const r = await recipeFromName(q.trim(), { allergies: s.preferences.allergies, skill: s.preferences.cookingSkill, maxMinutes: s.preferences.maxCookMinutes });
+      const r = await recipeFromName(q.trim(), { allergies: s.preferences.allergies, disliked: s.preferences.dislikedFoods, skill: s.preferences.cookingSkill, maxMinutes: s.preferences.maxCookMinutes });
       if (!r.name) return notify('레시피를 찾지 못했어요');
       const recipe = aiRecipeToRecipe(r, 'user');
       actions.saveRecipe(recipe);

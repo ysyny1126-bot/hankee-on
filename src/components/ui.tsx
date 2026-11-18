@@ -1,5 +1,5 @@
 import { Link, router, type Href } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -310,3 +310,63 @@ const styles = StyleSheet.create({
   refLine: { position: 'absolute', left: 0, right: 0, height: 0, borderTopWidth: 1, borderStyle: 'dashed', borderColor: color.textMuted },
   listItem: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm },
 });
+
+/** 큰 선택 칸(온보딩·설정): 이모지 + 제목 + 설명. multi면 체크 표시 */
+export function Choice({ emoji, label, sub, selected, onPress, multi }: { emoji?: string; label: string; sub?: string; selected?: boolean; onPress: () => void; multi?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={multi ? 'checkbox' : 'radio'}
+      accessibilityState={multi ? { checked: !!selected } : { selected: !!selected }}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.md,
+        paddingVertical: space.md,
+        paddingHorizontal: space.md,
+        borderRadius: radius.lg,
+        borderWidth: 2,
+        borderColor: selected ? color.brand : color.border,
+        backgroundColor: selected ? color.brandSoft : color.surface,
+        opacity: pressed ? 0.85 : 1,
+      })}>
+      {emoji ? <Text style={{ fontSize: 26 }}>{emoji}</Text> : null}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <T v="bodyBold">{label}</T>
+        {sub ? <T v="tiny" c={color.textSub}>{sub}</T> : null}
+      </View>
+      <View style={{ width: 22, height: 22, borderRadius: multi ? 6 : 11, borderWidth: 2, borderColor: selected ? color.brand : color.border, backgroundColor: selected ? color.brand : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+        {selected ? <Text style={{ color: color.onBrand, fontSize: 12, fontWeight: '900' }}>✓</Text> : null}
+      </View>
+    </Pressable>
+  );
+}
+
+/** 목록 선택 + 직접 입력을 함께 받는 칩 묶음 */
+export function TagPicker({ options, value, onChange, tone, placeholder }: { options: string[]; value: string[]; onChange: (v: string[]) => void; tone?: 'warn' | 'danger' | 'fresh'; placeholder?: string }) {
+  const toggle = (x: string) => onChange(value.includes(x) ? value.filter((y) => y !== x) : [...value, x]);
+  const customs = value.filter((x) => !options.includes(x));
+  return (
+    <View style={{ gap: space.sm }}>
+      <Row wrap>
+        {[...options, ...customs].map((o) => <Chip key={o} label={customs.includes(o) ? `${o} ✕` : o} tone={tone} selected={value.includes(o)} onPress={() => toggle(o)} />)}
+      </Row>
+      <TagInput placeholder={placeholder ?? '직접 입력 후 추가'} onAdd={(t) => !value.includes(t) && onChange([...value, t])} />
+    </View>
+  );
+}
+
+function TagInput({ placeholder, onAdd }: { placeholder: string; onAdd: (t: string) => void }) {
+  const [text, setText] = useState('');
+  const add = () => {
+    const t = text.trim();
+    if (t) onAdd(t);
+    setText('');
+  };
+  return (
+    <Row>
+      <Field placeholder={placeholder} value={text} onChangeText={setText} onSubmitEditing={add} returnKeyType="done" />
+      <Button title="추가" kind="secondary" small onPress={add} disabled={!text.trim()} />
+    </Row>
+  );
+}

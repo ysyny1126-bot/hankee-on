@@ -1,6 +1,6 @@
-import { findCatalogExact, sameIngredient } from '@/data/catalog';
+import { findCatalog, findCatalogExact, sameIngredient } from '@/data/catalog';
 import type { AppState, CookRating, FoodPreferences, Recipe } from '@/data/types';
-import { addDays, toDateKey } from './dates';
+import { addDays, eul, joinWa, toDateKey } from './dates';
 import type { RecipeMatch } from './inventory';
 
 /**
@@ -11,7 +11,7 @@ import type { RecipeMatch } from './inventory';
  * text가 없는 이유는 점수에만 반영되고 화면에는 나오지 않는다(예: 별로라고 한 메뉴 감점).
  */
 export interface Reason {
-  key: 'coverage' | 'expiring' | 'missing' | 'time' | 'skill' | 'preferred' | 'liked' | 'disliked_before' | 'recent' | 'fresh';
+  key: 'coverage' | 'expiring' | 'missing' | 'time' | 'skill' | 'preferred' | 'liked' | 'disliked_before' | 'recent' | 'fresh' | 'budget' | 'space';
   weight: number;
   text?: string;
   personal?: boolean; // 사용자 기록(개인화 동의)을 써서 나온 이유
@@ -27,7 +27,8 @@ export interface Memory {
 export interface RankContext {
   allergies: string[];
   disliked: string[];
-  prefs: Pick<FoodPreferences, 'preferredFoods' | 'maxCookMinutes' | 'cookingSkill'>;
+  prefs: Pick<FoodPreferences, 'preferredFoods' | 'maxCookMinutes' | 'cookingSkill'> &
+    Partial<Pick<FoodPreferences, 'monthlyBudget' | 'householdSize' | 'fridgeSpace'>>;
   memory: Memory | null; // 개인화 동의가 없으면 null → 기록을 쓰지 않음
 }
 
@@ -76,7 +77,18 @@ export function scoreMatch(m: RecipeMatch, ctx: RankContext): { score: number; r
     text: m.missingRequired.length ? `${m.missingRequired.map((i) => i.name).join('·')}만 있으면 돼요` : '냉장고 재료로 바로',
   });
   if (m.missingRequired.length) reasons.push({ key: 'missing', weight: -10 * m.missingRequired.length });
-  if (m.usesExpiring.length) reasons.push({ key: 'expiring', weight: 25 * m.usesExpiring.length, text: `${m.usesExpiring.map((i) => i.name).join('·')} 먼저 쓰기` });
+  if (m.usesExpiring.length) reasons.push({ key: 'expiring', weight: 25 * m.usesExpiring.length, text: `소비기한이 가까운 ${eul(joinWa(m.usesExpiring.slice(0, 2).map((i) => i.name)))} 활용해요` });
+
+  // 월간 식비: 더 사야 할 재료의 대략 가격이 한 끼 예산을 넘으면 감점
+  const cost = missingCost(m);
+  if (ctx.prefs.monthlyBudget) {
+    const perMeal = ctx.prefs.monthlyBudget / (60 * Math.max(1, ctx.prefs.householdSize ?? 1));
+    if (cost === 0) reasons.push({ key: 'budget', weight: 5 });
+    else if (cost > perMeal) reasons.push({ key: 'budget', weight: -15, text: `장보기 약 ${roundWon(cost).toLocaleString()}원` });
+    else reasons.push({ key: 'budget', weight: 0, text: `장보기 약 ${roundWon(cost).toLocaleString()}원` });
+  }
+  // 냉장고가 꽉 찼으면 새로 사야 하는 메뉴보다 있는 재료로 하는 메뉴를 먼저
+  if (ctx.prefs.fridgeSpace === 'full' && m.missingRequired.length) reasons.push({ key: 'space', weight: -5 * m.missingRequired.length });
 
   if (r.timeMinutes > ctx.prefs.maxCookMinutes) reasons.push({ key: 'time', weight: -20 });
   else if (r.timeMinutes <= 10) reasons.push({ key: 'time', weight: 3, text: `${r.timeMinutes}분이면 끝` });
@@ -103,13 +115,23 @@ export function scoreMatch(m: RecipeMatch, ctx: RankContext): { score: number; r
 
 /** 화면에 보여 줄 이유 문장(중요한 것부터 n개) */
 export function topReasons(m: { reasons: Reason[] }, n = 2): string[] {
-  const order: Reason['key'][] = ['expiring', 'liked', 'preferred', 'coverage', 'fresh', 'skill', 'time'];
+  const order: Reason['key'][] = ['expiring', 'liked', 'preferred', 'coverage', 'budget', 'fresh', 'skill', 'time'];
   return m.reasons
     .filter((x) => x.text)
     .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
     .slice(0, n)
     .map((x) => x.text!);
 }
+
+/** 부족한 재료를 새로 살 때의 대략 가격(원). 재료 사전의 평균 가격 기준 추정치 */
+export function missingCost(m: Pick<RecipeMatch, 'missingRequired'>): number {
+  return m.missingRequired.reduce((sum, i) => {
+    const c = findCatalog(i.name);
+    if (!c?.avgPrice) return sum + 2000;
+    return sum + (c.unit === i.unit ? c.avgPrice * i.amount : Math.max(c.avgPrice, 1000));
+  }, 0);
+}
+const roundWon = (n: number) => Math.max(100, Math.round(n / 100) * 100);
 
 export function rankContext(s: AppState): RankContext {
   return {

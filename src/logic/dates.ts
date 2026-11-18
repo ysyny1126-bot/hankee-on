@@ -82,3 +82,9 @@ export const euro = (w: string) => {
   const rieul = c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 === 8;
   return `${w}${hasBatchim(w) && !rieul ? '으로' : '로'}`;
 };
+
+/** '두부와 애호박'처럼 와/과로 잇기 (3개 이상은 '·'로) */
+export function joinWa(words: string[]): string {
+  if (words.length === 2) return `${words[0]}${hasBatchim(words[0]) ? '과' : '와'} ${words[1]}`;
+  return words.join('·');
+}

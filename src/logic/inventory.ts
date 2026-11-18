@@ -1,7 +1,8 @@
-import { allergensOf, PANTRY_STAPLES, sameIngredient } from '@/data/catalog';
+import { PANTRY_STAPLES, sameIngredient } from '@/data/catalog';
 import type { Ingredient, Recipe, RecipeIngredient } from '@/data/types';
 import { daysUntil } from './dates';
 import { scoreMatch, type RankContext, type Reason } from './recommend';
+import { checkRecipe } from './safety';
 
 export interface IngredientMatch {
   need: RecipeIngredient;
@@ -45,7 +46,6 @@ export function matchRecipe(recipe: Recipe, stock: Ingredient[], allergies: stri
     .filter((s): s is Ingredient => !!s && !!s.expiryDate && daysUntil(s.expiryDate) <= 3);
   // 같은 재료 이름이 두 번 들어가면 한 번만
   const uniqueExpiring = usesExpiring.filter((x, i) => usesExpiring.findIndex((y) => y.id === x.id) === i);
-  const recipeAllergens = recipe.allergens.length ? recipe.allergens : allergensOf(recipe.ingredients.map((i) => i.name));
   return {
     recipe,
     matches,
@@ -56,20 +56,19 @@ export function matchRecipe(recipe: Recipe, stock: Ingredient[], allergies: stri
     score: 0,
     reasons: [],
     coverage: required.length ? have.length / required.length : 1,
-    blockedByAllergy: recipeAllergens.filter((a) => allergies.includes(a)),
+    blockedByAllergy: checkRecipe(recipe, { allergies, disliked: [] }).allergy,
   };
 }
 
 /**
  * 냉장고 재료 기반 레시피 순위.
- * 알레르기가 겹치는 레시피는 항상 제외한다(기획 원칙: 알레르기 최우선).
+ * 알레르기·기피 음식에 걸리는 레시피는 항상 제외한다(safety.ts, 기획 원칙: 제외 조건 최우선).
  * 점수와 이유는 recommend.ts의 scoreMatch 한곳에서만 계산한다.
  */
 export function rankRecipes(recipes: Recipe[], stock: Ingredient[], ctx: RankContext): RecipeMatch[] {
   return recipes
     .map((r) => matchRecipe(r, stock, ctx.allergies))
-    .filter((m) => m.blockedByAllergy.length === 0)
-    .filter((m) => !m.recipe.ingredients.some((i) => !i.optional && ctx.disliked.some((d) => sameIngredient(d, i.name))))
+    .filter((m) => !checkRecipe(m.recipe, { allergies: ctx.allergies, disliked: ctx.disliked }).excluded)
     .map((m) => ({ ...m, ...scoreMatch(m, ctx) }))
     .sort((a, b) => b.score - a.score);
 }

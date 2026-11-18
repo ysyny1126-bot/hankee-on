@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -14,7 +15,9 @@ import { generatePlan } from '@/logic/planner';
 export default function Meal() {
   const s = useAppState();
   const today = toDateKey();
-  const [view, setView] = useState<'today' | 'week'>('today');
+  const params = useLocalSearchParams<{ view?: 'today' | 'week' }>();
+  // 오늘 한 끼부터. 주간 계획 습관이면 일주일 보기로 시작(언제든 바꿀 수 있음)
+  const [view, setView] = useState<'today' | 'week'>(params.view ?? s.preferences.planHabit ?? 'today');
   const [withBreakfast, setWithBreakfast] = useState(false);
   const dates = view === 'today' ? [today] : Array.from({ length: 7 }, (_, i) => addDays(today, i));
   const types: MealType[] = withBreakfast ? ['breakfast', 'lunch', 'dinner'] : ['lunch', 'dinner'];
@@ -41,7 +44,7 @@ export default function Meal() {
       <Segmented options={[{ key: 'today', label: '오늘' }, { key: 'week', label: '이번 주(7일)' }]} value={view} onChange={setView} />
       <Row>
         <Chip label="아침 포함" selected={withBreakfast} onPress={() => setWithBreakfast(!withBreakfast)} />
-        <T v="tiny" c={color.textMuted} style={{ flex: 1 }}>알레르기 제외 · 임박 재료 우선 · {s.preferences.maxCookMinutes}분 기준</T>
+        <T v="tiny" c={color.textMuted} style={{ flex: 1 }}>알레르기·기피 음식 제외 · 임박 재료 우선 · {s.preferences.maxCookMinutes}분 기준</T>
       </Row>
       <Row gap={space.sm}>
         <Button title={planned.length ? '다시 짜기' : `${view === 'today' ? '오늘' : '7일'} 식단 만들기`} icon="✨" style={{ flex: 1 }} onPress={generate} />

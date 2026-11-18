@@ -14,7 +14,7 @@ function NotificationSync() {
   const s = useAppState();
   useEffect(() => {
     syncExpiryNotifications(s).catch(() => {});
-  }, [s.ingredients, s.notifications]);
+  }, [s.ingredients, s.notifications]); // 알림 설정이나 재고가 바뀌면 다시 예약
   return null;
 }
 

@@ -14,6 +14,7 @@ import type {
   MealRecord,
   Recipe,
   ShoppingItem,
+  SpendRecord,
   WasteRecord,
 } from './types';
 import { newId, toDateKey } from '@/logic/dates';
@@ -40,6 +41,18 @@ export const initialState: AppState = {
     maxCookMinutes: 20,
     cookingSkill: '초보',
     householdSize: 1,
+    lifestyles: [],
+    monthlyBudget: null,
+    budgetBand: null,
+    fridgeSize: null,
+    fridgeSpace: null,
+    planHabit: 'today',
+    coachId: 'warm',
+    profileGoals: [],
+    restrictionsLater: false,
+    fridgePhotoUri: null,
+    showFridgePhoto: false,
+    body: null,
   },
   consents: { personalization: false, externalAI: false, healthInfo: false, agreedAt: null },
   notifications: {
@@ -47,6 +60,8 @@ export const initialState: AppState = {
     unusedIngredient: true,
     menuSuggestion: true,
     shopping: true,
+    mealReminder: false,
+    mealReminderTimes: ['12:30', '19:00'],
     expiryDaysBefore: 2,
     maxPerDay: 2,
   },
@@ -56,11 +71,28 @@ export const initialState: AppState = {
   goals: [],
   shopping: [],
   waste: [],
+  spend: [],
   cooks: [],
   mealPlan: [],
   reports: [],
   dismissedSuggestions: {},
+  visit: { last: null, previous: null },
 };
+
+/**
+ * 예전 버전에서 저장한 데이터에 새로 생긴 항목을 기본값으로 채운다.
+ * (얕게 합치면 preferences 안의 새 항목이 비어 버리므로 묶음별로 합친다)
+ */
+export function migrate(raw: Partial<AppState>): AppState {
+  return {
+    ...initialState,
+    ...raw,
+    preferences: { ...initialState.preferences, ...raw.preferences },
+    notifications: { ...initialState.notifications, ...raw.notifications },
+    consents: { ...initialState.consents, ...raw.consents },
+    visit: { ...initialState.visit, ...raw.visit },
+  };
+}
 
 type Listener = () => void;
 let state: AppState = initialState;
@@ -80,10 +112,16 @@ export function getState() {
 async function load() {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (raw) state = { ...initialState, ...JSON.parse(raw) };
+    if (raw) state = migrate(JSON.parse(raw));
   } catch {
     state = initialState;
   }
+  // 방문 기록: 오늘 처음 연 것이면 직전 방문을 previous로 옮긴다
+  const now = new Date().toISOString();
+  const last = state.visit.last;
+  const sameDay = last && toDateKey(new Date(last)) === toDateKey();
+  state = { ...state, visit: { last: now, previous: sameDay ? state.visit.previous : last } };
+  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
   loaded = true;
   listeners.forEach((l) => l());
 }
@@ -116,8 +154,14 @@ export const actions = {
   addIngredients(items: NewIngredient[]) {
     setState((s) => {
       const list = [...s.ingredients];
+      const spend: SpendRecord[] = [];
       for (const it of items) {
         const cat = findCatalog(it.name);
+        if (it.kind !== 'leftover') {
+          const est = cat?.avgPrice && cat.unit === it.unit ? cat.avgPrice * it.quantity : 0;
+          const amount = Math.round(it.price ?? est);
+          if (amount > 0) spend.push({ id: newId('sp_'), date: toDateKey(), name: it.name, amount, estimated: it.price == null });
+        }
         const same = list.find(
           (x) => x.name === it.name && x.unit === it.unit && x.expiryDate === it.expiryDate && x.storage === it.storage,
         );
@@ -134,7 +178,7 @@ export const actions = {
           lastUsedAt: null,
         });
       }
-      return { ...s, ingredients: list.map((x) => ({ ...x })) };
+      return { ...s, ingredients: list.map((x) => ({ ...x })), spend: [...spend, ...(s.spend ?? [])] };
     });
   },
   updateIngredient(id: string, patch: Partial<Ingredient>) {
@@ -321,7 +365,7 @@ export const actions = {
   },
 
   replaceAll(next: AppState) {
-    setState(() => next);
+    setState(() => migrate(next));
   },
   resetAll() {
     setState(() => initialState);

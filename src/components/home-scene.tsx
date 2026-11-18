@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
@@ -18,6 +19,8 @@ export function HomeScene({
   warnDays,
   holding,
   bubble,
+  mood,
+  photoUri,
   onPressFridge,
   onPressCharacter,
 }: {
@@ -26,12 +29,16 @@ export function HomeScene({
   warnDays: number;
   holding?: string | null;
   bubble?: string;
+  mood?: 'happy' | 'idle';
+  /** 사용자가 올린 실제 냉장고 사진(동의한 경우만). 없으면 기본 일러스트 */
+  photoUri?: string | null;
   onPressFridge: () => void;
   onPressCharacter?: () => void;
 }) {
   const sorted = [...ingredients].sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999'));
   const shown = sorted.slice(0, SHOW);
   const extra = sorted.length - shown.length;
+  const urgent = ingredients.filter((i) => i.expiryDate && daysUntil(i.expiryDate) <= warnDays).length;
 
   return (
     <View style={{ backgroundColor: color.brandSoft, borderRadius: radius.xl, paddingTop: space.lg, paddingHorizontal: space.lg, overflow: 'hidden' }}>
@@ -44,11 +51,26 @@ export function HomeScene({
 
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <Pressable onPress={onPressCharacter} style={{ paddingBottom: 6 }} accessibilityRole="button" accessibilityLabel="캐릭터">
-          <Character id={characterId} size={112} holding={holding} mood={holding ? 'happy' : 'idle'} />
+          <Character id={characterId} size={112} holding={holding} mood={mood ?? (holding ? 'happy' : 'idle')} />
         </Pressable>
 
         {/* 냉장고 */}
         <Pressable onPress={onPressFridge} accessibilityRole="button" accessibilityLabel={`냉장고 열기, 재료 ${ingredients.length}개`} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+          {photoUri ? (
+            <View style={{ width: 150, height: 196, borderRadius: 26, borderWidth: 2, borderColor: '#F1E3D2', borderBottomWidth: 6, borderBottomColor: '#E8D3BC', overflow: 'hidden', backgroundColor: '#FFFDF9', ...shadow.card }}>
+              <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" accessibilityLabel="내 냉장고 사진" />
+              <View style={{ position: 'absolute', left: 8, right: 8, bottom: 8, flexDirection: 'row', gap: 4, justifyContent: 'space-between' }}>
+                <View style={{ backgroundColor: 'rgba(255,253,249,0.92)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <T v="tiny" style={{ fontWeight: '700' }}>재료 {ingredients.length}</T>
+                </View>
+                {urgent > 0 ? (
+                  <View style={{ backgroundColor: color.warn, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <T v="tiny" c="#fff" style={{ fontWeight: '700' }}>임박 {urgent}</T>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          ) : (
           <View style={{ width: 150, height: 196, backgroundColor: '#FFFDF9', borderRadius: 26, borderWidth: 2, borderColor: '#F1E3D2', borderBottomWidth: 6, borderBottomColor: '#E8D3BC', padding: 8, gap: 6, ...shadow.card }}>
             {/* 냉동칸 */}
             <View style={{ height: 34, borderRadius: 12, backgroundColor: '#EEF4F6', justifyContent: 'center', paddingHorizontal: 10 }}>
@@ -82,6 +104,7 @@ export function HomeScene({
             </View>
             <View style={{ position: 'absolute', left: -2, top: 54, width: 4, height: 30, borderRadius: 2, backgroundColor: '#D9CFC4' }} />
           </View>
+          )}
         </Pressable>
       </View>
       {/* 바닥 */}

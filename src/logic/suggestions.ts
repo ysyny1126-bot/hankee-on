@@ -5,6 +5,7 @@ import { analyzePeriod, goalProgress, lastNDays } from './analysis';
 import { daysSince, daysUntil, eul, euro, toDateKey } from './dates';
 import { rankRecipes, type RecipeMatch } from './inventory';
 import { rankContext, topReasons } from './recommend';
+import { isSafeIngredient, restrictionsOf } from './safety';
 
 /**
  * "먼저 제안하는 AI"의 두뇌.
@@ -74,9 +75,12 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
 
   // 1) 소비기한 임박 재료 활용
   if (n.expiry) {
+    const rs = restrictionsOf(s.preferences);
     for (const ing of expiringIngredients(s).slice(0, 2)) {
       const d = daysUntil(ing.expiryDate!);
-      const r = recipeUsing(ranked, ing);
+      // 알레르기·기피 재료는 메뉴로 권하지 않고 정리만 안내한다
+      const safe = isSafeIngredient(ing.name, rs);
+      const r = safe ? recipeUsing(ranked, ing) : undefined;
       out.push({
         id: `expiring:${ing.id}`,
         kind: 'expiring',
@@ -84,7 +88,7 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
         title: d < 0 ? `${ing.name} 소비기한이 지났어요` : `${ing.name}, ${d === 0 ? '오늘까지' : `${d}일 남았어요`}`,
         body: d < 0
           ? '상태를 확인하고 먹을 수 없다면 폐기로 기록해 주세요. 낭비 통계에 반영돼요.'
-          : r ? `${r.recipe.emoji} ${r.recipe.name}에 쓸 수 있어요.` : '이 재료를 쓰는 메뉴를 찾아볼까요?',
+          : !safe ? '피하는 재료로 설정돼 있어요. 함께 사는 사람이 쓰거나 정리해 주세요.' : r ? `${r.recipe.emoji} ${r.recipe.name}에 쓸 수 있어요.` : '이 재료를 쓰는 메뉴를 찾아볼까요?',
         reason: `입력하신 소비기한 ${ing.expiryDate} 기준`,
         action: d < 0 ? { label: '재료 확인', href: `/ingredient/edit?id=${ing.id}` } : r ? { label: '레시피 보기', href: `/recipe/${r.recipe.id}` } : undefined,
         recipeId: r?.recipe.id,
@@ -100,7 +104,8 @@ export function buildSuggestions(s: AppState, now = new Date()): Suggestion[] {
         (!i.expiryDate || daysUntil(i.expiryDate) > n.expiryDaysBefore) &&
         daysSince(i.lastUsedAt ?? i.addedAt, now) >= 7 &&
         i.category !== '양념' &&
-        i.kind !== 'leftover',
+        i.kind !== 'leftover' &&
+        isSafeIngredient(i.name, restrictionsOf(s.preferences)),
     );
     if (stale) {
       const r = recipeUsing(ranked, stale);
