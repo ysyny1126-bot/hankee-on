@@ -41,3 +41,6 @@ example
 # generated native folders
 /ios
 /android
+
+# 비밀값(API 키)
+.env
