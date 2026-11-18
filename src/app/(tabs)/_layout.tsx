@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Icon, type IconName } from '@/components/icon';
 import { Sheet } from '@/components/sheet';
 import { T } from '@/components/ui';
 import { color, pastel, radius, shadow, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 
-const TAB_ICON: Record<string, string> = { index: '🏠', cook: '🍳', log: '📒', my: '🙂' };
+const TAB_ICON: Record<string, IconName> = { index: 'home', cook: 'pot', log: 'book', my: 'user' };
 
 /**
  * 떠 있는 알약형 하단 탭(캠퍼스메이트 스타일).
@@ -40,7 +41,7 @@ function PillTabBar({ state, descriptors, emitter, navigateToTab, onAdd }: Botto
           if (route.name === 'add') {
             return (
               <Pressable key={route.key} onPress={onAdd} accessibilityRole="button" accessibilityLabel="만들기" style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: color.navy, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: color.onBrand, fontSize: 26, lineHeight: 28, fontWeight: '500' }}>+</Text>
+                <Icon name="plus" c={color.onBrand} size={24} stroke={2.4} />
               </Pressable>
             );
           }
@@ -68,7 +69,7 @@ function PillTabBar({ state, descriptors, emitter, navigateToTab, onAdd }: Botto
                 backgroundColor: focused ? color.brand : 'transparent',
                 ...(focused ? shadow.button : null),
               }}>
-              <Text style={{ fontSize: 19, opacity: focused ? 1 : 0.55 }}>{TAB_ICON[route.name]}</Text>
+              <Icon name={TAB_ICON[route.name] ?? 'home'} size={22} c={focused ? color.onBrand : '#6E7290'} />
               {focused ? <T v="small" c={color.onBrand} style={{ fontWeight: '800' }}>{label}</T> : null}
             </Pressable>
           );
@@ -78,11 +79,11 @@ function PillTabBar({ state, descriptors, emitter, navigateToTab, onAdd }: Botto
   );
 }
 
-const ADD_ITEMS: { emoji: string; label: string; href: Href; bg: string }[] = [
-  { emoji: '🧊', label: '냉장고 찍기', href: '/scan/fridge', bg: pastel.sky },
-  { emoji: '🍽️', label: '식사 찍기', href: '/meal-record/edit', bg: pastel.peach },
-  { emoji: '🍜', label: '음식 → 레시피', href: '/scan/food', bg: pastel.pink },
-  { emoji: '✏️', label: '재료 직접 추가', href: '/ingredient/edit', bg: pastel.mint },
+const ADD_ITEMS: { icon: IconName; label: string; sub: string; href: Href; bg: string }[] = [
+  { icon: 'fridge', label: '냉장고 찍기', sub: '사진으로 재료 등록', href: '/scan/fridge', bg: pastel.sky },
+  { icon: 'camera', label: '식사 찍기', sub: '먹은 음식 기록', href: '/meal-record/edit', bg: pastel.peach },
+  { icon: 'utensils', label: '음식 → 레시피', sub: '사진 속 음식 만들기', href: '/scan/food', bg: pastel.pink },
+  { icon: 'pencil', label: '재료 직접 추가', sub: '이름·수량·기한', href: '/ingredient/edit', bg: pastel.mint },
 ];
 
 /** 하단 탭: 홈 · 요리 · ⊕ · 기록 · 나 */
@@ -113,8 +114,11 @@ export default function TabLayout() {
                 router.push(it.href);
               }}
               style={({ pressed }) => ({ width: '48%', flexGrow: 1, alignItems: 'flex-start', gap: 6, padding: space.lg, minHeight: 110, borderRadius: radius.lg, backgroundColor: it.bg, opacity: pressed ? 0.85 : 1 })}>
-              <Text style={{ fontSize: 30 }}>{it.emoji}</Text>
-              <T v="bodyBold">{it.label}</T>
+              <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.65)', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name={it.icon} size={21} />
+              </View>
+              <T v="bodyBold" style={{ marginTop: 'auto' }}>{it.label}</T>
+              <T v="tiny" c="rgba(21,23,42,0.7)">{it.sub}</T>
             </Pressable>
           ))}
         </View>

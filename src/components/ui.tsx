@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Icon } from '@/components/icon';
 import { clay, color, familyFor, font, MAX_WIDTH, radius, shadow, space } from '@/constants/tokens';
 
 /**
@@ -157,11 +158,11 @@ export function SectionHeader({ title, action, href, onPress }: { title: string;
       {action ? (
         href ? (
           <Link href={href}>
-            <T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action} ›</T>
+            <Row gap={2}><T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action}</T><Icon name="chevron" size={15} c={color.textMuted} /></Row>
           </Link>
         ) : (
           <Pressable onPress={onPress}>
-            <T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action} ›</T>
+            <Row gap={2}><T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action}</T><Icon name="chevron" size={15} c={color.textMuted} /></Row>
           </Pressable>
         )
       ) : null}

@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
+import { Icon } from '@/components/icon';
 import { getCoach } from '@/constants/profile';
 
 import { Row, Screen, SectionHeader, T, tx } from '@/components/ui';
@@ -76,7 +77,7 @@ export default function Home() {
           <T v="small" c={color.textSub}>{formatKoreanDate(today)} · {todayMeals.length ? `오늘 ${todayMeals.length}끼 챙겼어요` : `${when} 뭐 먹을까요?`}</T>
         </View>
         <Pressable onPress={() => router.push('/settings')} accessibilityLabel="설정" style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center' }}>
-          <T v="h3">⚙︎</T>
+          <Icon name="settings" size={21} />
         </Pressable>
       </Row>
 
@@ -90,11 +91,12 @@ export default function Home() {
               <T v="small" c="rgba(255,255,255,0.92)" style={{ fontWeight: '600' }} numberOfLines={2}>⏱ {menu.recipe.timeMinutes}분 · {menuReason(menu, false)}</T>
               <Row gap={space.sm} style={{ marginTop: space.sm }}>
                 <Pressable onPress={() => router.push(`/recipe/${menu.recipe.id}`)} style={styles.heroBtn} accessibilityRole="button">
-                  <T v="small" c={color.navy} style={{ fontWeight: '800' }}>요리하기 ›</T>
+                  <T v="small" c={color.navy} style={{ fontWeight: '800' }}>요리하기</T>
+                  <Icon name="chevron" size={16} stroke={2.4} />
                 </Pressable>
                 {candidates.length > 1 && (
                   <Pressable onPress={() => setPick((n) => n + 1)} hitSlop={8} accessibilityRole="button">
-                    <T v="small" c="#fff" style={{ fontWeight: '700' }}>다른 메뉴 ↻</T>
+                    <Row gap={4}><T v="small" c="#fff" style={{ fontWeight: '700' }}>다른 메뉴</T><Icon name="refresh" size={14} c="#fff" stroke={2.4} /></Row>
                   </Pressable>
                 )}
               </Row>
@@ -103,7 +105,8 @@ export default function Home() {
             <>
               <Text style={styles.heroTitle}>냉장고를 채우면{'\n'}메뉴를 골라 드려요</Text>
               <Pressable onPress={() => router.push('/scan/fridge')} style={[styles.heroBtn, { marginTop: space.sm }]} accessibilityRole="button">
-                <T v="small" c={color.navy} style={{ fontWeight: '800' }}>📷 냉장고 찍기 ›</T>
+                <Icon name="camera" size={16} />
+                <T v="small" c={color.navy} style={{ fontWeight: '800' }}>냉장고 찍기</T>
               </Pressable>
             </>
           )}
@@ -115,9 +118,9 @@ export default function Home() {
 
       {/* 코치 한마디 */}
       <Pressable onPress={() => router.push('/settings')} style={styles.notice} accessibilityLabel={`${coachName}: ${coach.text}`}>
-        <T v="h3">{getCoach(p.coachId).emoji}</T>
+        <Icon name="chat" size={20} c={color.brand} />
         <T v="small" style={{ flex: 1, fontWeight: '600' }} numberOfLines={2}>{coach.text}</T>
-        <T v="small" c={color.textMuted}>›</T>
+        <Icon name="chevron" size={18} c={color.textMuted} />
       </Pressable>
 
       {/* 3. 냉장고 · 바로가기 (파스텔 타일) */}
@@ -129,7 +132,7 @@ export default function Home() {
           <FridgeMini ingredients={s.ingredients} photoUri={photoUri} warnDays={warnDays} />
           <View style={styles.tileFoot}>
             <T v="small" style={{ fontWeight: '700', flex: 1 }}>{expiring.length ? `먼저 쓸 재료 ${expiring.length}개` : '임박한 재료 없어요'}</T>
-            <T v="small">›</T>
+            <Icon name="chevron" size={16} />
           </View>
         </Pressable>
         <View style={{ flex: 1, gap: space.md }}>
@@ -137,31 +140,31 @@ export default function Home() {
             <View style={styles.tag}><T v="tiny" style={{ fontWeight: '700' }}>먼저 쓰기</T></View>
             <Text style={styles.tileTitle} numberOfLines={1}>{expiring[0] ? expiring[0].name : '여유 있어요'}</Text>
             <T v="small" c="rgba(21,23,42,0.75)" style={{ fontWeight: '600', paddingRight: 44 }}>{expiring[0] ? `${dDayLabel(expiring[0].expiryDate!)}${expiring.length > 1 ? ` · 외 ${expiring.length - 1}개` : ''}` : '기한 임박 재료 0개'}</T>
-            <View style={styles.tileIc}><Text style={{ fontSize: 20 }}>{expiring[0]?.emoji ?? '⏰'}</Text></View>
+            <View style={styles.tileIc}><Icon name="clock" size={21} /></View>
           </Pressable>
           <Pressable onPress={() => router.push(nextSlot ? `/meal-record/edit?type=${nextSlot}` : '/log')} style={[styles.tile, { backgroundColor: pastel.lav }]}>
             <View style={styles.tag}><T v="tiny" style={{ fontWeight: '700' }}>오늘 식사</T></View>
             <Text style={styles.tileTitle}>{todayMeals.length}끼 기록</Text>
             <T v="small" c="rgba(21,23,42,0.75)" style={{ fontWeight: '600', paddingRight: 44 }}>{leftCount ? `${MEAL_LABEL[nextSlot ?? 'dinner']} 기록하기` : '오늘 세 끼 완료'}</T>
-            <View style={styles.tileIc}><Text style={{ fontSize: 20 }}>📸</Text></View>
+            <View style={styles.tileIc}><Icon name="camera" size={21} /></View>
           </Pressable>
         </View>
       </View>
       <Pressable onPress={() => router.push(weekMode ? '/plan?view=week' : '/plan')} style={[styles.tile, styles.tileWide, { backgroundColor: pastel.mint }]}>
-        <View style={styles.tileIcStatic}><Text style={{ fontSize: 20 }}>🗓️</Text></View>
+        <View style={styles.tileIcStatic}><Icon name="calendar" size={21} /></View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <T v="bodyBold">{weekMode ? '이번 주 식단' : '오늘 식단'}</T>
           <T v="small" c="rgba(21,23,42,0.75)" numberOfLines={1}>{weekPlan.length ? weekPlan.slice(0, 3).map((x) => recipes.find((r) => r.id === x.recipeId)?.name).filter(Boolean).join(' · ') : '냉장고 재료로 한 번에 짜 드려요'}</T>
         </View>
-        <T v="h3">›</T>
+        <Icon name="chevron" size={20} />
       </Pressable>
       <Pressable onPress={() => router.push('/shopping')} style={[styles.tile, styles.tileWide, { backgroundColor: pastel.yellow }]}>
-        <View style={styles.tileIcStatic}><Text style={{ fontSize: 20 }}>🛒</Text></View>
+        <View style={styles.tileIcStatic}><Icon name="cart" size={21} /></View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <T v="bodyBold">장보기 목록</T>
           <T v="small" c="rgba(21,23,42,0.75)" numberOfLines={1}>{shoppingLeft ? `살 것 ${shoppingLeft}개` : '부족한 재료를 담아 두면 여기서 봐요'}</T>
         </View>
-        <T v="h3">›</T>
+        <Icon name="chevron" size={20} />
       </Pressable>
 
       {/* 4. 오늘 식사 기록: 아침·점심·저녁 칸 */}
@@ -190,13 +193,13 @@ export default function Home() {
           <View style={{ ...clay, paddingVertical: 4 }}>
             {suggestions.slice(0, 3).map((sg, i) => (
               <Row key={sg.id} style={{ paddingVertical: 14, paddingHorizontal: 18, borderTopWidth: i ? 1 : 0, borderTopColor: color.border }}>
-                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 18 }}>{sg.emoji}</Text></View>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: color.brandSoft, alignItems: 'center', justifyContent: 'center' }}><Icon name="bulb" size={19} c={color.brandDark} /></View>
                 <Pressable style={{ flex: 1 }} onPress={() => sg.action && router.push(sg.action.href as never)}>
                   <T v="bodyBold" numberOfLines={1}>{sg.title}</T>
                   <T v="tiny" c={color.textMuted} numberOfLines={1}>{sg.reason}</T>
                 </Pressable>
                 <Pressable onPress={() => actions.dismissSuggestion(sg.id)} hitSlop={10} accessibilityLabel="오늘은 숨기기">
-                  <T v="small" c={color.textMuted}>✕</T>
+                  <Icon name="x" size={16} c={color.textMuted} />
                 </Pressable>
               </Row>
             ))}
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' ? ({ backgroundImage: heroGradient } as object) : { experimental_backgroundImage: heroGradient }),
   },
   heroTitle: { ...tx({ fontSize: 25, lineHeight: 31, fontWeight: '800', letterSpacing: -1.1, color: '#fff' }) },
-  heroBtn: { backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 18, height: 42, alignItems: 'center', justifyContent: 'center' },
+  heroBtn: { flexDirection: 'row', gap: 4, backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 18, height: 42, alignItems: 'center', justifyContent: 'center' },
   heroArt: { width: 118, height: 118, borderRadius: 59, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   kicker: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.65)', borderRadius: 999, paddingHorizontal: 11, paddingVertical: 4 },
   notice: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: color.surface, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16 },
