@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
+import { MealStage } from '@/components/meal-stage';
 import { Icon, type IconName } from '@/components/icon';
 import { Button, IconButton, PageHeader, Row, Screen, T, tx } from '@/components/ui';
-import { getCharacter } from '@/constants/characters';
 import { color, radius, shadow, space } from '@/constants/tokens';
 import { actions, useAllRecipes, useAppState } from '@/data/store';
 import type { Ingredient, MealRecord, MealType, Recipe } from '@/data/types';
@@ -22,7 +22,7 @@ const SLOTS: MealType[] = ['breakfast', 'lunch', 'dinner'];
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 
 /**
- * HOME — "캐릭터가 반겨 주는 냉장고"
+ * HOME — "캐릭터가 냉장고 재료로 오늘 한 끼를 제안하는 무대"
  * 1 인사·날짜(작게) → 2 캐릭터+냉장고 장면(냉장고를 누르면 재료 화면)
  * → 3 오늘의 한 끼(가장 큰 카드) + 바로 아래 '먹은 음식 기록하기'
  * → 4 먼저 활용하면 좋은 재료 → 5 오늘 식사(아침·점심·저녁 줄) → 6 보조 진입점(작게)
@@ -50,17 +50,17 @@ export default function Home() {
   const menu: RecipeMatch | null = chosen ?? (candidates.length ? candidates[pick % candidates.length] : null);
 
   const coach = coachState(s, menu?.recipe.name);
-  const charName = getCharacter(p.characterId).name.replace(/\(가칭\)/, '');
   const weekPlanned = s.mealPlan.filter((e) => e.date > today && e.date <= addDays(today, 6)).length;
   const shoppingLeft = s.shopping.filter((x) => !x.done).length;
 
   const d = fromDateKey(today);
   const dateLabel = `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAY[d.getDay()]}요일`;
-  const headline = !stock.length && !s.meals.length
-    ? '반가워요'
-    : todayMeals.length
-      ? `오늘 ${todayMeals.length}끼 챙겼어요`
-      : `${MEAL_LABEL[slot]}은 뭐 먹을까요?`;
+  // 무대 맨 위 한마디: 코치가 오늘 상황을 말해 주고, 메뉴 제안과 겹치면 기본 인사로
+  const kicker = !menu
+    ? `${p.nickname}님, 반가워요. 오늘은 한 끼부터 가볍게 시작해요`
+    : coach.moment === 'next_menu' || coach.moment === 'start'
+      ? `${p.nickname}님, 냉장고 속 재료로 골라 봤어요`
+      : coach.text;
 
   const choose = (m: RecipeMatch) => {
     actions.chooseMeal(today, slot, m.recipe.id, topReasons(m, 2).join(' · '));
@@ -72,45 +72,22 @@ export default function Home() {
   };
 
   return (
-    <Screen>
-      {/* 1. 날짜(작게) + 인사(이름은 가볍게, 오늘 할 일은 굵게) */}
-      <PageHeader
-        eyebrow={dateLabel}
-        title={
-          <Text style={styles.greet}>
-            <Text style={{ fontWeight: '500' }}>{p.nickname}님, </Text>
-            {'\n'}{headline}
-          </Text>
-        }
-        right={<IconButton label="설정" onPress={() => router.push('/settings')}><Icon name="settings" size={20} c={color.textSub} /></IconButton>}
-      />
-
-      {/* 2. 캐릭터 + 냉장고 */}
-      <FridgeScene
+    <Screen edges={[]}>
+      {/* 1~3. 오늘의 한 끼 무대: 코치 한마디 → 냉장고 재료가 캐릭터 주위로 → 캐릭터가 요리를 들고 제안 */}
+      <MealStage
         characterId={p.characterId}
-        charName={charName}
-        mood={coach.mood}
-        line={coach.text}
-        holding={coach.moment === 'ate_today' && todayMeals.length ? mealEmoji(todayMeals[todayMeals.length - 1], recipes) : null}
-        status={todayMeals.length ? `오늘 ${todayMeals.length}끼 함께했어요` : stock.length ? '같이 오늘 메뉴를 골라요' : '냉장고를 같이 채워 봐요'}
+        kicker={kicker}
+        m={menu}
+        chosen={!!chosen}
         stock={stock}
         firstUse={firstUse}
+        dateLabel={dateLabel}
+        mood={menu ? 'happy' : coach.mood}
+        canSwap={candidates.length > 1 || !!chosen}
+        onChoose={() => menu && choose(menu)}
+        onCook={() => menu && router.push(`/recipe/${menu.recipe.id}`)}
+        onAnother={another}
       />
-
-      {/* 3. 오늘의 한 끼 */}
-      {menu ? (
-        <MenuCard
-          m={menu}
-          slot={slot}
-          chosen={!!chosen}
-          canSwap={candidates.length > 1 || !!chosen}
-          onChoose={() => choose(menu)}
-          onCook={() => router.push(`/recipe/${menu.recipe.id}`)}
-          onAnother={another}
-        />
-      ) : (
-        <StartCard hasStock={stock.length > 0} />
-      )}
 
       {/* 메뉴 카드 바로 아래: 먹은 음식 기록하기 */}
       <View style={styles.recordBar}>
@@ -177,171 +154,6 @@ function whenLabel(i: Ingredient): string {
   if (n === 0) return '오늘까지';
   if (n === 1) return '내일까지';
   return `${n}일 남음`;
-}
-
-// ───────── 2. 캐릭터 + 냉장고 장면 ─────────
-function FridgeScene({ characterId, charName, mood, line, holding, status, stock, firstUse }: {
-  characterId?: string;
-  charName: string;
-  mood: 'happy' | 'idle';
-  line: string;
-  holding: string | null;
-  status: string;
-  stock: Ingredient[];
-  firstUse: Ingredient[];
-}) {
-  const shown = [...stock].sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999')).slice(0, 6);
-  const summary = stock.length
-    ? `재료 ${stock.length}개${firstUse.length ? ` · 먼저 쓰면 좋은 재료 ${firstUse.length}개` : ''}`
-    : '아직 비어 있어요 · 재료 추가하기';
-  return (
-    <View style={styles.scene}>
-      {/* 말풍선 */}
-      <View style={styles.bubble}>
-        <T v="small" style={{ fontWeight: '600' }} numberOfLines={2}>{line}</T>
-        <View style={styles.bubbleTail} />
-      </View>
-
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: space.md, marginTop: 4 }}>
-        <View style={{ alignItems: 'center' }}>
-          <Character id={characterId} size={118} mood={mood} holding={holding} />
-        </View>
-
-        {/* 냉장고: 누르면 보유 재료 화면 */}
-        <Pressable
-          onPress={() => router.push('/fridge')}
-          accessibilityRole="button"
-          accessibilityLabel={`냉장고 열기. ${summary}`}
-          style={({ pressed }) => [styles.fridge, pressed && { transform: [{ scale: 0.98 }] }]}>
-          <View style={styles.freezer}>
-            <View style={styles.handle} />
-          </View>
-          <View style={styles.fridgeBody}>
-            {shown.length ? (
-              shown.map((i) => <Text key={i.id} style={{ fontSize: 20, width: '33%', textAlign: 'center' }}>{i.emoji}</Text>)
-            ) : (
-              <T v="tiny" c={color.textMuted} style={{ textAlign: 'center', width: '100%', marginTop: 30 }}>비어 있어요</T>
-            )}
-            <View style={[styles.handle, { top: 8 }]} />
-          </View>
-          {firstUse.length > 0 && (
-            <View style={styles.fridgeBadge}>
-              <T v="tiny" c={color.warnDark} style={{ fontWeight: '800' }}>먼저 {firstUse.length}</T>
-            </View>
-          )}
-        </Pressable>
-      </View>
-
-      {/* 이름·상태 + 냉장고 열기 */}
-      <View style={styles.sceneFoot}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <T v="bodyBold" numberOfLines={1}>{charName} <T v="small" c={color.textSub}>· {status}</T></T>
-        </View>
-      </View>
-      <Pressable onPress={() => router.push(stock.length ? '/fridge' : '/scan/fridge')} accessibilityRole="button" style={({ pressed }) => [styles.openFridge, pressed && { opacity: 0.85 }]}>
-        <Icon name={stock.length ? 'fridge' : 'plus'} size={18} c={color.brandDark} />
-        <T v="small" style={{ flex: 1, fontWeight: '700' }}>{summary}</T>
-        <Icon name="chevron" size={16} c={color.textSub} />
-      </Pressable>
-    </View>
-  );
-}
-
-// ───────── 3. 오늘의 한 끼 ─────────
-function MenuCard({ m, slot, chosen, canSwap, onChoose, onCook, onAnother }: { m: RecipeMatch; slot: MealType; chosen: boolean; canSwap: boolean; onChoose: () => void; onCook: () => void; onAnother: () => void }) {
-  const r = m.recipe;
-  const using = m.matches.filter((x) => x.stock && x.status !== 'staple');
-  const expiringIds = new Set(m.usesExpiring.map((i) => i.id));
-  const desc = r.features ?? descOf(r);
-  const reasons = topReasons(m, 2);
-  return (
-    <View style={styles.menuCard}>
-      <View style={styles.menuArt}>
-        {r.imageUri ? (
-          <Image source={{ uri: r.imageUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" accessibilityLabel={`${r.name} 사진`} />
-        ) : (
-          <View style={styles.plate} accessibilityLabel={`${r.name} 그림`}>
-            <Text style={{ fontSize: 64 }}>{r.emoji}</Text>
-          </View>
-        )}
-        <View style={styles.menuKicker}>
-          <T v="tiny" c={chosen ? color.brandDark : color.textSub} style={{ fontWeight: '800' }}>{chosen ? `✓ 오늘 ${MEAL_LABEL[slot]}으로 정했어요` : `오늘의 한 끼 · ${MEAL_LABEL[slot]}`}</T>
-        </View>
-      </View>
-
-      <View style={{ padding: 20, gap: space.sm }}>
-        <Text style={styles.menuTitle}>{r.name}</Text>
-        <T v="small" c={color.textSub} numberOfLines={2}>{desc}</T>
-        <Row gap={space.md} wrap>
-          <Row gap={4}><Icon name="clock" size={15} c={color.textSub} /><T v="small" c={color.textSub}>약 {r.timeMinutes}분</T></Row>
-          <T v="small" c={color.textSub}>{r.difficulty}</T>
-          <T v="small" c={m.missingRequired.length ? color.textSub : color.brandDark} style={{ fontWeight: '700' }}>
-            {m.missingRequired.length ? `${m.missingRequired.map((i) => i.name).join('·')}만 있으면 돼요` : '냉장고 재료로 바로 만들 수 있어요'}
-          </T>
-        </Row>
-
-        {using.length > 0 && (
-          <View style={{ gap: 6 }}>
-            <T v="tiny" c={color.textMuted}>활용할 내 재료</T>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {using.map((x) => (
-                <View key={x.stock!.id} style={[styles.useChip, expiringIds.has(x.stock!.id) && { backgroundColor: color.warnSoft }]}>
-                  <Text style={{ fontSize: 14 }}>{x.stock!.emoji}</Text>
-                  <T v="tiny" c={color.text} style={{ fontWeight: '700' }}>{x.stock!.name}{expiringIds.has(x.stock!.id) ? ' · 먼저' : ''}</T>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-        {reasons.length > 0 && <T v="tiny" c={color.textMuted}>추천 이유: {reasons.join(' · ')}</T>}
-
-        <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.xs }}>
-          {chosen ? (
-            <Pressable onPress={onCook} accessibilityRole="button" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}>
-              <Icon name="pot" size={18} c={color.onBrand} />
-              <T v="bodyBold" c={color.onBrand}>레시피 보고 요리하기</T>
-            </Pressable>
-          ) : (
-            <Pressable onPress={onChoose} accessibilityRole="button" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}>
-              <T v="bodyBold" c={color.onBrand}>이 메뉴로 할게요</T>
-            </Pressable>
-          )}
-          {canSwap && (
-            <Pressable onPress={onAnother} accessibilityRole="button" accessibilityLabel={chosen ? '다른 메뉴로 바꾸기' : '다른 메뉴 보기'} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-              <Icon name="refresh" size={16} c={color.text} />
-              <T v="small" style={{ fontWeight: '700' }}>{chosen ? '바꾸기' : '다른 메뉴'}</T>
-            </Pressable>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function descOf(r: Recipe): string {
-  const tags = r.tags.filter((t) => t !== 'AI 생성').slice(0, 2).join(' · ');
-  return tags ? `${tags} · ${r.servings}인분 기준` : `${r.servings}인분 기준`;
-}
-
-/** 추천할 메뉴가 없을 때(재료가 없거나 적을 때): 입력을 강요하지 않고 두 갈래 길을 보여 준다 */
-function StartCard({ hasStock }: { hasStock: boolean }) {
-  return (
-    <View style={[styles.menuCard, { padding: 20, gap: space.sm }]}>
-      <T v="tiny" c={color.textSub} style={{ fontWeight: '800' }}>오늘의 한 끼</T>
-      <Text style={styles.menuTitle}>{hasStock ? '재료가 조금 더 있으면\n딱 맞는 메뉴를 골라 드려요' : '오늘은 한 끼부터\n가볍게 시작해요'}</Text>
-      <T v="small" c={color.textSub}>냉장고 재료를 넣으면 그 재료로 만들 메뉴를 골라 드려요. 먼저 메뉴를 둘러봐도 좋아요.</T>
-      <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.xs }}>
-        <Pressable onPress={() => router.push('/scan/fridge')} accessibilityRole="button" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}>
-          <Icon name="plus" size={18} c={color.onBrand} />
-          <T v="bodyBold" c={color.onBrand}>재료 추가하기</T>
-        </Pressable>
-        <Pressable onPress={() => router.push('/cook')} accessibilityRole="button" style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-          <Icon name="search" size={16} c={color.text} />
-          <T v="small" style={{ fontWeight: '700' }}>메뉴 찾기</T>
-        </Pressable>
-      </View>
-    </View>
-  );
 }
 
 // ───────── 5. 오늘 식사: 끼니 줄 ─────────
