@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { router, Stack as RStack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, View } from 'react-native';
 
 import { analyzeMealPhoto, hasAIKey } from '@/ai/gemini';
 import { pickPhoto } from '@/ai/photo';
@@ -29,7 +29,7 @@ function itemFromName(name: string, prev?: MealItem): MealItem {
 }
 
 export default function MealRecordEdit() {
-  const { id, type, date: dateParam } = useLocalSearchParams<{ id?: string; type?: MealType; date?: string }>();
+  const { id, type, date: dateParam, mode } = useLocalSearchParams<{ id?: string; type?: MealType; date?: string; mode?: 'photo' }>();
   const s = useAppState();
   const existing = id ? s.meals.find((m) => m.id === id) : undefined;
 
@@ -90,6 +90,12 @@ export default function MealRecordEdit() {
       setLoading(false);
     }
   };
+
+  // 홈의 '사진으로 기록'에서 왔으면 휴대폰에서는 카메라를 바로 연다(웹은 브라우저가 막아서 아래 버튼으로)
+  useEffect(() => {
+    if (mode === 'photo' && !existing && Platform.OS !== 'web') photoFlow('camera');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = () => {
     if (!items.length && !memo.trim()) return notify('음식을 하나 이상 추가해 주세요');

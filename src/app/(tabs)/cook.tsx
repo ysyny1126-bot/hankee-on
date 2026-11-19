@@ -1,9 +1,10 @@
-import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { hasAIKey, recipeFromName } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
+import { Icon } from '@/components/icon';
 import { Button, Chip, Field, Row, Screen, SectionHeader, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
@@ -26,6 +27,15 @@ export default function Cook() {
   const [aiLoading, setAiLoading] = useState(false);
   const aiOn = hasAIKey() && s.consents.externalAI;
   const today = toDateKey();
+  // 홈의 '먼저 활용하면 좋은 재료'를 누르면 그 재료로 만들 수 있는 메뉴를 바로 보여 준다
+  const { ingredient } = useLocalSearchParams<{ ingredient?: string }>();
+  useEffect(() => {
+    if (ingredient) {
+      setSearchOpen(true);
+      setQ(ingredient);
+      setPage(0);
+    }
+  }, [ingredient]);
 
   const ranked = useMemo(() => rankForUser(s), [s]);
   const pool = ranked.filter((m) => {
@@ -58,8 +68,8 @@ export default function Cook() {
     <Screen>
       <Row style={{ justifyContent: 'space-between', marginTop: space.sm }}>
         <T v="h1">오늘 뭐 먹지?</T>
-        <Pressable onPress={() => { setSearchOpen(!searchOpen); setQ(''); }} hitSlop={10} accessibilityLabel="검색">
-          <Text style={{ fontSize: 22 }}>{searchOpen ? '✕' : '🔍'}</Text>
+        <Pressable onPress={() => { setSearchOpen(!searchOpen); setQ(''); if (ingredient) router.setParams({ ingredient: undefined }); }} hitSlop={10} accessibilityLabel={searchOpen ? '검색 닫기' : '검색'}>
+          <Icon name={searchOpen ? 'x' : 'search'} size={22} c={color.text} />
         </Pressable>
       </Row>
 
@@ -81,7 +91,7 @@ export default function Cook() {
       ) : (
         <View style={{ alignItems: 'center', paddingVertical: space.xl, gap: space.sm }}>
           <Text style={{ fontSize: 36 }}>🔍</Text>
-          <T c={color.textSub}>맞는 메뉴가 없어요</T>
+          <T c={color.textSub}>{q.trim() ? `‘${q.trim()}’로 만들 수 있는 기본 메뉴가 없어요` : '맞는 메뉴가 없어요'}</T>
         </View>
       )}
 

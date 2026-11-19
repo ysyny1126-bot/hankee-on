@@ -356,6 +356,13 @@ export const actions = {
   setMealPlan(entries: MealPlanEntry[], replaceDates: string[]) {
     setState((s) => ({ ...s, mealPlan: [...s.mealPlan.filter((e) => !replaceDates.includes(e.date)), ...entries] }));
   },
+  /** 오늘의 한 끼 고르기: 같은 날·같은 끼니에 있던 계획은 이 메뉴로 바꾼다(다른 끼니는 그대로) */
+  chooseMeal(date: string, mealType: MealPlanEntry['mealType'], recipeId: string, reason: string) {
+    setState((s) => ({
+      ...s,
+      mealPlan: [...s.mealPlan.filter((e) => !(e.date === date && e.mealType === mealType)), { id: newId('plan_'), date, mealType, recipeId, reason }],
+    }));
+  },
   removeMealPlan(id: string) {
     setState((s) => ({ ...s, mealPlan: s.mealPlan.filter((e) => e.id !== id) }));
   },
@@ -390,7 +397,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       listeners.delete(l);
     };
   }, []);
-  if (!ready) return <View style={{ flex: 1, backgroundColor: '#F5F4FA' }} />; // 불러오는 동안 빈 배경
+  if (!ready) return <View style={{ flex: 1, backgroundColor: '#F7F4EE' }} />; // 불러오는 동안 빈 배경
   return <Ctx.Provider value={snap}>{children}</Ctx.Provider>;
 }
 

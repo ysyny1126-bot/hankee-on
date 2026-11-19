@@ -83,7 +83,7 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
   // 알약 버튼: 주요 = 네이비, 완료 = 민트, 보조 = 흰 바탕 + 테두리
   const palette = {
     primary: { bg: color.navy, fg: color.onBrand, bd: 'transparent' },
-    fresh: { bg: '#5EE0B7', fg: color.navyDeep, bd: 'transparent' },
+    fresh: { bg: color.brandDark, fg: color.onBrand, bd: 'transparent' },
     secondary: { bg: color.surface, fg: color.navy, bd: color.borderStrong },
     ghost: { bg: 'transparent', fg: color.textSub, bd: 'transparent' },
     danger: { bg: color.dangerSoft, fg: color.dangerDark, bd: 'transparent' },
@@ -115,7 +115,7 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
 
 export function Chip({ label, selected, onPress, tone }: { label: string; selected?: boolean; onPress?: () => void; tone?: 'warn' | 'danger' | 'fresh' }) {
   // 선택된 칩: 네이비(알레르기는 코랄, 기피는 노랑, 완료는 민트)
-  const toneColor = tone ? { warn: color.warnDark, danger: color.danger, fresh: color.freshDark }[tone] : color.navy;
+  const toneColor = tone ? { warn: color.warnDark, danger: color.dangerDark, fresh: color.freshDark }[tone] : color.brandDark;
   return (
     <Pressable
       onPress={onPress}
@@ -238,7 +238,7 @@ export function Bars({ data, height = 110, unit = '', refLine }: { data: { label
         {data.map((d, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height }}>
             {d.value > 0 ? <T v="tiny" c={color.textSub}>{Math.round(d.value)}{unit}</T> : null}
-            <View style={{ width: '70%', height: Math.max(2, (d.value / max) * (height - 18)), borderRadius: 6, backgroundColor: d.highlight ? color.brand : '#D8D0FF' }} />
+            <View style={{ width: '70%', height: Math.max(2, (d.value / max) * (height - 18)), borderRadius: 6, backgroundColor: d.highlight ? color.brand : '#CFE9DC' }} />
           </View>
         ))}
       </View>
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: color.bg },
   scroll: { paddingBottom: 120 },
   inner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: space.lg, paddingTop: space.md, gap: space.md },
-  footer: { backgroundColor: 'rgba(245,244,250,0.92)', paddingVertical: space.md, borderTopWidth: 1, borderTopColor: color.border },
+  footer: { backgroundColor: 'rgba(247,244,238,0.95)', paddingVertical: space.md, borderTopWidth: 1, borderTopColor: color.border },
   footerInner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: space.lg, gap: space.sm },
   card: { ...clay, padding: 20, gap: space.sm },
   btn: { minHeight: 50, borderRadius: radius.pill, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
@@ -301,11 +301,11 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, alignSelf: 'flex-start' },
   input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48 },
-  seg: { flexDirection: 'row', backgroundColor: '#ECEBF3', borderRadius: radius.pill, padding: 3 },
+  seg: { flexDirection: 'row', backgroundColor: color.surfaceAlt, borderRadius: radius.pill, padding: 3 },
   segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: radius.pill },
   segActive: { backgroundColor: color.surface, ...shadow.soft },
   stepBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  track: { height: 8, borderRadius: 4, backgroundColor: '#E9E8F2', overflow: 'hidden' },
+  track: { height: 8, borderRadius: 4, backgroundColor: color.surfaceAlt, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
   refLine: { position: 'absolute', left: 0, right: 0, height: 0, borderTopWidth: 1, borderStyle: 'dashed', borderColor: color.textMuted },
   listItem: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm },
