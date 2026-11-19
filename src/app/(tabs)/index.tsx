@@ -64,7 +64,7 @@ export default function Home() {
 
   const choose = (m: RecipeMatch) => {
     actions.chooseMeal(today, slot, m.recipe.id, topReasons(m, 2).join(' · '));
-    router.push(`/recipe/${m.recipe.id}`);
+    router.push(`/recipe/${m.recipe.id}?prep=1`); // 다음 단계: 냉장고에서 재료 꺼내기
   };
   const another = () => {
     if (chosenEntry) actions.removeMealPlan(chosenEntry.id);
@@ -85,7 +85,7 @@ export default function Home() {
         mood={menu ? 'happy' : coach.mood}
         canSwap={candidates.length > 1 || !!chosen}
         onChoose={() => menu && choose(menu)}
-        onCook={() => menu && router.push(`/recipe/${menu.recipe.id}`)}
+        onCook={() => menu && router.push(`/recipe/${menu.recipe.id}?prep=1`)}
         onAnother={another}
       />
 

@@ -9,7 +9,7 @@ import { findFoodReference } from '@/data/catalog';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import type { CookRating, MealType } from '@/data/types';
 import { addDays, guessMealType, newId, nowTime, toDateKey } from '@/logic/dates';
-import { matchRecipe, proposeDeduction, round } from '@/logic/inventory';
+import { matchRecipe, planDeduction, round } from '@/logic/inventory';
 
 const RATINGS: { key: CookRating; emoji: string; label: string }[] = [
   { key: 'good', emoji: '😋', label: '맛있어요' },
@@ -28,9 +28,10 @@ export default function CookComplete() {
   const recipe = findRecipe(s, id);
   const made = Number(scaleParam) || 1;
   const m = recipe ? matchRecipe(recipe, s.ingredients, s.preferences.allergies, made) : null;
-  const usable = m?.matches.filter((x) => x.stock) ?? [];
+  // 같은 재료가 여러 묶음이면 소비기한이 가까운 묶음부터 빼도록 미리 채운다(R1)
+  const usable = (m?.matches.filter((x) => x.stocks.length) ?? []).map((x) => ({ x, plan: planDeduction(x) }));
 
-  const [amounts, setAmounts] = useState<Record<string, number>>(() => Object.fromEntries(usable.map((x) => [x.stock!.id, proposeDeduction(x)])));
+  const [amounts, setAmounts] = useState<Record<string, number>>(() => Object.fromEntries(usable.flatMap((u) => u.plan.map((d) => [d.ingredient.id, d.amount]))));
   const [rating, setRating] = useState<CookRating | null>(null);
   const [saveMeal, setSaveMeal] = useState(true);
   const [mealType, setMealType] = useState<MealType>(guessMealType());
@@ -128,18 +129,26 @@ export default function CookComplete() {
       <Card>
         <T v="h3">냉장고에서 뺄 양</T>
         {usable.length === 0 && <T v="small" c={color.textMuted}>냉장고 재료를 쓰지 않았어요.</T>}
-        {usable.map((x) => (
-          <Row key={x.stock!.id} style={{ justifyContent: 'space-between', paddingVertical: 4 }}>
-            <View style={{ flex: 1 }}>
-              <T v="bodyBold">{x.stock!.emoji} {x.stock!.name}</T>
-              <T v="tiny" c={color.textSub}>보유 {x.stock!.quantity}{x.stock!.unit} · 레시피 {x.need.amount}{x.need.unit}</T>
-              {x.status === 'unknown_amount' && <Badge label="단위가 달라 직접 입력" tone="info" />}
-            </View>
-            <Row gap={4}>
-              <Stepper value={amounts[x.stock!.id] ?? 0} onChange={(n) => setAmounts((a) => ({ ...a, [x.stock!.id]: Math.min(n, x.stock!.quantity) }))} step={x.stock!.unit === 'g' || x.stock!.unit === 'ml' ? 10 : 0.5} />
-              <T v="small">{x.stock!.unit}</T>
+        {usable.map(({ x, plan }) => (
+          <View key={x.need.name} style={{ gap: 4, paddingVertical: 4 }}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <T v="bodyBold">{x.stock!.emoji} {x.need.name}</T>
+              <T v="tiny" c={color.textSub}>레시피 {x.need.amount}{x.need.unit}{x.have != null ? ` · 보유 ${x.have}${x.need.unit}` : ''}</T>
             </Row>
-          </Row>
+            {x.status === 'unknown_amount' && <Badge label="단위가 달라 직접 입력" tone="info" />}
+            {plan.map(({ ingredient: b }) => (
+              <Row key={b.id} style={{ justifyContent: 'space-between', paddingLeft: space.md }}>
+                <View style={{ flex: 1 }}>
+                  <T v="small">{b.quantity}{b.unit} 묶음</T>
+                  <T v="tiny" c={color.textSub}>{b.expiryDate ? `소비기한 ${b.expiryDate.slice(5).replace('-', '/')}` : '소비기한 미입력'}{plan.length > 1 && b.id === plan[0].ingredient.id ? ' · 먼저 쓰기' : ''}</T>
+                </View>
+                <Row gap={4}>
+                  <Stepper value={amounts[b.id] ?? 0} onChange={(n) => setAmounts((a) => ({ ...a, [b.id]: Math.min(n, b.quantity) }))} step={b.unit === 'g' || b.unit === 'ml' ? 10 : 0.5} />
+                  <T v="small">{b.unit}</T>
+                </Row>
+              </Row>
+            ))}
+          </View>
         ))}
       </Card>
       <View style={{ height: space.sm }} />

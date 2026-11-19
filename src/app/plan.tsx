@@ -9,7 +9,7 @@ import { actions, findRecipe, useAppState } from '@/data/store';
 import type { MealType } from '@/data/types';
 import { MEAL_LABEL } from '@/logic/analysis';
 import { addDays, formatKoreanDate, toDateKey } from '@/logic/dates';
-import { matchRecipe } from '@/logic/inventory';
+import { consumeVirtual, matchRecipe, round } from '@/logic/inventory';
 import { generatePlan } from '@/logic/planner';
 
 export default function Meal() {
@@ -29,14 +29,30 @@ export default function Meal() {
 
   const planned = s.mealPlan.filter((p) => dates.includes(p.date));
 
+  /** 식단 순서대로 가상 재고에서 빼 가며, 모자라는 양을 재료별로 합쳐 장보기에 담는다(R4) */
   const shopAll = () => {
-    const items = planned.flatMap((p) => {
+    const ORDER_T = ['breakfast', 'lunch', 'dinner', 'snack'];
+    const sorted = [...planned].sort((a, b) => a.date.localeCompare(b.date) || ORDER_T.indexOf(a.mealType) - ORDER_T.indexOf(b.mealType));
+    let stock = s.ingredients;
+    const need = new Map<string, { name: string; amount: number; unit: string; recipes: string[]; recipeId: string }>();
+    for (const p of sorted) {
       const r = findRecipe(s, p.recipeId);
-      if (!r) return [];
-      return matchRecipe(r, s.ingredients, s.preferences.allergies).missingRequired.map((i) => ({ name: i.name, amount: i.amount, unit: i.unit, reason: `식단: ${r.name}`, recipeId: r.id }));
-    });
+      if (!r) continue;
+      const m = matchRecipe(r, stock, s.preferences.allergies);
+      for (const x of m.matches) {
+        if (x.need.optional || x.status === 'staple' || x.status === 'have' || x.status === 'unknown_amount') continue;
+        const short = x.status === 'low' && x.have != null ? x.need.amount - x.have : x.need.amount;
+        const k = `${x.need.name}|${x.need.unit}`;
+        const cur = need.get(k) ?? { name: x.need.name, amount: 0, unit: x.need.unit, recipes: [], recipeId: r.id };
+        cur.amount = round(cur.amount + short);
+        if (!cur.recipes.includes(r.name)) cur.recipes.push(r.name);
+        need.set(k, cur);
+      }
+      stock = consumeVirtual(stock, r);
+    }
+    const items = [...need.values()].map((v) => ({ name: v.name, amount: v.amount, unit: v.unit, reason: `식단: ${v.recipes.join('·')}`, recipeId: v.recipeId }));
     const n = actions.addShopping(items);
-    notify(n ? `장보기 목록에 ${n}개 담았어요` : '더 살 재료가 없어요', '같은 재료는 한 번만 담았어요.');
+    notify(n ? `장보기 목록에 ${n}개 담았어요` : '더 살 재료가 없어요', '앞 끼니에서 쓰는 양까지 계산해 재료별로 합쳤어요.');
   };
 
   return (

@@ -71,11 +71,15 @@ export function scoreMatch(m: RecipeMatch, ctx: RankContext): { score: number; r
   const r = m.recipe;
   const reasons: Reason[] = [];
 
+  // 양이 조금 모자란 재료도 함께 알려 준다(식단에서 앞 끼니가 써 버린 경우 등)
+  const low = m.matches.filter((x) => x.status === 'low' && !x.need.optional).map((x) => x.need.name);
+  const parts = [m.missingRequired.length ? `${m.missingRequired.map((i) => i.name).join('·')} 필요` : '', low.length ? `${low.join('·')} 조금 부족` : ''].filter(Boolean);
   reasons.push({
     key: 'coverage',
     weight: m.coverage * 100,
-    text: m.missingRequired.length ? `${m.missingRequired.map((i) => i.name).join('·')}만 있으면 돼요` : '냉장고 재료로 바로',
+    text: !parts.length ? '냉장고 재료로 바로' : m.missingRequired.length && !low.length ? `${m.missingRequired.map((i) => i.name).join('·')}만 있으면 돼요` : parts.join(' · '),
   });
+  if (low.length) reasons.push({ key: 'missing', weight: -5 * low.length });
   if (m.missingRequired.length) reasons.push({ key: 'missing', weight: -10 * m.missingRequired.length });
   if (m.usesExpiring.length) reasons.push({ key: 'expiring', weight: 25 * m.usesExpiring.length, text: `소비기한이 가까운 ${eul(joinWa(m.usesExpiring.slice(0, 2).map((i) => i.name)))} 활용해요` });
 
