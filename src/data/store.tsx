@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { findCatalog } from './catalog';
 import { BUILTIN_RECIPES } from './recipes';
@@ -397,7 +397,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       listeners.delete(l);
     };
   }, []);
-  if (!ready) return <View style={{ flex: 1, backgroundColor: '#F7F4EE' }} />; // 불러오는 동안 빈 배경
+  // 불러오는 동안: 빈 화면 대신 작은 표시(보통 순간이라 문구 없이)
+  if (!ready)
+    return (
+      <View style={{ flex: 1, backgroundColor: '#F7F4EE', alignItems: 'center', justifyContent: 'center' }} accessibilityLabel="불러오는 중">
+        <ActivityIndicator color="#11805A" />
+      </View>
+    );
   return <Ctx.Provider value={snap}>{children}</Ctx.Provider>;
 }
 

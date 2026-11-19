@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { Icon, type IconName } from '@/components/icon';
-import { Row, Screen, T, tx } from '@/components/ui';
+import { Button, IconButton, PageHeader, Row, Screen, T, tx } from '@/components/ui';
 import { getCharacter } from '@/constants/characters';
 import { color, radius, shadow, space } from '@/constants/tokens';
 import { actions, useAllRecipes, useAppState } from '@/data/store';
@@ -73,16 +73,17 @@ export default function Home() {
 
   return (
     <Screen>
-      {/* 1. 인사·날짜 (작게) */}
-      <Row style={{ marginTop: space.xs, alignItems: 'flex-start' }}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <T v="small" c={color.textMuted}>{dateLabel}</T>
-          <T v="h2">{p.nickname}님, {headline}</T>
-        </View>
-        <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel="설정" hitSlop={8} style={styles.iconBtn}>
-          <Icon name="settings" size={20} c={color.textSub} />
-        </Pressable>
-      </Row>
+      {/* 1. 날짜(작게) + 인사(이름은 가볍게, 오늘 할 일은 굵게) */}
+      <PageHeader
+        eyebrow={dateLabel}
+        title={
+          <Text style={styles.greet}>
+            <Text style={{ fontWeight: '500' }}>{p.nickname}님, </Text>
+            {'\n'}{headline}
+          </Text>
+        }
+        right={<IconButton label="설정" onPress={() => router.push('/settings')}><Icon name="settings" size={20} c={color.textSub} /></IconButton>}
+      />
 
       {/* 2. 캐릭터 + 냉장고 */}
       <FridgeScene
@@ -384,7 +385,23 @@ function LinkRow({ icon, label, sub, onPress, first }: { icon: IconName; label: 
   );
 }
 
+/** 홈에서 예상치 못한 오류가 나면: 탓하지 않는 말 + 다시 시도(Expo Router의 ErrorBoundary) */
+export function ErrorBoundary({ retry }: { error: Error; retry: () => Promise<void> }) {
+  return (
+    <Screen>
+      <View style={{ alignItems: 'center', gap: space.md, paddingTop: 80 }}>
+        <Character size={110} mood="idle" />
+        <T v="h2" style={{ textAlign: 'center' }}>잠깐 문제가 생겼어요</T>
+        <T c={color.textSub} style={{ textAlign: 'center' }}>저장된 기록은 그대로예요. 다시 불러와 볼게요.</T>
+        <Button title="다시 시도" onPress={retry} />
+        <Button title="냉장고 보기" kind="secondary" onPress={() => router.push('/fridge')} />
+      </View>
+    </Screen>
+  );
+}
+
 const styles = StyleSheet.create({
+  greet: { ...tx({ fontSize: 24, lineHeight: 32, fontWeight: '800', letterSpacing: -0.8, color: color.text }) },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   scene: { backgroundColor: color.scene, borderRadius: 28, padding: 18, paddingBottom: 14, gap: 10 },
   bubble: { alignSelf: 'center', maxWidth: '88%', backgroundColor: color.surface, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, ...shadow.soft },

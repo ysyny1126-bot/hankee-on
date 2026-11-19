@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { Row, Screen, T } from '@/components/ui';
+import { Icon } from '@/components/icon';
+import { IconButton, PageHeader, Row, Screen, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { useAllRecipes, useAppState } from '@/data/store';
 import type { MealType } from '@/data/types';
@@ -27,13 +28,28 @@ export default function Log() {
 
   return (
     <Screen>
-      <Row style={{ justifyContent: 'space-between', marginTop: space.sm }}>
-        <Pressable onPress={() => setDate(addDays(date, -1))} hitSlop={12} style={{ padding: space.sm }}><T v="h2">‹</T></Pressable>
-        <Pressable onPress={() => setDate(today)}>
-          <T v="h3">{date === today ? '오늘' : formatKoreanDate(date)}</T>
+      <PageHeader
+        eyebrow="기록"
+        title={date === today ? '오늘 먹은 것' : formatKoreanDate(date)}
+        right={
+          <Row gap={6}>
+            <IconButton label="전날 보기" onPress={() => setDate(addDays(date, -1))}>
+              <View style={{ transform: [{ scaleX: -1 }] }}><Icon name="chevron" size={20} c={color.text} /></View>
+            </IconButton>
+            {date < today ? (
+              <IconButton label="다음 날 보기" onPress={() => setDate(addDays(date, 1))}><Icon name="chevron" size={20} c={color.text} /></IconButton>
+            ) : null}
+          </Row>
+        }
+      />
+      {meals.length === 0 && (
+        <T v="small" c={color.textSub}>{date === today ? '지금 먹은 것부터 편하게 기록해요. 사진이나 이름만 있어도 돼요.' : '이날은 기록이 없어요. 생각나는 게 있으면 지금 남겨도 돼요.'}</T>
+      )}
+      {date !== today && (
+        <Pressable onPress={() => setDate(today)} accessibilityRole="button" style={{ alignSelf: 'flex-start' }}>
+          <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>오늘로 돌아가기</T>
         </Pressable>
-        <Pressable onPress={() => date < today && setDate(addDays(date, 1))} hitSlop={12} style={{ padding: space.sm, opacity: date < today ? 1 : 0.2 }}><T v="h2">›</T></Pressable>
-      </Row>
+      )}
 
       {SLOTS.map((slot) => {
         const list = meals.filter((m) => m.mealType === slot.type).sort((a, b) => a.mealTime.localeCompare(b.mealTime));

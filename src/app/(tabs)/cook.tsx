@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { hasAIKey, recipeFromName } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Icon } from '@/components/icon';
-import { Button, Chip, Field, Row, Screen, SectionHeader, T } from '@/components/ui';
+import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
@@ -66,20 +66,23 @@ export default function Cook() {
 
   return (
     <Screen>
-      <Row style={{ justifyContent: 'space-between', marginTop: space.sm }}>
-        <T v="h1">오늘 뭐 먹지?</T>
-        <Pressable onPress={() => { setSearchOpen(!searchOpen); setQ(''); if (ingredient) router.setParams({ ingredient: undefined }); }} hitSlop={10} accessibilityLabel={searchOpen ? '검색 닫기' : '검색'}>
-          <Icon name={searchOpen ? 'x' : 'search'} size={22} c={color.text} />
-        </Pressable>
-      </Row>
+      <PageHeader
+        eyebrow="메뉴"
+        title="오늘 뭐 먹지?"
+        right={
+          <IconButton label={searchOpen ? '검색 닫기' : '메뉴·재료 검색'} onPress={() => { setSearchOpen(!searchOpen); setQ(''); if (ingredient) router.setParams({ ingredient: undefined }); }}>
+            <Icon name={searchOpen ? 'x' : 'search'} size={20} c={color.text} />
+          </IconButton>
+        }
+      />
 
       {searchOpen ? (
         <Field placeholder="요리·재료 이름" value={q} onChangeText={(t) => { setQ(t); setPage(0); }} autoFocus />
       ) : (
         <Row>
           <Chip label="전체" selected={filter === 'all'} onPress={() => { setFilter('all'); setPage(0); }} />
-          <Chip label="⏰ 임박 재료" selected={filter === 'expiring'} onPress={() => { setFilter('expiring'); setPage(0); }} />
-          <Chip label="⚡ 15분" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
+          <Chip label="먼저 쓸 재료" selected={filter === 'expiring'} onPress={() => { setFilter('expiring'); setPage(0); }} />
+          <Chip label="15분 이내" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
         </Row>
       )}
 

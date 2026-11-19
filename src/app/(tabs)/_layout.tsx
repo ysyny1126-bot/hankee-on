@@ -19,15 +19,16 @@ const TAB_ICON: Record<string, IconName> = { index: 'home', cook: 'pot', log: 'b
 function BottomBar({ state, descriptors, emitter, navigateToTab, onAdd }: BottomTabBarProps & { onAdd: () => void }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ backgroundColor: color.surface, borderTopWidth: 1, borderTopColor: color.border, paddingBottom: Math.max(8, insets.bottom) }}>
-      <View style={{ width: '100%', maxWidth: 520, alignSelf: 'center', height: 62, flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ backgroundColor: color.surface, borderTopWidth: 1, borderTopColor: color.border, paddingBottom: Math.max(8, insets.bottom), shadowColor: '#3B2A14', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: -4 }, elevation: 8 }}>
+      <View style={{ width: '100%', maxWidth: 520, alignSelf: 'center', height: 66, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }}>
         {state.routes.map((route, i) => {
           if (route.name === 'add') {
             return (
               <View key={route.key} style={{ flex: 1, alignItems: 'center' }}>
-                <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="만들기: 냉장고 찍기, 식사 기록" style={({ pressed }) => ({ width: 54, height: 54, marginTop: -22, borderRadius: 27, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.bg, opacity: pressed ? 0.9 : 1, ...shadow.button })}>
+                <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="추가하기: 냉장고 찍기, 먹은 음식 기록" style={({ pressed }) => ({ width: 56, height: 56, marginTop: -26, borderRadius: 28, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.surface, transform: [{ scale: pressed ? 0.96 : 1 }], ...shadow.button })}>
                   <Icon name="plus" c={color.onBrand} size={24} stroke={2.4} />
                 </Pressable>
+                <T v="tiny" c={color.textSub} style={{ fontWeight: '700', marginTop: 2 }}>추가</T>
               </View>
             );
           }
@@ -43,8 +44,11 @@ function BottomBar({ state, descriptors, emitter, navigateToTab, onAdd }: Bottom
                 const e = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                 if (!focused && !e.defaultPrevented) navigateToTab(route.key);
               }}
-              style={{ flex: 1, height: 62, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-              <Icon name={TAB_ICON[route.name] ?? 'home'} size={22} c={focused ? color.brandDark : color.textMuted} stroke={focused ? 2.3 : 2} />
+              style={{ flex: 1, height: 66, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+              {/* 선택된 탭: 옅은 초록 알약 + 진한 아이콘 + 굵은 라벨(색만으로 구분하지 않음) */}
+              <View style={{ width: 52, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? color.brandSoft : 'transparent' }}>
+                <Icon name={TAB_ICON[route.name] ?? 'home'} size={22} c={focused ? color.brandDark : color.textMuted} stroke={focused ? 2.4 : 1.9} />
+              </View>
               <T v="tiny" c={focused ? color.brandDark : color.textMuted} style={{ fontWeight: focused ? '800' : '600' }}>{label}</T>
             </Pressable>
           );
@@ -73,8 +77,8 @@ export default function TabLayout() {
         tabBar={(props) => <BottomBar {...props} onAdd={() => setAddOpen(true)} />}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: color.bg } }}>
         <Tabs.Screen name="index" options={{ title: '홈' }} />
-        <Tabs.Screen name="cook" options={{ title: '요리' }} />
-        <Tabs.Screen name="add" options={{ title: '만들기' }} />
+        <Tabs.Screen name="cook" options={{ title: '메뉴' }} />
+        <Tabs.Screen name="add" options={{ title: '추가' }} />
         <Tabs.Screen name="log" options={{ title: '기록' }} />
         <Tabs.Screen name="my" options={{ title: '나' }} />
       </Tabs>

@@ -7,8 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { hasAIKey } from '@/ai/gemini';
 import { pickPhoto, setPendingPhoto, storableUri, type PickedPhoto } from '@/ai/photo';
 import { Character } from '@/components/character';
+import { Icon } from '@/components/icon';
 import { CoachPicker } from '@/components/coach-picker';
 import { notify } from '@/components/dialog';
+import { Welcome } from '@/components/welcome';
 import { Button, Choice, Field, OnOff, Row, T, TagPicker } from '@/components/ui';
 import { CHARACTERS } from '@/constants/characters';
 import {
@@ -79,6 +81,7 @@ const SKIPPABLE: Step[] = ['lifestyle', 'budget', 'fridge', 'cooking', 'goals'];
  * 처음엔 대략적인 값만 받고, 자세한 값은 설정에서 언제든 고칠 수 있다.
  */
 export default function Onboarding() {
+  const [welcome, setWelcome] = useState(true); // 첫 화면(환영) → 9단계 질문
   const [i, setI] = useState(0);
   const [d, setD] = useState<Draft>(START);
   const touched = useRef(new Set<keyof Draft>());
@@ -119,7 +122,7 @@ export default function Onboarding() {
     if (step === 'lifestyle') applyLifestyleDefaults();
     if (i < STEPS.length - 1) setI(i + 1);
   };
-  const back = () => (i > 0 ? setI(i - 1) : null);
+  const back = () => (i > 0 ? setI(i - 1) : setWelcome(true));
   const skip = () => {
     if (step === 'goals') set('profileGoals', []);
     next();
@@ -171,14 +174,16 @@ export default function Onboarding() {
 
   const canNext = step === 'nickname' ? d.nickname.trim().length > 0 : true;
 
+  if (welcome) return <Welcome characterId={d.characterId} onStart={() => setWelcome(false)} onDemo={() => finish(true)} />;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['top', 'bottom']}>
       <View style={{ width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', flex: 1 }}>
         {/* 진행률 + 뒤로 가기 */}
         <View style={{ paddingHorizontal: space.lg, paddingTop: space.sm, gap: space.sm }}>
           <Row style={{ justifyContent: 'space-between', minHeight: 32 }}>
-            <Pressable onPress={back} disabled={i === 0} hitSlop={12} accessibilityRole="button" accessibilityLabel="이전 질문">
-              <T v="h3" c={i === 0 ? 'transparent' : color.text}>‹</T>
+            <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel={i === 0 ? '첫 화면으로' : '이전 질문'} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginLeft: -8 }}>
+              <View style={{ transform: [{ scaleX: -1 }] }}><Icon name="chevron" size={22} c={color.text} /></View>
             </Pressable>
             <T v="small" c={color.textMuted}>{i + 1} / {STEPS.length}</T>
             {SKIPPABLE.includes(step) ? (

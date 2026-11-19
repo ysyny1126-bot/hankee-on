@@ -298,9 +298,9 @@ const styles = StyleSheet.create({
   card: { ...clay, padding: 20, gap: space.sm },
   btn: { minHeight: 50, borderRadius: radius.pill, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   btnSmall: { minHeight: 36, paddingHorizontal: 14 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border },
+  chip: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 15, borderRadius: radius.pill, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, alignSelf: 'flex-start' },
-  input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48 },
+  input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 13, minHeight: 50 },
   seg: { flexDirection: 'row', backgroundColor: color.surfaceAlt, borderRadius: radius.pill, padding: 3 },
   segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: radius.pill },
   segActive: { backgroundColor: color.surface, ...shadow.soft },
@@ -368,5 +368,30 @@ function TagInput({ placeholder, onAdd }: { placeholder: string; onAdd: (t: stri
       <Field placeholder={placeholder} value={text} onChangeText={setText} onSubmitEditing={add} returnKeyType="done" />
       <Button title="추가" kind="secondary" small onPress={add} disabled={!text.trim()} />
     </Row>
+  );
+}
+
+/**
+ * 화면 머리: 작은 머리말(무슨 화면인지) + 큰 제목(지금 할 일) + 오른쪽 보조 버튼.
+ * 모든 탭 화면이 같은 위계를 쓰도록 한 부품으로 둔다.
+ */
+export function PageHeader({ eyebrow, title, right }: { eyebrow?: string; title: ReactNode; right?: ReactNode }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm, marginTop: space.xs, marginBottom: space.xs }}>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        {eyebrow ? <T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{eyebrow}</T> : null}
+        {typeof title === 'string' ? <T v="h1">{title}</T> : title}
+      </View>
+      {right}
+    </View>
+  );
+}
+
+/** 동그란 보조 버튼(설정·검색 등). 접근 가능한 이름을 꼭 받는다. */
+export function IconButton({ label, onPress, children }: { label: string; onPress: () => void; children: ReactNode }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, backgroundColor: pressed ? color.surfaceAlt : color.surface, borderWidth: 1, borderColor: color.border, alignItems: 'center', justifyContent: 'center' })}>
+      {children}
+    </Pressable>
   );
 }

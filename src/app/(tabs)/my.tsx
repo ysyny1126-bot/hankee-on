@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
-import { Bars, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
+import { Icon } from '@/components/icon';
+import { Bars, IconButton, PageHeader, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import { analyzePeriod, goalProgress, thisWeek, usedValue, wasteStats } from '@/logic/analysis';
@@ -25,13 +26,18 @@ export default function My() {
 
   return (
     <Screen>
-      <Row style={{ justifyContent: 'space-between', marginTop: space.sm }}>
-        <Row>
-          <Character id={s.preferences.characterId} size={44} />
-          <T v="h2">{s.preferences.nickname}</T>
-        </Row>
-        <Pressable onPress={() => router.push('/settings')} hitSlop={10} accessibilityLabel="설정"><Text style={{ fontSize: 22 }}>⚙️</Text></Pressable>
-      </Row>
+      <PageHeader
+        eyebrow="나"
+        title={
+          <Row gap={10}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: color.scene, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <Character id={s.preferences.characterId} size={40} />
+            </View>
+            <T v="h1" numberOfLines={1} style={{ flexShrink: 1 }}>{s.preferences.nickname}님</T>
+          </Row>
+        }
+        right={<IconButton label="설정" onPress={() => router.push('/settings')}><Icon name="settings" size={20} c={color.textSub} /></IconButton>}
+      />
 
       {/* 주간 리포트 */}
       <Box onPress={() => router.push('/report')}>
