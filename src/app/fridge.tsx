@@ -189,6 +189,7 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         <T v="tiny" c={color.textSub}>📦 보관 참고: {keepInfo(i.name)} (대략치 · 제품 기한이 우선)</T>
       ) : null}
       {i.kind !== 'leftover' ? <MyUnit item={i} /> : null}
+      {i.kind !== 'leftover' ? <StoreTools item={i} onMoved={() => setEditing(true)} /> : null}
 
       {i.kind === 'leftover' && (
         <Button title={`🍽️ 한 끼 먹기 (${Math.min(1, i.quantity)}인분)`} kind="fresh" onPress={() => { actions.eatLeftover(i.id, 1, guessMealType() === 'snack' ? 'dinner' : guessMealType()); onClose(); notify('맛있게 드세요!', '식사 기록에 남겼어요.'); }} />
@@ -250,6 +251,51 @@ function MyUnit({ item: i }: { item: Ingredient }) {
         </Row>
       </Row>
       <Button small title="저장" onPress={() => { actions.setMyUnit(cat.name, i.unit, v); setOpen(false); notify('내 단위를 저장했어요', `${cat.name} 1${i.unit} = ${euro(`${v}${cat.unit}`)} 계산할게요.`); }} />
+    </View>
+  );
+}
+
+/**
+ * E3 냉동실로 옮기기 · E2 나눠 담기(소분).
+ * 냉동하면 보관 기간이 늘어나지만 얼마나 늘지는 제품마다 달라서, 앱이 정하지 않고 바로 날짜 칸을 열어 준다.
+ */
+function StoreTools({ item: i, onMoved }: { item: Ingredient; onMoved: () => void }) {
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [parts, setParts] = useState(i.unit === 'g' && i.quantity >= 400 ? Math.min(5, Math.round(i.quantity / 200)) : 2);
+  const [freeze, setFreeze] = useState(i.storage !== 'freezer');
+  const d = i.expiryDate ? daysUntil(i.expiryDate) : null;
+  const canFreeze = i.storage === 'fridge' && ['육류', '해산물', '곡류', '과일', '채소', '콩·두부'].includes(i.category);
+  const each = Math.round((i.quantity / parts) * 100) / 100;
+  return (
+    <View style={{ gap: 6 }}>
+      <Row gap={6} wrap>
+        {canFreeze ? (
+          <Chip
+            label={d !== null && d <= 2 ? '❄️ 냉동실로 옮기기(곧 기한)' : '❄️ 냉동실로 옮기기'}
+            tone={d !== null && d <= 2 ? 'warn' : undefined}
+            onPress={() => {
+              actions.moveStorage(i.id, 'freezer');
+              onMoved();
+              notify('냉동실로 옮겼어요', '냉동하면 보관 기간이 늘어나요. 포장지나 보관 안내를 보고 새 기한을 정해 주세요.');
+            }}
+          />
+        ) : null}
+        {i.storage === 'freezer' ? <Chip label="🧊 냉장실로 꺼내기(해동)" onPress={() => { actions.moveStorage(i.id, 'fridge'); onMoved(); }} /> : null}
+        {i.quantity >= 2 || (['g', 'ml'].includes(i.unit) && i.quantity >= 100) ? (
+          <Chip label="✂️ 나눠 담기" selected={splitOpen} onPress={() => setSplitOpen(!splitOpen)} />
+        ) : null}
+      </Row>
+      {splitOpen && (
+        <View style={{ backgroundColor: color.surfaceAlt, borderRadius: radius.md, padding: space.sm, gap: 6 }}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <T v="small">몇 개로 나눌까요?</T>
+            <Stepper value={parts} min={2} onChange={(n) => setParts(Math.min(10, Math.max(2, n)))} />
+          </Row>
+          <T v="tiny" c={color.textSub}>한 묶음에 약 {each}{i.unit}씩 {parts}개가 돼요.</T>
+          {i.storage !== 'freezer' ? <Chip label="첫 묶음만 남기고 나머지는 냉동" selected={freeze} onPress={() => setFreeze(!freeze)} /> : null}
+          <Button small title="나누기" onPress={() => { actions.splitIngredient(i.id, parts, freeze && i.storage !== 'freezer'); setSplitOpen(false); notify(`${parts}개로 나눴어요`, freeze && i.storage !== 'freezer' ? '냉동한 묶음의 기한은 냉장고 화면에서 정할 수 있어요.' : ''); }} />
+        </View>
+      )}
     </View>
   );
 }

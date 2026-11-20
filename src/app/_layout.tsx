@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { UndoToast } from '@/components/undo-toast';
+import { SaveBanner } from '@/components/save-banner';
 import { color } from '@/constants/tokens';
 import { StoreProvider, useAppState } from '@/data/store';
 import { syncExpiryNotifications } from '@/logic/notify';
@@ -64,6 +65,7 @@ export default function RootLayout() {
         <Stack.Screen name="cook-mode/[id]" options={{ title: '요리 모드' }} />
       </Stack>
       <UndoToast />
+      <SaveBanner />
     </StoreProvider>
   );
 }

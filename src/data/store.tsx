@@ -125,12 +125,43 @@ export function subscribeUndo(l: Listener) {
 let loaded = false;
 const listeners = new Set<Listener>();
 
+/**
+ * E19 저장: 실패하면(저장 공간 부족·사생활 보호 모드 등) 화면 위에 알리고 다시 시도할 수 있게 한다.
+ * 기록은 앱을 켜 둔 동안 메모리에 남아 있으므로, 다시 시도에 성공하면 잃지 않는다.
+ */
+let saveFailed = false;
+const saveListeners = new Set<Listener>();
+export function isSaveFailed() {
+  return saveFailed;
+}
+export function subscribeSave(l: Listener) {
+  saveListeners.add(l);
+  return () => {
+    saveListeners.delete(l);
+  };
+}
+function setSaveFailed(v: boolean) {
+  if (saveFailed === v) return;
+  saveFailed = v;
+  saveListeners.forEach((l) => l());
+}
+export function persist() {
+  let text: string;
+  try {
+    text = JSON.stringify(state);
+  } catch {
+    setSaveFailed(true);
+    return;
+  }
+  AsyncStorage.setItem(STORAGE_KEY, text).then(() => setSaveFailed(false), () => setSaveFailed(true));
+}
+
 function setState(updater: (s: AppState) => AppState) {
   const before = state.preferences.myUnits;
   state = updater(state);
   if (state.preferences.myUnits !== before) setUserUnits(state.preferences.myUnits);
   listeners.forEach((l) => l());
-  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+  persist();
 }
 
 export function getState() {
@@ -150,7 +181,7 @@ async function load() {
   const last = state.visit.last;
   const sameDay = last && toDateKey(new Date(last)) === toDateKey();
   state = { ...state, visit: { last: now, previous: sameDay ? state.visit.previous : last } };
-  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+  persist();
   loaded = true;
   listeners.forEach((l) => l());
 }
@@ -237,6 +268,31 @@ export const actions = {
   /** 아주 적게 남은 재료를 그대로 두기(정리 안내를 다시 하지 않음) */
   keepSmall(id: string) {
     setState((s) => ({ ...s, ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, keepSmall: true } : x)) }));
+  },
+  /** E3 보관 위치 옮기기(예: 냉장 → 냉동). 소비기한은 앱이 바꾸지 않고, 화면에서 사용자가 새로 정한다 */
+  moveStorage(id: string, storage: Ingredient['storage']) {
+    setState((s) => ({
+      ...s,
+      ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, storage, location: storage === 'pantry' ? 'outside' : 'fridge' } : x)),
+    }));
+  },
+  /** E2 나눠 담기: 한 묶음을 parts개로 똑같이 나눈다. freezeRest면 첫 묶음만 남기고 나머지는 냉동 */
+  splitIngredient(id: string, parts: number, freezeRest: boolean) {
+    setState((s) => {
+      const it = s.ingredients.find((x) => x.id === id);
+      if (!it || parts < 2) return s;
+      const each = round(it.quantity / parts);
+      const copies: Ingredient[] = Array.from({ length: parts - 1 }, () => ({
+        ...it,
+        id: newId('ing_'),
+        quantity: each,
+        ...(freezeRest ? { storage: 'freezer' as const, location: 'fridge' as const } : {}),
+      }));
+      return {
+        ...s,
+        ingredients: [...s.ingredients.map((x) => (x.id === id ? { ...x, quantity: round(it.quantity - each * (parts - 1)) } : x)), ...copies],
+      };
+    });
   },
   /** A7 내 단위 저장: 1 unit = perUnit × 사전 기본 단위 */
   setMyUnit(catalogName: string, unit: string, perUnit: number) {
@@ -531,7 +587,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDay((prev) => {
         if (prev === now) return prev;
         state = { ...state, visit: { last: new Date().toISOString(), previous: state.visit.last } };
-        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+        persist();
         setSnap(state);
         return now;
       });

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Character } from '@/components/character';
 import { MealStage } from '@/components/meal-stage';
 import { TidyCard } from '@/components/tidy-card';
+import { FirstWeekGuide } from '@/components/first-week';
 import { PlanCatchUp } from '@/components/plan-catch-up';
 import { notify } from '@/components/dialog';
 import { Icon, type IconName } from '@/components/icon';
@@ -104,6 +105,11 @@ export default function Home() {
         <T v="bodyBold" style={{ flex: 1 }}>먹은 음식 기록하기</T>
         <SmallAction icon="camera" label="사진" onPress={() => router.push(`/meal-record/edit?type=${slot}&mode=photo`)} />
         <SmallAction icon="pencil" label="메모" onPress={() => router.push(`/meal-record/edit?type=${slot}`)} />
+      </View>
+
+      {/* 첫 주 안내(가입 7일 동안, 셋 다 하면 사라짐) */}
+      <View style={{ marginTop: space.sm }}>
+        <FirstWeekGuide />
       </View>
 
       {/* 남은 음식 먼저: 다시 요리하지 않고 바로 한 끼 */}
