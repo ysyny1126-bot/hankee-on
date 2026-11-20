@@ -23,7 +23,7 @@ const ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 export default function Cook() {
   const s = useAppState();
   const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState<'all' | 'expiring' | 'quick' | 'clear'>('all');
+  const [filter, setFilter] = useState<'all' | 'expiring' | 'quick' | 'clear' | 'fav'>('all');
   const [picked, setPicked] = useState<string[]>([]); // 냉장고 털기: 고른 재료
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -57,6 +57,7 @@ export default function Cook() {
     .filter((m) => {
       if (tokens.length) return tokens.every((w) => uses(m, w));
       if (filter === 'clear') return picked.length > 0 && picked.every((w) => uses(m, w));
+      if (filter === 'fav') return s.favorites.includes(m.recipe.id);
       if (filter === 'expiring') return m.usesExpiring.length > 0;
       if (filter === 'quick') return m.recipe.timeMinutes <= 15;
       return true;
@@ -98,11 +99,12 @@ export default function Cook() {
       {searchOpen ? (
         <Field placeholder="요리·재료 이름" value={q} onChangeText={(t) => { setQ(t); setPage(0); }} autoFocus />
       ) : (
-        <Row>
+        <Row wrap>
           <Chip label="전체" selected={filter === 'all'} onPress={() => { setFilter('all'); setPage(0); }} />
           <Chip label="먼저 쓸 재료" selected={filter === 'expiring'} onPress={() => { setFilter('expiring'); setPage(0); }} />
           <Chip label="15분 이내" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
           <Chip label="🧺 냉장고 털기" selected={filter === 'clear'} onPress={() => { setFilter('clear'); setPage(0); }} />
+          {s.favorites.length > 0 && <Chip label={`★ 즐겨찾기 ${s.favorites.length}`} selected={filter === 'fav'} onPress={() => { setFilter('fav'); setPage(0); }} />}
         </Row>
       )}
       {searchOpen && tokens.length > 1 ? <T v="tiny" c={color.textSub}>{iga(tokens.join(' + '))} 모두 들어간 메뉴</T> : null}

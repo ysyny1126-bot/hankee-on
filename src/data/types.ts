@@ -275,6 +275,10 @@ export interface AppState {
   mealPlan: MealPlanEntry[];
   reports: DietaryReport[];
   dismissedSuggestions: Record<string, string>; // 제안 id → 숨긴 날짜
+  /** E12 즐겨찾기한 레시피 id */
+  favorites: string[];
+  /** E11 내 레시피 노트(레시피 id → 메모). 다음에 같은 요리를 할 때 보여 준다 */
+  recipeNotes: Record<string, { note: string; updatedAt: string }>;
   /** 앱을 연 기록. previous는 이번에 열기 직전의 마지막 방문(오랜만에 돌아온 사용자 반기기용) */
   visit: { last: string | null; previous: string | null };
 }

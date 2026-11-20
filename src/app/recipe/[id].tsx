@@ -6,7 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { youtubeSearchUrl } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
-import { Badge, Button, Chip, Empty, Row, Screen, T } from '@/components/ui';
+import { Badge, Button, Chip, Empty, Field, Row, Screen, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { formatAmount, matchRecipe, planDeduction, round, type IngredientMatch } from '@/logic/inventory';
@@ -17,6 +17,7 @@ import { checkRecipe, restrictionsOf, safeSubstitutes, type Restrictions } from 
 export default function RecipeDetail() {
   const { id, prep: prepParam } = useLocalSearchParams<{ id: string; prep?: string }>();
   const s = useAppState();
+  const fav = s.favorites.includes(id);
   const recipe = findRecipe(s, id);
   // 함께 먹는 사람 수를 기본 인분으로 (1~3)
   const [scale, setScale] = useState(Math.min(3, Math.max(1, s.preferences.householdSize || 1)));
@@ -71,7 +72,16 @@ export default function RecipeDetail() {
         ) : (
           <Text style={{ fontSize: 84, lineHeight: 100 }}>{recipe.emoji}</Text>
         )}
-        <T v="h1">{recipe.name}</T>
+        <Row gap={6}>
+          <T v="h1">{recipe.name}</T>
+          <Pressable
+            onPress={() => actions.toggleFavorite(recipe.id)}
+            accessibilityRole="button"
+            accessibilityLabel={fav ? '즐겨찾기에서 빼기' : '즐겨찾기에 넣기'}
+            hitSlop={10}>
+            <Text style={{ fontSize: 24, color: fav ? '#F2A900' : color.textMuted }}>{fav ? '★' : '☆'}</Text>
+          </Pressable>
+        </Row>
         <Row gap={4} wrap style={{ justifyContent: 'center' }}>
           <Badge label={`⏱ ${recipe.timeMinutes}분`} />
           <Badge label={recipe.difficulty} />
@@ -79,6 +89,8 @@ export default function RecipeDetail() {
           {recipe.origin !== 'builtin' && <Badge label="AI 추정 레시피" tone="info" />}
         </Row>
       </View>
+
+      <RecipeNote recipeId={recipe.id} />
 
       {check.allergy.length > 0 && (
         <View style={{ backgroundColor: color.dangerSoft, borderRadius: radius.md, padding: space.md, gap: 2 }}>
@@ -202,5 +214,33 @@ function IngredientRow({ x, rs }: { x: IngredientMatch; rs: Restrictions }) {
       </View>
       <T v="small" c={color.textSub}>{formatAmount(x.need.amount, x.need.unit)}</T>
     </Row>
+  );
+}
+
+/** E11 내 레시피 노트: 지난번 만들고 남긴 메모를 보여 주고 고칠 수 있게 */
+function RecipeNote({ recipeId }: { recipeId: string }) {
+  const s = useAppState();
+  const saved = s.recipeNotes[recipeId]?.note ?? '';
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(saved);
+  if (!editing)
+    return saved ? (
+      <Pressable onPress={() => { setText(saved); setEditing(true); }} style={{ backgroundColor: color.warnSoft, borderRadius: radius.md, padding: space.md, gap: 2 }} accessibilityRole="button" accessibilityLabel={`내 메모: ${saved}. 눌러서 고치기`}>
+        <T v="small" style={{ fontWeight: '700' }}>📝 지난번 내 메모</T>
+        <T v="small">{saved}</T>
+      </Pressable>
+    ) : (
+      <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ alignSelf: 'flex-start' }}>
+        <T v="small" c={color.textSub}>📝 이 레시피에 메모 남기기</T>
+      </Pressable>
+    );
+  return (
+    <View style={{ gap: space.sm }}>
+      <Field label="내 메모" placeholder="예: 다음엔 간장 반만, 물 조금 더" value={text} onChangeText={setText} multiline autoFocus />
+      <Row gap={space.sm}>
+        <Button small title="저장" onPress={() => { actions.setRecipeNote(recipeId, text); setEditing(false); }} />
+        <Button small kind="ghost" title="취소" onPress={() => setEditing(false)} />
+      </Row>
+    </View>
   );
 }

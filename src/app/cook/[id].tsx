@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Empty, OnOff, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
+import { Badge, Button, Card, Chip, Empty, Field, OnOff, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { findFoodReference } from '@/data/catalog';
 import { actions, findRecipe, useAppState } from '@/data/store';
@@ -33,6 +33,7 @@ export default function CookComplete() {
 
   const [amounts, setAmounts] = useState<Record<string, number>>(() => Object.fromEntries(usable.flatMap((u) => u.plan.map((d) => [d.ingredient.id, d.amount]))));
   const [rating, setRating] = useState<CookRating | null>(null);
+  const [note, setNote] = useState(s.recipeNotes[id]?.note ?? '');
   const [saveMeal, setSaveMeal] = useState(true);
   const [mealType, setMealType] = useState<MealType>(guessMealType());
   const [eaten, setEaten] = useState(made > 1 ? 1 : made);
@@ -44,6 +45,7 @@ export default function CookComplete() {
   const done = () => {
     const ded = Object.entries(amounts).map(([ingredientId, amount]) => ({ ingredientId, amount }));
     const rec = actions.completeCooking(recipe, ded, { rating: rating ?? undefined, servingsMade: made, servingsEaten: eaten, leftoverExpiry });
+    if (note.trim() !== (s.recipeNotes[recipe.id]?.note ?? '')) actions.setRecipeNote(recipe.id, note);
     if (saveMeal && eaten > 0) {
       const ref = findFoodReference(recipe.name);
       actions.addMeal({
@@ -98,6 +100,7 @@ export default function CookComplete() {
           })}
         </Row>
         {!s.consents.personalization && <T v="tiny" c={color.textMuted}>‘식생활 기억하기’를 켜면 평가가 다음 추천에 반영돼요.</T>}
+        <Field placeholder="다음에 기억할 것 (예: 간장 덜, 불 약하게)" value={note} onChangeText={setNote} accessibilityLabel="레시피 메모" />
       </Card>
 
       {/* 2. 먹은 양 · 남은 양 */}

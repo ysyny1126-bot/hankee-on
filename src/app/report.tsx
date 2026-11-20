@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { Badge, Bars, Button, Card, Chip, ProgressBar, Row, Screen, Segmented, T } from '@/components/ui';
 import { router } from 'expo-router';
+import { WeekRecap } from '@/components/week-recap';
 import { color, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import type { NutritionInfo } from '@/data/types';
@@ -61,6 +62,8 @@ export default function Report() {
         <T v="bodyBold">{range.start === range.end ? formatKoreanDate(range.start) : `${range.start.slice(5).replace('-', '/')} ~ ${range.end.slice(5).replace('-', '/')}`}</T>
         <Chip label="다음 ›" onPress={() => setOffset(Math.max(0, offset - 1))} />
       </Row>
+
+      {period === 'weekly' && <WeekRecap start={range.start} end={range.end} />}
 
       {a.dataLevel !== 'ok' && (
         <Card tone="warn">

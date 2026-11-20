@@ -299,3 +299,34 @@ export function oftenWasted(s: AppState, today = toDateKey()): { name: string; c
   for (const w of s.waste) if (w.date >= from) { const k = findCatalog(w.ingredientName)?.name ?? w.ingredientName; c.set(k, (c.get(k) ?? 0) + 1); }
   return [...c.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
 }
+
+/**
+ * E14 주간 회고: 실제 기록만으로 만든 '이번 주 한 줄 정리'.
+ * 값이 없으면 그 줄을 빼고, 0을 꾸며 보여 주지 않는다.
+ */
+export function weekRecap(s: AppState, start: string, end: string) {
+  const inRange = (d: string) => d >= start && d <= end;
+  const cooks = s.cooks.filter((c) => inRange(c.date));
+  const before = new Set(s.cooks.filter((c) => c.date < start).map((c) => c.recipeId));
+  const newDishes = [...new Set(cooks.filter((c) => !before.has(c.recipeId)).map((c) => c.recipeName))];
+  const usedKinds = new Set(cooks.flatMap((c) => c.usedIngredients.map((u) => findCatalog(u.name)?.name ?? u.name)));
+  let usedWon = 0;
+  for (const c of cooks)
+    for (const u of c.usedIngredients) {
+      const cat = findCatalog(u.name);
+      if (cat?.avgPrice && cat.unit === u.unit) usedWon += cat.avgPrice * u.amount;
+    }
+  const meals = s.meals.filter((m) => inRange(m.mealDate));
+  const home = meals.filter((m) => m.sourceType === 'home').length;
+  const wasted = s.waste.filter((w) => inRange(w.date)).length;
+  const best = cooks.find((c) => c.rating === 'good')?.recipeName;
+  const flow = pantryFlow(s, start, end);
+  const lines: string[] = [];
+  if (cooks.length) lines.push(`🍳 직접 요리 ${cooks.length}번${newDishes.length ? ` · 처음 해 본 요리 ${newDishes.slice(0, 3).join('·')}` : ''}`);
+  if (usedKinds.size) lines.push(`🥬 냉장고 재료 ${usedKinds.size}가지를 요리에 썼어요${usedWon >= 1000 ? `(약 ${(Math.round(usedWon / 100) * 100).toLocaleString()}원어치, 평균가 기준)` : ''}`);
+  if (meals.length) lines.push(`🍚 기록한 식사 ${meals.length}끼 중 집밥 ${home}끼`);
+  if (best) lines.push(`😋 이번 주 가장 맛있었던 것: ${best}`);
+  if (flow.total > 0) lines.push(`💰 식비 약 ${flow.total.toLocaleString()}원(장보기 ${flow.spent.toLocaleString()} · 배달·외식 ${flow.mealCost.toLocaleString()})`);
+  lines.push(wasted ? `🗑️ 버린 재료 ${wasted}개 — 다음 주엔 하나 줄여 봐요` : s.ingredients.length || cooks.length ? '🌱 이번 주 버린 재료 0개!' : '');
+  return { lines: lines.filter(Boolean), hasData: cooks.length + meals.length > 0 };
+}

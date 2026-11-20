@@ -78,6 +78,8 @@ export const initialState: AppState = {
   mealPlan: [],
   reports: [],
   dismissedSuggestions: {},
+  favorites: [],
+  recipeNotes: {},
   visit: { last: null, previous: null },
 };
 
@@ -459,6 +461,19 @@ export const actions = {
   removeMealPlan(id: string) {
     remember('식단에서 뺌');
     setState((s) => ({ ...s, mealPlan: s.mealPlan.filter((e) => e.id !== id) }));
+  },
+
+  toggleFavorite(recipeId: string) {
+    setState((s) => ({ ...s, favorites: s.favorites.includes(recipeId) ? s.favorites.filter((x) => x !== recipeId) : [recipeId, ...s.favorites] }));
+  },
+  /** 레시피 노트 저장(빈 글이면 지움) */
+  setRecipeNote(recipeId: string, note: string) {
+    setState((s) => {
+      const notes = { ...s.recipeNotes };
+      if (note.trim()) notes[recipeId] = { note: note.trim(), updatedAt: new Date().toISOString() };
+      else delete notes[recipeId];
+      return { ...s, recipeNotes: notes };
+    });
   },
 
   dismissSuggestion(id: string) {
