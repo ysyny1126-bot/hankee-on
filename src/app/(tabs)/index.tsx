@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
-import { MealStage } from '@/components/meal-stage';
+import { KitchenHero } from '@/components/kitchen-hero';
 import { TidyCard } from '@/components/tidy-card';
 import { FirstWeekGuide } from '@/components/first-week';
 import { PlanCatchUp } from '@/components/plan-catch-up';
@@ -15,7 +15,7 @@ import { actions, useAllRecipes, useAppState } from '@/data/store';
 import type { Ingredient, MealRecord, MealType, Recipe } from '@/data/types';
 import { MEAL_LABEL } from '@/logic/analysis';
 import { coachState } from '@/logic/coach';
-import { addDays, daysUntil, fromDateKey, toDateKey } from '@/logic/dates';
+import { addDays, daysUntil, fromDateKey, toDateKey, weekStart } from '@/logic/dates';
 import { mealEmoji } from '@/logic/food-emoji';
 import type { RecipeMatch } from '@/logic/inventory';
 import { topReasons } from '@/logic/recommend';
@@ -65,12 +65,17 @@ export default function Home() {
 
   const d = fromDateKey(today);
   const dateLabel = `${d.getMonth() + 1}월 ${d.getDate()}일 ${WEEKDAY[d.getDay()]}요일`;
-  // 무대 맨 위 한마디: 코치가 오늘 상황을 말해 주고, 메뉴 제안과 겹치면 기본 인사로
-  const kicker = !menu
-    ? `${p.nickname}님, 반가워요. 오늘은 한 끼부터 가볍게 시작해요`
+
+  // 캐릭터 말풍선은 짧게(두 줄 이내)
+  const bubble = !menu
+    ? '냉장고부터 채워 볼까요?'
     : coach.moment === 'next_menu' || coach.moment === 'start'
-      ? `${p.nickname}님, 냉장고 속 재료로 골라 봤어요`
+      ? '냉장고 열어 볼래요?'
       : coach.text;
+  // 이번 주 집밥 횟수(월요일부터) · 집밥 목표가 있으면 그 값, 없으면 5회
+  const wk = weekStart(today);
+  const homeThisWeek = s.meals.filter((x) => x.mealDate >= wk && x.mealDate <= today && x.sourceType === 'home').length;
+  const homeGoal = s.goals.find((g) => g.goalType === 'home_cooking' && g.status === 'active')?.targetValue ?? 5;
 
   const choose = (m: RecipeMatch) => {
     actions.chooseMeal(today, slot, m.recipe.id, topReasons(m, 2).join(' · '));
@@ -85,16 +90,17 @@ export default function Home() {
   return (
     <Screen edges={[]}>
       {/* 1~3. 오늘의 한 끼 무대: 코치 한마디 → 냉장고 재료가 캐릭터 주위로 → 캐릭터가 요리를 들고 제안 */}
-      <MealStage
+      <KitchenHero
         characterId={p.characterId}
-        kicker={kicker}
-        m={menu}
-        chosen={!!chosen}
+        dateLabel={dateLabel}
         stock={s.ingredients}
         firstUse={firstUse}
-        dateLabel={dateLabel}
-        mood={menu ? 'happy' : coach.mood}
+        m={menu}
+        chosen={!!chosen}
         when={when}
+        bubble={bubble}
+        homeCount={homeThisWeek}
+        homeGoal={homeGoal}
         canSwap={candidates.length > 1 || !!chosen}
         onChoose={() => menu && choose(menu)}
         onCook={() => menu && router.push(`/recipe/${menu.recipe.id}?prep=1`)}
@@ -102,7 +108,7 @@ export default function Home() {
       />
 
       {/* 메뉴 카드 바로 아래: 먹은 음식 기록하기 */}
-      <View style={styles.recordBar}>
+      <View style={[styles.recordBar, { marginTop: space.md }]}>
         <T v="bodyBold" style={{ flex: 1 }}>먹은 음식 기록하기</T>
         <SmallAction icon="camera" label="사진" onPress={() => router.push(`/meal-record/edit?type=${slot}&mode=photo`)} />
         <SmallAction icon="pencil" label="메모" onPress={() => router.push(`/meal-record/edit?type=${slot}`)} />
