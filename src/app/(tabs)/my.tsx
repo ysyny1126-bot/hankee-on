@@ -1,16 +1,16 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
-import { Icon } from '@/components/icon';
-import { Bars, IconButton, PageHeader, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
+import { Icon, type IconName } from '@/components/icon';
+import { WeekStrip } from '@/components/week-strip';
+import { IconButton, PageHeader, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
 import { clay, color, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import { analyzePeriod, goalProgress, thisWeek, usedValue, wasteStats } from '@/logic/analysis';
-import { addDays, fromDateKey, toDateKey } from '@/logic/dates';
+import { toDateKey } from '@/logic/dates';
 
-const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 
 /** 나: 주간 리포트 · 목표 · 아낀 돈/낭비 · 장보기 · 설정 */
 export default function My() {
@@ -18,7 +18,6 @@ export default function My() {
   const today = toDateKey();
   const { start, end } = thisWeek();
   const a = useMemo(() => analyzePeriod(s.meals, start, end), [s.meals, start, end]);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const goals = s.goals.filter((g) => g.status === 'active');
   const ws = wasteStats(s);
   const saved = usedValue(s);
@@ -45,7 +44,8 @@ export default function My() {
           <T v="h3">이번 주</T>
           <T v="small" c={color.textMuted}>리포트 ›</T>
         </Row>
-        <Bars data={days.map((d) => ({ label: WEEK[fromDateKey(d).getDay()], value: s.meals.filter((m) => m.mealDate === d).length, highlight: d === today }))} height={70} />
+        {/* 홈·기록 탭과 같은 요일 줄(기록한 끼니만큼 채움) */}
+        <WeekStrip meals={s.meals} plan={s.mealPlan} />
         <Row style={{ justifyContent: 'space-around' }}>
           <Num v={`${a.totalMeals}`} u="끼" l="식사" />
           <Num v={`${a.distinctIngredients.length}`} u="가지" l="식재료" />
@@ -88,15 +88,27 @@ export default function My() {
         </Box>
       </Row>
 
-      {/* 장보기 */}
-      <Box onPress={() => router.push('/shopping')}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T v="h3">🛒 장보기 {shop.length}</T>
-          <T v="small" c={color.textMuted}>›</T>
-        </Row>
-        {shop.length ? <T v="small" c={color.textSub} numberOfLines={1}>{shop.slice(0, 5).map((x) => x.name).join(' · ')}</T> : null}
-      </Box>
+      {/* 바로 가기: 같은 모양의 줄로(카드를 여러 개 늘어놓지 않음) */}
+      <View style={{ ...clay, overflow: 'hidden' }}>
+        <LinkRow icon="list" label="식사 기록 모아보기" sub={`${s.meals.length}끼`} href="/meals" first />
+        <LinkRow icon="calendar" label="이번 주 식단" sub={s.mealPlan.filter((e) => e.date >= today).length ? `${s.mealPlan.filter((e) => e.date >= today && e.status !== 'done').length}끼 계획` : '원할 때만'} href="/plan" />
+        <LinkRow icon="cart" label="장보기 목록" sub={shop.length ? `살 것 ${shop.length}개` : '비어 있어요'} href="/shopping" />
+        <LinkRow icon="target" label="식생활 목표" sub={goals.length ? `${goals.length}개 진행 중` : '없어도 괜찮아요'} href="/goals" />
+        <LinkRow icon="settings" label="설정" sub="캐릭터·식비·알레르기" href="/settings" />
+      </View>
     </Screen>
+  );
+}
+
+function LinkRow({ icon, label, sub, href, first }: { icon: IconName; label: string; sub: string; href: Href; first?: boolean }) {
+  return (
+    <Pressable onPress={() => router.push(href)} accessibilityRole="button" accessibilityLabel={`${label}, ${sub}`}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: space.lg, minHeight: 56, borderTopWidth: first ? 0 : 1, borderTopColor: color.border, backgroundColor: pressed ? color.surfaceAlt : 'transparent' })}>
+      <Icon name={icon} size={20} c={color.textSub} />
+      <T v="bodyBold" style={{ flex: 1 }}>{label}</T>
+      <T v="small" c={color.textMuted}>{sub}</T>
+      <Icon name="chevron" size={16} c={color.textMuted} />
+    </Pressable>
   );
 }
 

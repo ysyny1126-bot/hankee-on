@@ -489,7 +489,11 @@ export const actions = {
 
   /** 식단 다시 짜기: 이미 먹은(완료) 끼니는 남기고, 그 날짜의 나머지만 바꾼다 */
   setMealPlan(entries: MealPlanEntry[], replaceDates: string[]) {
-    setState((s) => ({ ...s, mealPlan: [...s.mealPlan.filter((e) => e.status === 'done' || !replaceDates.includes(e.date)), ...entries] }));
+    setState((s) => {
+      const kept = s.mealPlan.filter((e) => e.status === 'done' || !replaceDates.includes(e.date));
+      const doneSlot = new Set(kept.filter((e) => e.status === 'done').map((e) => `${e.date}|${e.mealType}`));
+      return { ...s, mealPlan: [...kept, ...entries.filter((e) => !doneSlot.has(`${e.date}|${e.mealType}`))] };
+    });
   },
   /**
    * A3: 못 먹은 끼니 미루기 — 다음 날(지난 날짜면 오늘부터) 같은 끼니의 빈자리로 옮긴다.
@@ -510,6 +514,8 @@ export const actions = {
   },
   /** 오늘의 한 끼 고르기: 같은 날·같은 끼니에 있던 계획은 이 메뉴로 바꾼다(다른 끼니는 그대로) */
   chooseMeal(date: string, mealType: MealPlanEntry['mealType'], recipeId: string, reason: string) {
+    // 이미 먹고 기록한 끼니에는 계획을 겹쳐 넣지 않는다(화면은 다음 끼니를 넘겨준다)
+    if (state.mealPlan.some((e) => e.date === date && e.mealType === mealType && e.status === 'done')) return;
     setState((s) => ({
       ...s,
       mealPlan: [...s.mealPlan.filter((e) => !(e.date === date && e.mealType === mealType && e.status !== 'done')), { id: newId('plan_'), date, mealType, recipeId, reason }],

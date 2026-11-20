@@ -11,7 +11,7 @@ import { BUDGET_BANDS, COOK_TIME_BANDS, DISLIKE_OPTIONS, FRIDGE_SIZES, FRIDGE_SP
 
 import { AI_MODEL_NAME, hasAIKey } from '@/ai/gemini';
 import { confirmAsync, notify } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Field, Row, Screen, SectionHeader, Segmented, Stepper, T, OnOff, TagPicker } from '@/components/ui';
+import { Badge, Button, Card, Chip, Field, Row, Screen, SectionHeader, Segmented, Stepper, T, OnOff, TagPicker, Intro } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
 import { buildDemoState, buildScenario, DEMO_SCENES } from '@/data/demo';
@@ -35,6 +35,7 @@ export default function Settings() {
 
   return (
     <Screen edges={['bottom']}>
+      <Intro>바꾼 내용은 바로 추천에 반영돼요. 모르는 항목은 비워 둬도 괜찮아요.</Intro>
       <SectionHeader title="내 캐릭터" />
       <Row gap={space.sm}>
         {CHARACTERS.map((c) => {

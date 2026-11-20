@@ -14,6 +14,7 @@ import type { RecipeMatch } from '@/logic/inventory';
 import { topReasons } from '@/logic/recommend';
 import { expiringIngredients, rankForUser } from '@/logic/suggestions';
 import { isUsable } from '@/logic/tidy';
+import { nextMealSlot } from '@/logic/planner';
 
 /** 카드 윗부분 색: 메뉴마다 번갈아(정보가 아니라 구분용) */
 const TINTS = ['#FFF1DC', '#FDE9E2', '#E8F4EA', '#EAF1FA', '#F6ECF6'];
@@ -40,8 +41,7 @@ export default function MenuDeck() {
   const deck = ranked.filter((m) => m.coverage >= 0.5 && !leftoverRecipes.has(m.recipe.id)).slice(0, 12);
   const ready = ranked.filter((m) => m.missingRequired.length === 0).length;
 
-  const hour = new Date().getHours();
-  const slot: MealType = hour < 10 ? 'breakfast' : hour < 15 ? 'lunch' : 'dinner';
+  const slot: MealType = nextMealSlot(s);
   const current = deck[Math.min(idx, deck.length - 1)];
 
   const pick = (m: RecipeMatch) => {

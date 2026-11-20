@@ -3,7 +3,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
-import { Button, Card, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
+import { Button, Card, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { findCatalog, sameIngredient } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
@@ -80,6 +80,7 @@ export default function Shopping() {
 
   return (
     <Screen edges={['bottom']}>
+      <Intro>살 것을 적어 두고, 산 뒤에는 체크해서 냉장고에 한 번에 넣어요.</Intro>
       <Row>
         <View style={{ flex: 1 }}><Field placeholder="살 것 추가 (예: 우유)" value={name} onChangeText={setName} onSubmitEditing={add} returnKeyType="done" /></View>
         <Button title="추가" small onPress={add} />

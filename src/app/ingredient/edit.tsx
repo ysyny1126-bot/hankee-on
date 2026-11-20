@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { readExpiryFromPackage, hasAIKey } from '@/ai/gemini';
 import { pickPhoto } from '@/ai/photo';
 import { confirmAsync, notify } from '@/components/dialog';
-import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T } from '@/components/ui';
+import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T, Intro } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
 import { findCatalog, findCatalogExact, INGREDIENT_CATALOG, keepInfo } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
@@ -115,6 +115,7 @@ export default function IngredientEdit() {
     }>
       <RStack.Screen options={{ title: existing ? '식재료 수정' : '식재료 등록' }} />
       {added.length > 0 && <T v="small" c={color.brandDark}>✓ 방금 등록: {added.join(', ')}</T>}
+      {!existing && <Intro>이름만 적어도 등록돼요. 나머지는 나중에 고칠 수 있어요.</Intro>}
       <Field label="재료 이름" placeholder="예: 두부" value={name} onChangeText={onName} onBlur={() => applyCatalog(name.trim())} />
       {suggestions.length > 0 && (
         <Row wrap>{suggestions.map((c) => <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => applyCatalog(c.name)} />)}</Row>

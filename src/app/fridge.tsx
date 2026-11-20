@@ -6,7 +6,7 @@ import { confirmAsync, notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { TidyCard } from '@/components/tidy-card';
 import { FridgeArt } from '@/components/fridge-art';
-import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
+import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { findCatalog, keepInfo, sameIngredient } from '@/data/catalog';
 import { convert } from '@/logic/units';
@@ -38,6 +38,7 @@ export default function Fridge() {
         <Button title="직접 추가" icon="✏️" kind="secondary" style={{ flex: 1 }} href="/ingredient/edit" />
       </Row>
 
+      <Intro>재료를 누르면 수량·소비기한을 고치거나 다 썼다고 표시할 수 있어요.</Intro>
       <TidyCard stock={s.ingredients} max={20} />
       {s.ingredients.length > 0 && (
         <Segmented options={[{ key: 'shelf', label: '선반으로 보기' }, { key: 'list', label: '빠르게 고치기' }]} value={mode} onChange={setMode} />

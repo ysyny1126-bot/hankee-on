@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { Badge, Bars, Button, Card, Chip, ProgressBar, Row, Screen, Segmented, T } from '@/components/ui';
+import { Badge, Bars, Button, Card, Chip, ProgressBar, Row, Screen, Segmented, T, Intro } from '@/components/ui';
 import { router } from 'expo-router';
 import { WeekRecap } from '@/components/week-recap';
 import { color, space } from '@/constants/tokens';
@@ -56,6 +56,7 @@ export default function Report() {
 
   return (
     <Screen edges={['bottom']}>
+      <Intro>남긴 기록으로 식생활을 돌아봐요. 숫자는 참고용이에요.</Intro>
       <Segmented options={[{ key: 'daily', label: '일간' }, { key: 'weekly', label: '주간' }, { key: 'monthly', label: '월간' }]} value={period} onChange={(p) => { setPeriod(p); setOffset(0); }} />
       <Row style={{ justifyContent: 'space-between' }}>
         <Chip label="‹ 이전" onPress={() => setOffset(offset + 1)} />

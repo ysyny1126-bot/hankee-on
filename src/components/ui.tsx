@@ -174,6 +174,14 @@ export function SectionHeader({ title, action, href, onPress }: { title: string;
   );
 }
 
+/**
+ * 화면 소개 한 줄: 들어오자마자 '여기서 무엇을 할 수 있는지' 알게 한다(제목은 위 머리글에 있음).
+ * 말은 짧게, 부담 주지 않게.
+ */
+export function Intro({ children }: { children: ReactNode }) {
+  return <T v="small" c={color.textSub} style={{ marginTop: -space.xs }}>{children}</T>;
+}
+
 /** 빈 화면: 무엇이 비었는지 + 다음 행동. art가 있으면 이모지 대신 브랜드 그림(손그림 냉장고 등) */
 export function Empty({ emoji, title, body, children, art }: { emoji: string; title: string; body?: string; children?: ReactNode; art?: ReactNode }) {
   return (

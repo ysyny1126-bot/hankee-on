@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Emoji, Empty, ListItem, Row, Screen, Segmented, T } from '@/components/ui';
+import { Badge, Button, Card, Chip, Emoji, Empty, ListItem, Row, Screen, Segmented, T, Intro } from '@/components/ui';
 import { PlanCatchUp } from '@/components/plan-catch-up';
 import { color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
@@ -59,6 +59,7 @@ export default function Meal() {
 
   return (
     <Screen edges={['bottom']}>
+      <Intro>냉장고 재료로 끼니를 미리 정해 둬요. 바꾸거나 빼도 괜찮아요.</Intro>
       <Segmented options={[{ key: 'today', label: '오늘' }, { key: 'week', label: '이번 주(7일)' }]} value={view} onChange={setView} />
       <Row>
         <Chip label="아침 포함" selected={withBreakfast} onPress={() => setWithBreakfast(!withBreakfast)} />
@@ -75,7 +76,9 @@ export default function Meal() {
         <Empty emoji="🗓️" title="아직 식단이 없어요" body="냉장고 재료와 취향을 바탕으로 한 번에 짜 드려요. 마음에 안 드는 끼니는 빼면 돼요." />
       ) : (
         dates.map((d) => {
-          const entries = planned.filter((p) => p.date === d).sort((a, b) => ['breakfast', 'lunch', 'dinner', 'snack'].indexOf(a.mealType) - ['breakfast', 'lunch', 'dinner', 'snack'].indexOf(b.mealType));
+          // 같은 끼니에 '먹음'이 있으면 그 끼니의 남은 계획은 숨긴다(예전에 겹쳐 들어간 것 정리)
+          const doneTypes = new Set(planned.filter((p) => p.date === d && p.status === 'done').map((p) => p.mealType));
+          const entries = planned.filter((p) => p.date === d && (p.status === 'done' || !doneTypes.has(p.mealType))).sort((a, b) => ['breakfast', 'lunch', 'dinner', 'snack'].indexOf(a.mealType) - ['breakfast', 'lunch', 'dinner', 'snack'].indexOf(b.mealType));
           if (!entries.length) return null;
           return (
             <Card key={d}>

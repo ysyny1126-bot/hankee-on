@@ -1,5 +1,5 @@
 import type { AppState, MealPlanEntry, MealType } from '@/data/types';
-import { addDays, daysUntil, newId } from './dates';
+import { addDays, daysUntil, newId, toDateKey } from './dates';
 import { consumeVirtual, rankRecipes } from './inventory';
 import { needsExpiryCheck } from './tidy';
 import { rankContext, topReasons } from './recommend';
@@ -60,4 +60,17 @@ export function generatePlan(s: AppState, startDate: string, days: number, mealT
     }
   }
   return out;
+}
+
+/**
+ * 지금 정할 끼니: 시간대 기준 끼니를 이미 먹고 기록했으면 그다음 끼니(점심 먹은 뒤 → 저녁).
+ * 홈과 '내 냉장고' 메뉴 카드가 같은 끼니에 계획을 넣도록 한곳에서 계산한다.
+ */
+export function nextMealSlot(s: AppState, now = new Date()): MealType {
+  const order: MealType[] = ['breakfast', 'lunch', 'dinner'];
+  const h = now.getHours();
+  const cur: MealType = h < 10 ? 'breakfast' : h < 15 ? 'lunch' : 'dinner';
+  const today = toDateKey(now);
+  const eaten = (t: MealType) => s.meals.some((m) => m.mealDate === today && m.mealType === t);
+  return order.slice(order.indexOf(cur)).find((t) => !eaten(t)) ?? cur;
 }

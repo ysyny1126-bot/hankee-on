@@ -133,30 +133,33 @@ export default function ScanFridge() {
   return (
     <Screen edges={['bottom']} footer={list.length ? <Button title={`선택한 ${checkedCount}개 등록`} onPress={save} disabled={!checkedCount} /> : undefined}>
       {!aiOn && (
-        <Card tone="warn">
-          <T v="bodyBold">AI 사진 분석이 꺼져 있어요</T>
+        <Card tone="info">
+          <T v="bodyBold">{hasAIKey() ? '사진 인식이 꺼져 있어요' : '사진 인식은 준비 중이에요'}</T>
           <T v="small" c={color.textSub}>
-            {hasAIKey() ? '사진은 동의 없이 밖으로 보내지 않아요. 설정의 ‘사진을 AI로 분석하기’를 켜면 사용할 수 있어요.' : 'AI 키가 아직 연결되지 않았어요(개발 중). 아래에서 직접 등록할 수 있어요.'}
+            {hasAIKey() ? '사진은 동의 없이 밖으로 보내지 않아요. 설정의 ‘사진을 AI로 분석하기’를 켜면 쓸 수 있어요.' : '아래 재료를 누르면 바로 냉장고에 넣을 수 있어요. 사진은 찍어 두고 보면서 고르셔도 돼요.'}
           </T>
         </Card>
       )}
 
       {/* 1순위: 사진으로 등록 */}
       <Card>
-        {photo ? <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" /> : (
+        {photo ? <Image source={{ uri: photo }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" /> : !aiOn ? (
+          <T v="small" c={color.textSub}>냉장고를 찍어 두면, 사진을 보면서 아래에서 재료를 고를 수 있어요.</T>
+        ) : (
           <View style={{ paddingVertical: space.sm, gap: space.xs }}>
             <T v="h3">📷 이렇게 찍으면 잘 찾아요</T>
             <T v="small" c={color.textSub}>· 냉장고 전체 말고 <T v="small" style={{ fontWeight: '700' }}>한 칸씩</T> 가까이{'\n'}· 문을 활짝 열고 밝은 곳에서 정면으로{'\n'}· 봉지 속 재료는 꺼내거나 이름이 보이게{'\n'}· 여러 장 찍으면 결과가 계속 더해져요</T>
           </View>
         )}
         <Row gap={space.sm}>
-          <Button title={photo ? '한 칸 더 찍기' : '촬영'} icon="📷" style={{ flex: 1 }} onPress={() => run('camera')} loading={loading} />
+          {/* 사진 인식을 못 쓸 때는 촬영이 주된 행동이 아니므로 보조 버튼으로 */}
+          <Button title={photo ? '한 칸 더 찍기' : aiOn ? '촬영' : '사진 찍어 두기'} icon="📷" kind={aiOn ? 'primary' : 'secondary'} style={{ flex: 1 }} onPress={() => run('camera')} loading={loading} />
           <Button title="앨범" icon="🖼️" kind="secondary" style={{ flex: 1 }} onPress={() => run('library')} disabled={loading} />
         </Row>
         {loading && <T v="small" c={color.textSub} style={{ textAlign: 'center' }}>사진 속 재료를 찾고 있어요… (보통 수 초~수십 초)</T>}
         {error ? <T v="small" c={color.danger}>{error}</T> : null}
         {stat && <T v="tiny" c={color.textMuted}>사진 {stat.kb >= 1024 ? `${(stat.kb / 1024).toFixed(1)}MB` : `${stat.kb}KB`} · 분석 {stat.sec}초 · 후보 {stat.found}개 — 후보는 틀릴 수 있으니 꼭 확인해 주세요</T>}
-        {photo && !aiOn && <T v="small" c={color.textSub}>지금은 AI 분석을 쓸 수 없어서, 사진을 보며 아래에서 직접 추가해 주세요.</T>}
+        {photo && !aiOn && <T v="small" c={color.textSub}>사진을 보면서 아래에서 재료를 눌러 주세요.</T>}
         {picked && <Button title="이 사진을 홈 냉장고 그림으로 쓰기" kind="ghost" small onPress={useAsHome} />}
       </Card>
 
@@ -188,7 +191,7 @@ export default function ScanFridge() {
         </>
       )}
 
-      <T v="h3">{aiOn ? '직접 추가' : '직접 추가 (자주 쓰는 재료)'}</T>
+      <T v="h3">{aiOn ? '직접 추가' : '재료를 눌러 바로 넣기'}</T>
       <Row wrap>
         {INGREDIENT_CATALOG.filter((c) => c.category !== '양념').slice(0, 30).map((c) => (
           <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => addManual(c.name)} />

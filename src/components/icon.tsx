@@ -27,7 +27,9 @@ export type IconName =
   | 'fridge'
   | 'utensils'
   | 'pencil'
-  | 'bulb';
+  | 'bulb'
+  | 'list'
+  | 'target';
 
 const P = (d: string, k?: string) => <Path key={k ?? d} d={d} />;
 
@@ -53,6 +55,8 @@ const SHAPES: Record<IconName, React.ReactNode[]> = {
   fridge: [P('M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6Z'), P('M5 10h14'), P('M15 7v6')],
   utensils: [P('M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'), P('M7 2v20'), P('M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7')],
   pencil: [P('M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z')],
+  list: [P('M8 6h13'), P('M8 12h13'), P('M8 18h13'), P('M3 6h.01'), P('M3 12h.01'), P('M3 18h.01')],
+  target: [<Circle key="a" cx={12} cy={12} r={10} />, <Circle key="b" cx={12} cy={12} r={6} />, <Circle key="c" cx={12} cy={12} r={2} />],
   bulb: [P('M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'), P('M9 18h6'), P('M10 22h4')],
 };
 

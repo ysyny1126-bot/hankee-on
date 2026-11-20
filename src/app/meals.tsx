@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 
-import { Button, Card, Empty, ListItem, Screen, T } from '@/components/ui';
+import { Button, Card, Empty, ListItem, Screen, T, Intro } from '@/components/ui';
 import { color, radius } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import { MEAL_LABEL, SOURCE_LABEL } from '@/logic/analysis';
@@ -12,8 +12,9 @@ export default function Meals() {
   const dates = [...new Set(sorted.map((m) => m.mealDate))];
   return (
     <Screen edges={['bottom']}>
+      <Intro>지금까지 남긴 식사를 날짜별로 모아 봐요. 눌러서 고칠 수 있어요.</Intro>
       <Button title="식사 기록 추가" icon="📸" href="/meal-record/edit" />
-      {dates.length === 0 && <Empty emoji="🍱" title="아직 기록이 없어요" />}
+      {dates.length === 0 && <Empty emoji="🍱" title="지금 먹은 것부터 편하게 기록해요" body="사진 한 장이나 음식 이름만 있어도 돼요." />}
       {dates.map((d) => (
         <Card key={d}>
           <T v="bodyBold">{formatKoreanDate(d)}</T>

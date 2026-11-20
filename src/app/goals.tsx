@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { confirmAsync } from '@/components/dialog';
-import { Badge, Button, Card, Chip, Field, ProgressBar, Row, Screen, SectionHeader, Stepper, T } from '@/components/ui';
+import { Badge, Button, Card, Chip, Field, ProgressBar, Row, Screen, SectionHeader, Stepper, T, Intro } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
 import { actions, useAppState } from '@/data/store';
 import type { GoalType } from '@/data/types';
@@ -37,6 +37,7 @@ export default function Goals() {
 
   return (
     <Screen edges={['bottom']}>
+      <Intro>지키지 못한 주가 있어도 괜찮아요. 진행 상황은 기록에서 자동으로 계산해요.</Intro>
       <SectionHeader title="내 목표" />
       {s.goals.length === 0 && <T v="small" c={color.textSub}>아직 목표가 없어요. 아래에서 하나 골라 보세요.</T>}
       {s.goals.map((g) => {
@@ -58,7 +59,7 @@ export default function Goals() {
             )}
             <Row style={{ justifyContent: 'flex-end' }}>
               <Button title={g.status === 'active' ? '잠시 쉬기' : '다시 시작'} kind="ghost" small onPress={() => actions.updateGoal(g.id, { status: g.status === 'active' ? 'paused' : 'active' })} />
-              <Button title="삭제" kind="danger" small onPress={async () => { if (await confirmAsync('목표 삭제', `‘${g.title}’ 목표를 지울까요?`, '삭제')) actions.removeGoal(g.id); }} />
+              <Button title="지우기" kind="ghost" small onPress={async () => { if (await confirmAsync('목표 삭제', `‘${g.title}’ 목표를 지울까요?`, '삭제')) actions.removeGoal(g.id); }} />
             </Row>
           </Card>
         );
