@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasAIKey } from '@/ai/gemini';
@@ -11,11 +11,14 @@ import { Icon } from '@/components/icon';
 import { CoachPicker } from '@/components/coach-picker';
 import { notify } from '@/components/dialog';
 import { Welcome } from '@/components/welcome';
-import { Button, Choice, Field, OnOff, Row, T, TagPicker } from '@/components/ui';
+import { Badge, Button, Choice, Field, OnOff, Row, T, TagPicker } from '@/components/ui';
+import { Sheet } from '@/components/sheet';
+import { Group, Line } from '@/components/summary-list';
 import { CHARACTERS } from '@/constants/characters';
 import {
   BODY_GOALS,
   BUDGET_BANDS,
+  budgetLabel,
   COOK_TIME_BANDS,
   DISLIKE_OPTIONS,
   FRIDGE_SIZES,
@@ -71,10 +74,22 @@ const START: Draft = {
   coachId: 'warm',
 };
 
-const STEPS = ['nickname', 'lifestyle', 'budget', 'fridge', 'cooking', 'goals', 'restrictions', 'character', 'coach'] as const;
+const STEPS = ['nickname', 'lifestyle', 'summary', 'restrictions', 'character', 'coach'] as const;
 type Step = (typeof STEPS)[number];
 /** 건너뛸 수 있는 질문(대략적인 정보·목표 등) */
-const SKIPPABLE: Step[] = ['lifestyle', 'budget', 'fridge', 'cooking', 'goals'];
+const SKIPPABLE: Step[] = ['lifestyle', 'summary'];
+
+/** 요약 단계에서 눌러 고치는 항목 */
+type Topic = 'budget' | 'cookTime' | 'skill' | 'plan' | 'fridge' | 'goals';
+
+const TOPIC_TEXT: Record<Topic, { title: string; sub: string }> = {
+  budget: { title: '한 달 식비는 대략 얼마예요?', sub: '정확하지 않아도 돼요. 장볼 재료가 예산에 맞는 메뉴를 먼저 골라 드려요.' },
+  cookTime: { title: '요리에 쓸 수 있는 시간은요?', sub: '평일 한 끼 기준이에요. 이 시간 안에 끝나는 메뉴를 먼저 보여 드려요.' },
+  skill: { title: '요리 경험은 어느 정도예요?', sub: '초보라면 쉬운 메뉴부터 골라 드려요.' },
+  plan: { title: '식단은 어떻게 짤까요?', sub: '홈과 식단 화면이 처음 보여 줄 범위예요.' },
+  fridge: { title: '냉장고는 어떤가요?', sub: "크기와 남은 공간을 알면 '사지 말고 있는 걸로' 하는 메뉴를 더 챙겨요." },
+  goals: { title: '이루고 싶은 게 있나요?', sub: '없어도 괜찮아요. 목표 없이도 모든 기능을 쓸 수 있어요.' },
+};
 
 /**
  * 시작하기: 한 화면에 한 가지 질문, 위에는 진행률과 뒤로 가기.
@@ -84,7 +99,7 @@ export default function Onboarding() {
   const [welcome, setWelcome] = useState(true); // 첫 화면(환영) → 9단계 질문
   const [i, setI] = useState(0);
   const [d, setD] = useState<Draft>(START);
-  const touched = useRef(new Set<keyof Draft>());
+  const [touched, setTouched] = useState<Set<keyof Draft>>(() => new Set()); // 사용자가 직접 고른 항목
   const [customBudget, setCustomBudget] = useState('');
   const [photo, setPhoto] = useState<PickedPhoto | null>(null);
   const [usePhotoAtHome, setUsePhotoAtHome] = useState(true);
@@ -92,10 +107,12 @@ export default function Onboarding() {
   const [healthConsent, setHealthConsent] = useState(true);
   const [personal, setPersonal] = useState(true);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [topic, setTopic] = useState<Topic | null>(null);
+  const { height } = useWindowDimensions();
 
   const step = STEPS[i];
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => {
-    touched.current.add(k);
+    setTouched((t) => (t.has(k) ? t : new Set(t).add(k)));
     setD((x) => ({ ...x, [k]: v }));
   };
 
@@ -106,7 +123,7 @@ export default function Onboarding() {
       for (const id of x.lifestyles) {
         const l = LIFESTYLES.find((y) => y.id === id);
         for (const [k, v] of Object.entries(l?.defaults ?? {})) {
-          if (touched.current.has(k as keyof Draft)) continue;
+          if (touched.has(k as keyof Draft)) continue;
           if (k === 'householdSize' && typeof v === 'number') next.householdSize = Math.max(next.householdSize, v);
           else if (k === 'budgetBand') {
             const b = BUDGET_BANDS.find((y) => y.id === v);
@@ -123,10 +140,7 @@ export default function Onboarding() {
     if (i < STEPS.length - 1) setI(i + 1);
   };
   const back = () => (i > 0 ? setI(i - 1) : setWelcome(true));
-  const skip = () => {
-    if (step === 'goals') set('profileGoals', []);
-    next();
-  };
+  const skip = () => next(); // 건너뛰면 지금 값(미리 채운 값 포함) 그대로 둔다
 
   const choosePhoto = async (src: 'camera' | 'library') => {
     setPhotoBusy(true);
@@ -140,10 +154,17 @@ export default function Onboarding() {
     }
   };
 
+  // 요약 단계의 '자동' 표시: 생활 유형 기본값이 들어갔고 아직 직접 고치지 않은 항목
+  const DRAFT_KEY: Record<string, string> = { budgetBand: 'budget', monthlyBudget: 'budget', maxCookMinutes: 'cookTime', cookingSkill: 'skill', householdSize: 'household', planHabit: 'planHabit' };
+  const touchedKeys = new Set([...touched].map((k) => DRAFT_KEY[k as string]).filter(Boolean));
+  const autoKeys = new Set(
+    d.lifestyles.flatMap((id) => Object.keys(LIFESTYLES.find((l) => l.id === id)?.defaults ?? {}).map((k) => DRAFT_KEY[k]).filter((k) => k && !touchedKeys.has(k))),
+  );
+
   /** 설정의 '자동' 표시용: 직접 고른 항목과, 생활 유형으로 미리 채워진 항목을 나눠 기록 */
   const profileMarks = () => {
     const map: Record<string, string> = { budgetBand: 'budget', monthlyBudget: 'budget', maxCookMinutes: 'cookTime', cookingSkill: 'skill', householdSize: 'household', planHabit: 'planHabit' };
-    const set = new Set([...touched.current].map((k) => map[k as string]).filter(Boolean));
+    const set = new Set([...touched].map((k) => map[k as string]).filter(Boolean));
     const auto = new Set<string>();
     for (const id of d.lifestyles)
       for (const k of Object.keys(LIFESTYLES.find((l) => l.id === id)?.defaults ?? {})) if (map[k] && !set.has(map[k])) auto.add(map[k]);
@@ -232,98 +253,18 @@ export default function Onboarding() {
             </Q>
           )}
 
-          {step === 'budget' && (
-            <Q title="한 달 식비는 대략 얼마예요?" sub="정확하지 않아도 돼요. 장볼 재료가 예산에 맞는 메뉴를 먼저 골라 드려요.">
-              {BUDGET_BANDS.map((b) => (
-                <Choice key={b.id} label={b.label} selected={d.budgetBand === b.id} onPress={() => { setCustomBudget(''); set('budgetBand', b.id); set('monthlyBudget', b.value); }} />
-              ))}
-              <Field
-                label="직접 입력(만 원)"
-                placeholder="예: 30"
-                keyboardType="number-pad"
-                value={customBudget}
-                onChangeText={(t) => {
-                  const v = t.replace(/[^0-9]/g, '').slice(0, 4);
-                  setCustomBudget(v);
-                  set('budgetBand', v ? 'custom' : null);
-                  set('monthlyBudget', v ? Number(v) * 10000 : null);
-                }}
-              />
-              <Row style={{ justifyContent: 'space-between' }}>
-                <T v="small" c={color.textSub}>함께 먹는 사람(나 포함)</T>
-                <Row gap={space.xs}>
-                  {[1, 2, 3, 4].map((n) => (
-                    <Pressable key={n} onPress={() => set('householdSize', n)} style={{ width: 40, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: d.householdSize === n ? color.brand : color.border, backgroundColor: d.householdSize === n ? color.brandSoft : color.surface }}>
-                      <T v="bodyBold">{n === 4 ? '4+' : n}</T>
-                    </Pressable>
-                  ))}
-                </Row>
-              </Row>
-            </Q>
-          )}
-
-          {step === 'fridge' && (
-            <Q title="냉장고는 어떤가요?" sub="크기와 남은 공간을 알면 '사지 말고 있는 걸로' 하는 메뉴를 더 챙겨요.">
-              <T v="small" c={color.textSub} style={{ fontWeight: '700' }}>전체 크기</T>
-              <Row wrap gap={space.sm}>
-                {FRIDGE_SIZES.map((f) => (
-                  <Tile key={f.id} emoji={f.emoji} label={f.label} sub={f.sub} selected={d.fridgeSize === f.id} onPress={() => set('fridgeSize', f.id)} />
-                ))}
-              </Row>
-              <T v="small" c={color.textSub} style={{ fontWeight: '700' }}>지금 더 넣을 공간</T>
-              <Row gap={space.sm}>
-                {FRIDGE_SPACES.map((f) => (
-                  <Tile key={f.id} basis="30%" emoji={f.emoji} label={f.label} selected={d.fridgeSpace === f.id} onPress={() => set('fridgeSpace', f.id)} />
-                ))}
-              </Row>
-
-              <View style={{ ...clay, padding: space.md, gap: space.sm }}>
-                <T v="bodyBold">📷 냉장고 사진 (선택)</T>
-                {photo ? (
-                  <Image source={{ uri: photo.uri }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" />
-                ) : (
-                  <T v="tiny" c={color.textSub}>올리지 않아도 기본 냉장고 그림으로 시작해요. 문을 열고 한 칸씩 밝게 찍으면 좋아요.</T>
-                )}
-                <Row gap={space.sm}>
-                  <Button title={photo ? '다시 찍기' : '촬영'} kind="secondary" small style={{ flex: 1 }} onPress={() => choosePhoto('camera')} loading={photoBusy} />
-                  <Button title="앨범" kind="secondary" small style={{ flex: 1 }} onPress={() => choosePhoto('library')} disabled={photoBusy} />
-                </Row>
-                {photo && (
-                  <>
-                    <Toggle label="홈 냉장고 그림으로 쓰기" sub="이 기기에만 저장해요" value={usePhotoAtHome} onChange={setUsePhotoAtHome} />
-                    <Toggle label="AI로 재료 찾기" sub="사진을 Google Gemini(무료 등급)로 보내 분석해요. 무료 등급은 구글이 서비스 개선에 쓸 수 있어요." value={aiConsent} onChange={setAiConsent} />
-                    {aiConsent && !hasAIKey() && <T v="tiny" c={color.warn}>AI 키가 아직 연결되지 않아 지금은 분석할 수 없어요. 재료는 직접 넣을 수 있어요.</T>}
-                  </>
-                )}
-              </View>
-            </Q>
-          )}
-
-          {step === 'cooking' && (
-            <Q title="요리에 쓸 수 있는 시간은요?" sub="평일 한 끼 기준이에요. 이 시간 안에 끝나는 메뉴를 먼저 보여 드려요.">
-              <Row wrap gap={space.sm}>
-                {COOK_TIME_BANDS.map((b) => (
-                  <Tile key={b.minutes} label={b.label} selected={d.maxCookMinutes === b.minutes} onPress={() => set('maxCookMinutes', b.minutes)} />
-                ))}
-              </Row>
-              <T v="small" c={color.textSub} style={{ fontWeight: '700', marginTop: space.sm }}>요리 경험</T>
-              {SKILLS.map((k) => (
-                <Choice key={k.key} emoji={k.emoji} label={k.label} sub={k.sub} selected={d.cookingSkill === k.key} onPress={() => set('cookingSkill', k.key)} />
-              ))}
-              <T v="small" c={color.textSub} style={{ fontWeight: '700', marginTop: space.sm }}>식단은 어떻게 짤까요?</T>
-              <Row gap={space.sm}>
-                <Tile emoji="🍱" label="오늘 한 끼씩" selected={d.planHabit === 'today'} onPress={() => set('planHabit', 'today')} />
-                <Tile emoji="🗓️" label="일주일 계획" selected={d.planHabit === 'week'} onPress={() => set('planHabit', 'week')} />
-              </Row>
-            </Q>
-          )}
-
-          {step === 'goals' && (
-            <Q title="이루고 싶은 게 있나요?" sub="없어도 괜찮아요. 목표 없이도 모든 기능을 쓸 수 있어요.">
-              <TagPicker options={GOAL_OPTIONS.map((g) => g.label)} value={d.profileGoals} onChange={(v) => set('profileGoals', v)} placeholder="직접 입력 (예: 아침 꼭 먹기)" />
-              {d.profileGoals.some((g) => BODY_GOALS.includes(g)) && (
-                <T v="tiny" c={color.textSub}>맞춤 영양 계산이 필요하면 키·체중은 나중에 ‘설정’에서 원할 때만 넣으면 돼요. 지금은 묻지 않아요.</T>
-              )}
+          {step === 'summary' && (
+            <Q title="이렇게 시작할게요" sub={d.lifestyles.length ? '생활 유형으로 대략 채워 뒀어요. 바꿀 것만 눌러서 고쳐요.' : '모르는 건 그대로 두셔도 돼요. 바꿀 것만 눌러서 고쳐요.'}>
+              <Group>
+                <Line first label="한 달 식비" value={d.monthlyBudget ? `${budgetLabel(d).replace('(대략)', '')} · ${d.householdSize}명` : '정하지 않음'} empty={!d.monthlyBudget} auto={autoKeys.has('budget')} onPress={() => setTopic('budget')} />
+                <Line label="요리 시간" value={`평일 ${COOK_TIME_BANDS.find((b) => b.minutes === d.maxCookMinutes)?.label ?? `${d.maxCookMinutes}분`}`} auto={autoKeys.has('cookTime')} onPress={() => setTopic('cookTime')} />
+                <Line label="요리 경험" value={SKILLS.find((x) => x.key === d.cookingSkill)?.sub ?? d.cookingSkill} auto={autoKeys.has('skill')} onPress={() => setTopic('skill')} />
+                <Line label="식단 보기" value={d.planHabit === 'week' ? '일주일 계획' : '오늘 한 끼씩'} auto={autoKeys.has('planHabit')} onPress={() => setTopic('plan')} />
+              </Group>
+              <Group note="냉장고와 목표는 없어도 모든 기능을 쓸 수 있어요.">
+                <Line first label="냉장고" value={[FRIDGE_SIZES.find((f) => f.id === d.fridgeSize)?.label, FRIDGE_SPACES.find((f) => f.id === d.fridgeSpace)?.label, photo ? '사진 있음' : ''].filter(Boolean).join(' · ') || '정하지 않음'} empty={!d.fridgeSize && !d.fridgeSpace && !photo} onPress={() => setTopic('fridge')} />
+                <Line label="목표" value={d.profileGoals.length ? d.profileGoals.join(', ') : '없어도 괜찮아요'} empty={!d.profileGoals.length} onPress={() => setTopic('goals')} />
+              </Group>
             </Q>
           )}
 
@@ -381,6 +322,117 @@ export default function Onboarding() {
             <Button title="다음" onPress={next} disabled={!canNext} />
           )}
         </View>
+
+        {/* 요약 단계: 줄을 누르면 그 질문 하나만 아래에서(설정과 같은 방식) */}
+        <Sheet visible={!!topic} onClose={() => setTopic(null)}>
+          {topic ? (
+            <>
+              <T v="h2">{TOPIC_TEXT[topic].title}</T>
+              {autoKeys.has(topic === 'plan' ? 'planHabit' : topic) ? <Badge label="생활 유형으로 미리 골라 뒀어요 · 맞으면 그대로 두세요" tone="fresh" /> : null}
+              <T v="small" c={color.textSub}>{TOPIC_TEXT[topic].sub}</T>
+              <ScrollView style={{ maxHeight: Math.round(height * 0.58) }} contentContainerStyle={{ gap: space.md }} keyboardShouldPersistTaps="handled">
+                {topic === 'budget' && (
+                  <>
+              {BUDGET_BANDS.map((b) => (
+                <Choice key={b.id} label={b.label} selected={d.budgetBand === b.id} onPress={() => { setCustomBudget(''); set('budgetBand', b.id); set('monthlyBudget', b.value); }} />
+              ))}
+              <Field
+                label="직접 입력(만 원)"
+                placeholder="예: 30"
+                keyboardType="number-pad"
+                value={customBudget}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 4);
+                  setCustomBudget(v);
+                  set('budgetBand', v ? 'custom' : null);
+                  set('monthlyBudget', v ? Number(v) * 10000 : null);
+                }}
+              />
+              <Row style={{ justifyContent: 'space-between' }}>
+                <T v="small" c={color.textSub}>함께 먹는 사람(나 포함)</T>
+                <Row gap={space.xs}>
+                  {[1, 2, 3, 4].map((n) => (
+                    <Pressable key={n} onPress={() => set('householdSize', n)} style={{ width: 40, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: d.householdSize === n ? color.brand : color.border, backgroundColor: d.householdSize === n ? color.brandSoft : color.surface }}>
+                      <T v="bodyBold">{n === 4 ? '4+' : n}</T>
+                    </Pressable>
+                  ))}
+                </Row>
+              </Row>
+                  </>
+                )}
+                {topic === 'cookTime' && (
+                  <>
+              <Row wrap gap={space.sm}>
+                {COOK_TIME_BANDS.map((b) => (
+                  <Tile key={b.minutes} label={b.label} selected={d.maxCookMinutes === b.minutes} onPress={() => set('maxCookMinutes', b.minutes)} />
+                ))}
+              </Row>
+                  </>
+                )}
+                {topic === 'skill' && (
+                  <>
+              {SKILLS.map((k) => (
+                <Choice key={k.key} emoji={k.emoji} label={k.label} sub={k.sub} selected={d.cookingSkill === k.key} onPress={() => set('cookingSkill', k.key)} />
+              ))}
+                  </>
+                )}
+                {topic === 'plan' && (
+                  <>
+              <Row gap={space.sm}>
+                <Tile emoji="🍱" label="오늘 한 끼씩" selected={d.planHabit === 'today'} onPress={() => set('planHabit', 'today')} />
+                <Tile emoji="🗓️" label="일주일 계획" selected={d.planHabit === 'week'} onPress={() => set('planHabit', 'week')} />
+              </Row>
+                  </>
+                )}
+                {topic === 'fridge' && (
+                  <>
+              <T v="small" c={color.textSub} style={{ fontWeight: '700' }}>전체 크기</T>
+              <Row wrap gap={space.sm}>
+                {FRIDGE_SIZES.map((f) => (
+                  <Tile key={f.id} emoji={f.emoji} label={f.label} sub={f.sub} selected={d.fridgeSize === f.id} onPress={() => set('fridgeSize', f.id)} />
+                ))}
+              </Row>
+              <T v="small" c={color.textSub} style={{ fontWeight: '700' }}>지금 더 넣을 공간</T>
+              <Row gap={space.sm}>
+                {FRIDGE_SPACES.map((f) => (
+                  <Tile key={f.id} basis="30%" emoji={f.emoji} label={f.label} selected={d.fridgeSpace === f.id} onPress={() => set('fridgeSpace', f.id)} />
+                ))}
+              </Row>
+
+              <View style={{ ...clay, padding: space.md, gap: space.sm }}>
+                <T v="bodyBold">📷 냉장고 사진 (선택)</T>
+                {photo ? (
+                  <Image source={{ uri: photo.uri }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" />
+                ) : (
+                  <T v="tiny" c={color.textSub}>올리지 않아도 기본 냉장고 그림으로 시작해요. 문을 열고 한 칸씩 밝게 찍으면 좋아요.</T>
+                )}
+                <Row gap={space.sm}>
+                  <Button title={photo ? '다시 찍기' : '촬영'} kind="secondary" small style={{ flex: 1 }} onPress={() => choosePhoto('camera')} loading={photoBusy} />
+                  <Button title="앨범" kind="secondary" small style={{ flex: 1 }} onPress={() => choosePhoto('library')} disabled={photoBusy} />
+                </Row>
+                {photo && (
+                  <>
+                    <Toggle label="홈 냉장고 그림으로 쓰기" sub="이 기기에만 저장해요" value={usePhotoAtHome} onChange={setUsePhotoAtHome} />
+                    <Toggle label="AI로 재료 찾기" sub="사진을 Google Gemini(무료 등급)로 보내 분석해요. 무료 등급은 구글이 서비스 개선에 쓸 수 있어요." value={aiConsent} onChange={setAiConsent} />
+                    {aiConsent && !hasAIKey() && <T v="tiny" c={color.warn}>AI 키가 아직 연결되지 않아 지금은 분석할 수 없어요. 재료는 직접 넣을 수 있어요.</T>}
+                  </>
+                )}
+              </View>
+                  </>
+                )}
+                {topic === 'goals' && (
+                  <>
+              <TagPicker options={GOAL_OPTIONS.map((g) => g.label)} value={d.profileGoals} onChange={(v) => set('profileGoals', v)} placeholder="직접 입력 (예: 아침 꼭 먹기)" />
+              {d.profileGoals.some((g) => BODY_GOALS.includes(g)) && (
+                <T v="tiny" c={color.textSub}>맞춤 영양 계산이 필요하면 키·체중은 나중에 ‘설정’에서 원할 때만 넣으면 돼요. 지금은 묻지 않아요.</T>
+              )}
+                  </>
+                )}
+              </ScrollView>
+              <Button title="완료" onPress={() => setTopic(null)} />
+            </>
+          ) : null}
+        </Sheet>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

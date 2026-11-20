@@ -12,7 +12,7 @@ import { BUDGET_BANDS, budgetLabel, COOK_TIME_BANDS, DISLIKE_OPTIONS, FRIDGE_SIZ
 import { AI_MODEL_NAME, hasAIKey } from '@/ai/gemini';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Badge, Button, Chip, Choice, Field, Intro, OnOff, ProgressBar, Row, Screen, Stepper, T, TagPicker } from '@/components/ui';
-import { Icon } from '@/components/icon';
+import { Group, Line } from '@/components/summary-list';
 import { Sheet } from '@/components/sheet';
 import { color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
@@ -374,35 +374,8 @@ function Editor({ k, onDone }: { k: EditKey; onDone: () => void }) {
   }
 }
 
-/** 요약 목록의 묶음(제목 + 같은 모양의 줄들) */
-function Group({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
-  return (
-    <View style={{ gap: 6 }}>
-      <T v="small" c={color.textSub} style={{ fontWeight: '700', marginTop: space.sm }}>{title}</T>
-      <View style={[styles.box, { padding: 0, gap: 0, overflow: 'hidden' }]}>{children}</View>
-      {note ? <T v="tiny" c={color.textMuted}>{note}</T> : null}
-    </View>
-  );
-}
-
-/** 요약 한 줄: 항목 이름 · (자동) · 지금 값 › */
-function Line({ label, value, onPress, first, auto, empty, danger }: { label: string; value: string; onPress: () => void; first?: boolean; auto?: boolean; empty?: boolean; danger?: boolean }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}, ${value}${auto ? ', 생활 유형으로 자동 선택' : ''}. 눌러서 바꾸기`}
-      style={({ pressed }) => [styles.line, !first && styles.lineTop, pressed && { backgroundColor: color.surfaceAlt }]}>
-      <T v="bodyBold">{label}</T>
-      {auto ? <View style={styles.auto}><T v="tiny" c={color.brandDark} style={{ fontWeight: '800' }}>자동</T></View> : null}
-      <T v="small" c={danger ? color.dangerDark : empty ? color.textMuted : color.textSub} numberOfLines={1} style={{ flex: 1, textAlign: 'right' }}>{value}</T>
-      <Icon name="chevron" size={16} c={color.textMuted} />
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   box: { backgroundColor: color.surface, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: space.lg, minHeight: 54 },
-  lineTop: { borderTopWidth: 1, borderTopColor: color.border },
-  auto: { backgroundColor: color.brandSoft, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 },
 });
 
 function Toggle({ label, value, onChange, sub }: { label: string; value: boolean; onChange: (v: boolean) => void; sub?: string }) {
