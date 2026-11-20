@@ -44,3 +44,4 @@ example
 
 # 비밀값(API 키)
 .env
+데이터/
