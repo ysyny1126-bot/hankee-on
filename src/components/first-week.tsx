@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Row, T } from '@/components/ui';
@@ -11,7 +11,7 @@ import { daysSince } from '@/logic/dates';
  * E16 첫 주 안내: 가입 후 7일 동안, 부담 없는 3단계(재료 넣기 → 한 끼 요리 → 식사 기록).
  * 실제 기록으로 완료를 판단하고, 셋 다 하면 사라진다.
  */
-export function FirstWeekGuide() {
+export function FirstWeekGuide({ wrapStyle }: { wrapStyle?: StyleProp<ViewStyle> } = {}) {
   const s = useAppState();
   const start = s.consents.agreedAt;
   if (!start || daysSince(start) >= 7) return null;
@@ -23,7 +23,7 @@ export function FirstWeekGuide() {
   const n = steps.filter((x) => x.done).length;
   if (n === steps.length) return null;
   return (
-    <View style={{ backgroundColor: color.surface, borderRadius: radius.lg, padding: space.md, gap: 8, borderWidth: 1, borderColor: color.border }}>
+    <View style={[{ backgroundColor: color.surface, borderRadius: radius.lg, padding: space.md, gap: 8, borderWidth: 1, borderColor: color.border }, wrapStyle]}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T v="bodyBold">첫 주 가볍게 시작하기</T>
         <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>{n}/{steps.length}</T>

@@ -180,20 +180,25 @@ function Bubble({ item, index, total, width, empty }: { item: StageItem; index: 
   const cx = width / 2;
   const cy = 18 + width * 0.43; // 반원 중심(배경 반원과 같은 중심)
   const size = 58;
+  const BOX = 92;
   const left = cx + R * Math.cos(rad) - size / 2;
   const top = cy - R * Math.sin(rad) - size / 2 + 6;
 
   const need = item.kind === 'need';
   const first = item.kind === 'first';
   return (
-    <Animated.View style={{ position: 'absolute', left, top, width: size, alignItems: 'center', opacity: a, transform: [{ scale: a }] }}>
+    // 이름표가 잘리지 않게 거품보다 넓은 칸(BOX) 안에 가운데 정렬
+    <Animated.View
+      accessible
+      accessibilityLabel={empty ? undefined : `${item.name}${first ? ', 먼저 쓰면 좋은 재료' : need ? ', 더 필요해요' : ''}`}
+      style={{ position: 'absolute', left: left - (BOX - size) / 2, top, width: BOX, alignItems: 'center', opacity: a, transform: [{ scale: a }] }}>
       <View style={[styles.bubble, need && styles.bubbleNeed, first && styles.bubbleFirst]}>
         {empty ? <Icon name="plus" size={18} c={color.textMuted} /> : need ? <T v="tiny" c={color.textSub} style={{ fontWeight: '800' }}>필요</T> : <Text style={{ fontSize: 26 }}>{item.emoji}</Text>}
       </View>
       {!empty && (
         <View style={[styles.label, first && { backgroundColor: color.warnSoft }]}>
           <T v="tiny" c={first ? color.warnDark : need ? color.textSub : color.text} style={{ fontWeight: '800' }} numberOfLines={1}>
-            {item.name}{first ? ' · 먼저' : ''}
+            {item.name}
           </T>
         </View>
       )}
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
   bubble: { width: 58, height: 58, borderRadius: 29, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center', ...shadow.soft },
   bubbleNeed: { backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderStyle: 'dashed', borderColor: 'rgba(95,90,82,0.35)' },
   bubbleFirst: { borderWidth: 3, borderColor: color.warn },
-  label: { marginTop: 4, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, maxWidth: 96 },
+  label: { marginTop: 4, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, maxWidth: 92 },
   equation: { alignItems: 'center', gap: 4, paddingHorizontal: space.lg, marginTop: space.sm },
   actions: { flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, marginTop: space.md },
   primary: { flex: 1, minHeight: 52, borderRadius: 999, backgroundColor: color.brandDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16 },

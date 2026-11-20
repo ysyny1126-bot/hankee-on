@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Character } from '@/components/character';
 import { Icon, type IconName } from '@/components/icon';
@@ -19,8 +19,10 @@ const VALUES: { icon: IconName; text: string }[] = [
  * 로그인은 아직 없으므로 버튼처럼 꾸미지 않고 '준비 중'이라고 알린다.
  */
 export function Welcome({ characterId, onStart, onDemo }: { characterId?: string; onStart: () => void; onDemo: () => void }) {
+  // 아래 식탁 색이 화면 끝(홈 막대 아래)까지 이어지도록 아래 여백은 직접 넣는다
+  const insets = useSafeAreaInsets();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['top']}>
       <View style={{ flex: 1, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' }}>
         <View style={{ paddingHorizontal: 24, paddingTop: space.lg, gap: space.md }}>
           <View style={styles.logo}>
@@ -54,7 +56,7 @@ export function Welcome({ characterId, onStart, onDemo }: { characterId?: string
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 24, paddingBottom: space.md, gap: space.sm, backgroundColor: color.scene }}>
+        <View style={{ paddingHorizontal: 24, paddingBottom: space.md + insets.bottom, gap: space.sm, backgroundColor: color.scene }}>
           <Pressable onPress={onStart} accessibilityRole="button" style={({ pressed }) => [styles.primary, pressed && { opacity: 0.9 }]}>
             <T v="bodyBold" c={color.onBrand}>시작하기</T>
           </Pressable>

@@ -313,7 +313,7 @@ const DRAFTS: Draft[] = [
     steps: ['그릇에 요거트를 담아요.', '바나나를 동그랗게 썰어 올려요.', '시리얼·블루베리·견과류를 뿌려요.', '바로 먹어야 시리얼이 바삭해요.'],
   },
   {
-    id: 'tofu-kimchi', name: '두부김치', emoji: '🧈', timeMinutes: 15, difficulty: '쉬움', tags: ['한식', '볶음'],
+    id: 'tofu-kimchi', name: '두부김치', emoji: '🥢', timeMinutes: 15, difficulty: '쉬움', tags: ['한식', '볶음'],
     ingredients: [I('두부', 0.5, '모'), I('김치', 120, 'g'), I('돼지고기', 60, 'g', { optional: true }), I('대파', 0.2, '대', { optional: true }), I('설탕', 0.3, '큰술', { optional: true })],
     steps: ['두부를 끓는 물에 3분 데쳐 도톰하게 썰어요(전자레인지 1분도 괜찮아요).', '팬에 돼지고기를 볶다가 김치를 넣어 4분 볶아요.', '신 김치면 설탕을 조금 넣어요.', '접시에 두부를 두르고 가운데 김치볶음을 올려요.'],
   },

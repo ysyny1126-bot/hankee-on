@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { notify } from '@/components/dialog';
 import { Button, Row, T } from '@/components/ui';
@@ -31,7 +31,7 @@ function whenLabel(e: MealPlanEntry) {
  * 계획과 실제 연결: 지난 끼니 중 기록이 없는 것을 모아
  * "먹었어요(기록) / 미루기 / 빼기" 중에 고르게 한다.
  */
-export function PlanCatchUp({ max = 3 }: { max?: number }) {
+export function PlanCatchUp({ max = 3, wrapStyle }: { max?: number; wrapStyle?: StyleProp<ViewStyle> }) {
   const s = useAppState();
   const list = missedPlans(s);
   if (!list.length) return null;
@@ -67,7 +67,7 @@ export function PlanCatchUp({ max = 3 }: { max?: number }) {
   };
 
   return (
-    <View style={{ backgroundColor: color.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm, borderWidth: 1, borderColor: color.border }}>
+    <View style={[{ backgroundColor: color.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm, borderWidth: 1, borderColor: color.border }, wrapStyle]}>
       <T v="bodyBold">지난 끼니 확인</T>
       <T v="small" c={color.textSub}>계획했지만 기록이 없어요. 어떻게 됐는지 알려 주시면 식단이 맞춰져요.</T>
       {list.slice(0, max).map((e) => {

@@ -109,9 +109,7 @@ export default function Home() {
       </View>
 
       {/* 첫 주 안내(가입 7일 동안, 셋 다 하면 사라짐) */}
-      <View style={{ marginTop: space.sm }}>
-        <FirstWeekGuide />
-      </View>
+      <FirstWeekGuide wrapStyle={{ marginTop: space.sm }} />
 
       {/* 남은 음식 먼저: 다시 요리하지 않고 바로 한 끼 */}
       {leftovers.slice(0, 2).map((lo) => (
@@ -132,10 +130,8 @@ export default function Home() {
       ))}
 
       {/* 정리가 필요한 재료(기한 지남·아주 조금 남음) — 답하면 추천이 바로 정확해진다 */}
-      <View style={{ marginTop: space.md, gap: space.sm }}>
-        <PlanCatchUp max={1} />
-        <TidyCard stock={s.ingredients} />
-      </View>
+      <PlanCatchUp max={1} wrapStyle={{ marginTop: space.md }} />
+      <TidyCard stock={s.ingredients} wrapStyle={{ marginTop: space.md }} />
 
       {/* 4. 먼저 활용하면 좋은 재료 */}
       {firstUse.length > 0 && (

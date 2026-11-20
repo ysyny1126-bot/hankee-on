@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { notify } from '@/components/dialog';
 import { Button, Row, T } from '@/components/ui';
@@ -14,12 +14,12 @@ import { RECHECK_DAYS, tidyList } from '@/logic/tidy';
  * 아주 적게 남은 재료: 다 썼어요 / 남겨 두기
  * 답하기 전까지 이 재료들은 추천·식단 계산에 쓰지 않는다(화면에 안내).
  */
-export function TidyCard({ stock, max = 3 }: { stock: Ingredient[]; max?: number }) {
+export function TidyCard({ stock, max = 3, wrapStyle }: { stock: Ingredient[]; max?: number; wrapStyle?: StyleProp<ViewStyle> }) {
   const { expired, tiny, total } = tidyList(stock);
   if (!total) return null;
   const rows = [...expired.map((i) => ({ i, kind: 'expired' as const })), ...tiny.map((i) => ({ i, kind: 'tiny' as const }))].slice(0, max);
   return (
-    <View style={{ backgroundColor: color.warnSoft, borderRadius: radius.lg, padding: space.md, gap: space.sm }} accessibilityRole="summary">
+    <View style={[{ backgroundColor: color.warnSoft, borderRadius: radius.lg, padding: space.md, gap: space.sm }, wrapStyle]} accessibilityRole="summary">
       <T v="bodyBold">냉장고 확인 {total}개</T>
       <T v="small" c={color.textSub}>답해 주시기 전까지는 이 재료로 메뉴를 고르지 않아요.</T>
       {rows.map(({ i, kind }) => (

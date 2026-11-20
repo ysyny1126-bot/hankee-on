@@ -166,8 +166,8 @@ export default function Cook() {
               <Pressable key={p.id} onPress={() => router.push(`/recipe/${r.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.sm }}>
                 <Text style={{ fontSize: 24 }}>{r.emoji}</Text>
                 <T v="small" c={color.textMuted} style={{ width: 64 }}>{p.date === today ? '오늘' : '내일'} {MEAL_LABEL[p.mealType]}</T>
-                <T v="bodyBold" style={{ flex: 1 }}>{r.name}</T>
-                <T c={color.textMuted}>›</T>
+                <T v="bodyBold" style={{ flex: 1 }} c={p.status === 'done' ? color.textMuted : color.text}>{p.leftoverId ? `남은 ${r.name}` : r.name}</T>
+                {p.status === 'done' ? <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>먹음 ✓</T> : <T c={color.textMuted}>›</T>}
               </Pressable>
             );
           })}

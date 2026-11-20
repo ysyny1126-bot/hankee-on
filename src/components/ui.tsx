@@ -2,6 +2,7 @@ import { Link, router, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -29,14 +30,17 @@ export function Screen({ children, scroll = true, edges = ['top'] as ('top' | 'b
   const inner = <View style={[styles.inner, !scroll && { flex: 1 }]}>{children}</View>;
   return (
     <SafeAreaView style={styles.screen} edges={edges}>
-      {scroll ? (
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          {inner}
-        </ScrollView>
-      ) : (
-        inner
-      )}
-      {footer ? <View style={styles.footer}><View style={styles.footerInner}>{footer}</View></View> : null}
+      {/* 휴대폰 키보드가 올라오면 아래 버튼(저장·다음)이 가려지지 않게 화면을 밀어 올린다 */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={edges.includes('top') ? 0 : 100}>
+        {scroll ? (
+          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+            {inner}
+          </ScrollView>
+        ) : (
+          inner
+        )}
+        {footer ? <View style={styles.footer}><View style={styles.footerInner}>{footer}</View></View> : null}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

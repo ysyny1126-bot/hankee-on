@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useRef, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { hasAIKey } from '@/ai/gemini';
@@ -178,7 +178,7 @@ export default function Onboarding() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: color.bg }} edges={['top', 'bottom']}>
-      <View style={{ width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', flex: 1 }}>
+      <KeyboardAvoidingView style={{ width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* 진행률 + 뒤로 가기 */}
         <View style={{ paddingHorizontal: space.lg, paddingTop: space.sm, gap: space.sm }}>
           <Row style={{ justifyContent: 'space-between', minHeight: 32 }}>
@@ -363,7 +363,7 @@ export default function Onboarding() {
             <Button title="다음" onPress={next} disabled={!canNext} />
           )}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
