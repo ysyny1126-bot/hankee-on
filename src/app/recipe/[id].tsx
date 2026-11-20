@@ -9,6 +9,7 @@ import { notify } from '@/components/dialog';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
+import { handyMeasure } from '@/logic/units';
 import { formatAmount, matchRecipe, planDeduction, round, type IngredientMatch } from '@/logic/inventory';
 import { euro } from '@/logic/dates';
 import { checkRecipe, restrictionsOf, safeSubstitutes, type Restrictions } from '@/logic/safety';
@@ -212,7 +213,10 @@ function IngredientRow({ x, rs }: { x: IngredientMatch; rs: Restrictions }) {
         )}
         {subs.length > 0 && <T v="tiny" c={color.brandDark}>없으면 {euro(subs.join(' 또는 '))} 대체</T>}
       </View>
-      <T v="small" c={color.textSub}>{formatAmount(x.need.amount, x.need.unit)}</T>
+      <View style={{ alignItems: 'flex-end' }}>
+        <T v="small" c={color.textSub}>{formatAmount(x.need.amount, x.need.unit)}</T>
+        {handyMeasure(x.need.amount, x.need.unit) ? <T v="tiny" c={color.textMuted}>{handyMeasure(x.need.amount, x.need.unit)}</T> : null}
+      </View>
     </Row>
   );
 }

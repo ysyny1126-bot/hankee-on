@@ -77,6 +77,7 @@ export default function Home() {
     router.push(`/recipe/${m.recipe.id}?prep=1`); // 다음 단계: 냉장고에서 재료 꺼내기
   };
   const another = () => {
+    if (menu && !chosen) actions.skipRecipe(menu.recipe.id);
     if (chosenEntry) actions.removeMealPlan(chosenEntry.id);
     setPick((n) => n + 1);
   };

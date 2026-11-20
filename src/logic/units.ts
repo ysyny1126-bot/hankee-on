@@ -137,3 +137,16 @@ export function convert(amount: number, from: string, to: string, name: string):
 export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+/**
+ * E9 계량 도구가 없을 때: 큰술·작은술·ml를 밥숟가락·종이컵으로 대략 바꿔 보여 준다.
+ * 밥숟가락 ≈ 10ml, 종이컵 ≈ 180ml(대략치). 바꿀 필요가 없으면 null.
+ */
+export function handyMeasure(amount: number, unit: string): string | null {
+  const ml = unit === '큰술' ? amount * 15 : unit === '작은술' ? amount * 5 : unit === 'ml' ? amount : unit === '컵' ? amount * 200 : null;
+  if (ml == null || ml <= 0) return null;
+  const half = (n: number) => Math.max(0.5, Math.round(n * 2) / 2);
+  if (ml >= 90) return `종이컵 약 ${half(ml / 180)}컵`;
+  if (ml < 4) return '조금(한 꼬집)';
+  return `밥숟가락 약 ${half(ml / 10)}`;
+}

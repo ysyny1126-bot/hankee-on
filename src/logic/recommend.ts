@@ -11,7 +11,7 @@ import type { RecipeMatch } from './inventory';
  * text가 없는 이유는 점수에만 반영되고 화면에는 나오지 않는다(예: 별로라고 한 메뉴 감점).
  */
 export interface Reason {
-  key: 'coverage' | 'expiring' | 'missing' | 'time' | 'skill' | 'preferred' | 'liked' | 'disliked_before' | 'recent' | 'fresh' | 'budget' | 'space';
+  key: 'coverage' | 'expiring' | 'missing' | 'time' | 'skill' | 'preferred' | 'liked' | 'disliked_before' | 'recent' | 'fresh' | 'budget' | 'space' | 'skipped';
   weight: number;
   text?: string;
   personal?: boolean; // 사용자 기록(개인화 동의)을 써서 나온 이유
@@ -22,6 +22,8 @@ export interface Memory {
   ratings: Record<string, { good: number; ok: number; bad: number; last?: CookRating }>;
   /** 최근 먹은 음식 이름 */
   recentNames: string[];
+  /** E13 최근 2주 동안 '다른 거'로 넘긴 횟수 */
+  skipped: Record<string, number>;
 }
 
 export interface RankContext {
@@ -51,7 +53,10 @@ export function buildMemory(s: AppState): Memory | null {
   }
   const start = addDays(toDateKey(), -2); // 최근 3일
   const recentNames = s.meals.filter((m) => m.mealDate >= start).flatMap((m) => m.items.map((i) => i.foodName));
-  return { ratings, recentNames };
+  const skipped: Record<string, number> = {};
+  const from = addDays(toDateKey(), -13);
+  for (const k of s.skips ?? []) if (k.date >= from) skipped[k.recipeId] = (skipped[k.recipeId] ?? 0) + 1;
+  return { ratings, recentNames, skipped };
 }
 
 export function isPreferred(recipe: Recipe, preferred: string[]): boolean {
@@ -110,6 +115,9 @@ export function scoreMatch(m: RecipeMatch, ctx: RankContext): { score: number; r
       if (rt.last === 'bad') reasons.push({ key: 'disliked_before', weight: -40, personal: true });
     }
     if (mem.recentNames.includes(r.name)) reasons.push({ key: 'recent', weight: -15, personal: true });
+    // 여러 번 넘긴 메뉴는 조금씩 뒤로(빼지는 않음)
+    const sk = mem.skipped[r.id] ?? 0;
+    if (sk) reasons.push({ key: 'skipped', weight: -Math.min(18, sk * 6), personal: true });
     else if (mem.recentNames.length) reasons.push({ key: 'fresh', weight: 3, text: '최근 안 먹은 메뉴', personal: true });
   }
 

@@ -80,6 +80,7 @@ export const initialState: AppState = {
   dismissedSuggestions: {},
   favorites: [],
   recipeNotes: {},
+  skips: [],
   visit: { last: null, previous: null },
 };
 
@@ -519,6 +520,10 @@ export const actions = {
     setState((s) => ({ ...s, mealPlan: s.mealPlan.filter((e) => e.id !== id) }));
   },
 
+  /** E13 추천 넘김 기억(개인화 동의가 있을 때만 점수에 씀) */
+  skipRecipe(recipeId: string) {
+    setState((s) => ({ ...s, skips: [{ recipeId, date: toDateKey() }, ...(s.skips ?? [])].slice(0, 50) }));
+  },
   toggleFavorite(recipeId: string) {
     setState((s) => ({ ...s, favorites: s.favorites.includes(recipeId) ? s.favorites.filter((x) => x !== recipeId) : [recipeId, ...s.favorites] }));
   },

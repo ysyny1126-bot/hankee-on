@@ -275,6 +275,8 @@ export interface AppState {
   mealPlan: MealPlanEntry[];
   reports: DietaryReport[];
   dismissedSuggestions: Record<string, string>; // 제안 id → 숨긴 날짜
+  /** E13 홈에서 '다른 거'로 넘긴 추천(최근 50개만) */
+  skips: { recipeId: string; date: string }[];
   /** E12 즐겨찾기한 레시피 id */
   favorites: string[];
   /** E11 내 레시피 노트(레시피 id → 메모). 다음에 같은 요리를 할 때 보여 준다 */
