@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { KitchenHero } from '@/components/kitchen-hero';
+import { WeekStrip } from '@/components/week-strip';
 import { TidyCard } from '@/components/tidy-card';
 import { FirstWeekGuide } from '@/components/first-week';
 import { PlanCatchUp } from '@/components/plan-catch-up';
@@ -171,6 +172,9 @@ export default function Home() {
             <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>기록 전체 보기</T>
           </Pressable>
         </Row>
+        <View style={[styles.listCard, { paddingVertical: space.md, paddingHorizontal: space.sm }]}>
+          <WeekStrip meals={s.meals} plan={s.mealPlan} onSelect={(d) => router.push(d === today ? '/log' : `/log?date=${d}`)} />
+        </View>
         <View style={styles.listCard}>
           {SLOTS.map((t, i) => (
             <MealRow key={t} type={t} meals={todayMeals.filter((m) => m.mealType === t)} recipes={recipes} first={i === 0} />

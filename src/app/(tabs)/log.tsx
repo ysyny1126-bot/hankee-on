@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { WeekStrip } from '@/components/week-strip';
 import { IconButton, PageHeader, Row, Screen, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { useAllRecipes, useAppState } from '@/data/store';
@@ -23,7 +24,12 @@ export default function Log() {
   const s = useAppState();
   const recipes = useAllRecipes();
   const today = toDateKey();
-  const [date, setDate] = useState(today);
+  const params = useLocalSearchParams<{ date?: string }>();
+  const [date, setDate] = useState(params.date && params.date <= today ? params.date : today);
+  // 홈 요일 줄에서 다른 날을 누르고 들어오면 그날로 맞춘다
+  useEffect(() => {
+    if (params.date && params.date <= today) setDate(params.date);
+  }, [params.date, today]);
   const meals = s.meals.filter((m) => m.mealDate === date);
 
   return (
@@ -42,6 +48,11 @@ export default function Log() {
           </Row>
         }
       />
+      {/* 이번 주 요일 줄: 동그라미가 기록한 끼니만큼 채워진다. 누르면 그날로 */}
+      <View style={{ ...clay, paddingVertical: space.md, paddingHorizontal: space.sm }}>
+        <WeekStrip meals={s.meals} plan={s.mealPlan} selected={date} onSelect={setDate} />
+      </View>
+
       {meals.length === 0 && (
         <T v="small" c={color.textSub}>{date === today ? '지금 먹은 것부터 편하게 기록해요. 사진이나 이름만 있어도 돼요.' : '이날은 기록이 없어요. 생각나는 게 있으면 지금 남겨도 돼요.'}</T>
       )}

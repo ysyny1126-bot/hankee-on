@@ -5,6 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { TidyCard } from '@/components/tidy-card';
+import { FridgeArt } from '@/components/fridge-art';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { findCatalog, keepInfo, sameIngredient } from '@/data/catalog';
@@ -43,7 +44,7 @@ export default function Fridge() {
       )}
 
       {s.ingredients.length === 0 ? (
-        <Empty emoji="🫙" title="냉장고가 비어 있어요" />
+        <Empty emoji="🫙" art={<FridgeArt width={84} />} title="냉장고가 비어 있어요" body="사진 한 장이나 직접 입력으로 재료를 넣으면, 있는 재료로 메뉴를 골라 드려요." />
       ) : mode === 'list' ? (
         <QuickList items={s.ingredients} warn={warn} />
       ) : (

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Character } from '@/components/character';
+import { FridgeArt } from '@/components/fridge-art';
 import { Icon, type IconName } from '@/components/icon';
 import { T, tx } from '@/components/ui';
 import { color, MAX_WIDTH, shadow, space } from '@/constants/tokens';
@@ -43,15 +44,16 @@ export function Welcome({ characterId, onStart, onDemo }: { characterId?: string
           </View>
         </View>
 
-        {/* 캐릭터 장면: 식탁(살구빛 반원) 위로 고개를 내밀고 인사 */}
+        {/* 대표 장면: 자석이 붙은 손그림 냉장고 옆에서 캐릭터가 인사(앱 곳곳의 냉장고와 같은 그림) */}
         <View style={styles.sceneWrap}>
-          <View style={styles.bubble}>
+          <View style={[styles.bubble, { marginLeft: 90, marginBottom: 64, zIndex: 3 }]}>
             <T v="small" style={{ fontWeight: '700' }}>반가워요! 오늘 한 끼부터 같이 해요</T>
             <View style={styles.tail} />
           </View>
           <View style={styles.table}>
-            <View style={{ marginTop: -70 }}>
-              <Character id={characterId} size={150} mood="happy" />
+            <View style={{ marginTop: -128, flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
+              <FridgeArt width={92} />
+              <Character id={characterId} size={136} mood="happy" />
             </View>
           </View>
         </View>

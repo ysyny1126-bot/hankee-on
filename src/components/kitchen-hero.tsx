@@ -4,11 +4,13 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Character } from '@/components/character';
+import { FridgeArt } from '@/components/fridge-art';
 import { Icon } from '@/components/icon';
 import { T, tx } from '@/components/ui';
 import { color, shadow, space } from '@/constants/tokens';
 import type { Ingredient } from '@/data/types';
 import type { RecipeMatch } from '@/logic/inventory';
+import { topReasons } from '@/logic/recommend';
 
 /**
  * 홈 히어로(후보 A) — "부엌 장면 + 큰 숫자"
@@ -53,6 +55,14 @@ export function KitchenHero({
   const ingredients = stock.filter((i) => i.kind !== 'leftover');
   const empty = ingredients.length === 0;
   const r = m?.recipe;
+  // 이 메뉴가 쓰는 내 재료(먼저 쓸 재료를 앞에, 최대 3개)
+  const firstIds = new Set(firstUse.map((i) => i.id));
+  const using = (m?.matches ?? [])
+    .filter((x) => x.stock && x.status !== 'missing' && x.status !== 'staple')
+    .map((x) => ({ id: x.stock!.id, name: x.stock!.name, emoji: x.stock!.emoji, first: firstIds.has(x.stock!.id) }))
+    .sort((a, b) => Number(b.first) - Number(a.first))
+    .slice(0, 3);
+  const reason = m ? topReasons(m, 1)[0] : '';
 
   // 냉장고를 살짝 흔들어 '눌러 보세요'를 알린다(처음 한 번)
   const wiggle = useRef(new Animated.Value(0)).current;
@@ -99,25 +109,8 @@ export function KitchenHero({
             onPress={openFridge}
             accessibilityRole="button"
             accessibilityLabel={empty ? '냉장고가 비어 있어요. 재료 넣기' : `냉장고 열기. 재료 ${ingredients.length}개, 만들 수 있는 메뉴 보기`}
-            style={({ pressed }) => [styles.fridge, pressed && { transform: [{ scale: 0.97 }] }]}>
-            <View style={styles.freezer}>
-              <View style={styles.handleTop} />
-            </View>
-            <View style={styles.fridgeBody}>
-              <View style={styles.handle} />
-              <View style={styles.window}>
-                {empty ? (
-                  <Icon name="plus" size={22} c={color.textMuted} />
-                ) : (
-                  peek.map((i) => (
-                    <Text key={i.id} style={{ fontSize: 18, width: '33%', textAlign: 'center' }}>{i.emoji}</Text>
-                  ))
-                )}
-              </View>
-            </View>
-            {firstUse.length > 0 && (
-              <View style={styles.badge}><T v="tiny" c="#fff" style={{ fontWeight: '800' }}>{firstUse.length}</T></View>
-            )}
+            style={({ pressed }) => [pressed && { transform: [{ scale: 0.97 }] }]}>
+            <FridgeArt width={112} items={empty ? [] : peek.map((i) => i.emoji)} badge={firstUse.length} />
           </Pressable>
           <View style={styles.tapHint}><T v="tiny" c={color.textSub} style={{ fontWeight: '700' }}>{empty ? '눌러서 채우기' : '눌러서 열기'}</T></View>
         </Animated.View>
@@ -166,6 +159,20 @@ export function KitchenHero({
                 </T>
               </View>
             </View>
+            {/* 활용할 내 재료 + 추천 이유(한 줄씩) */}
+            <View style={{ gap: 6 }}>
+              {using.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} accessibilityLabel={`활용할 재료: ${using.map((u) => u.name).join(', ')}`}>
+                  {using.map((u) => (
+                    <View key={u.id} style={[styles.useChip, u.first && styles.useChipFirst]}>
+                      <Text style={{ fontSize: 13 }}>{u.emoji}</Text>
+                      <T v="tiny" c={u.first ? color.warnDark : color.text} style={{ fontWeight: '700' }}>{u.name}{u.first ? ' · 먼저' : ''}</T>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {reason ? <T v="tiny" c={color.textSub}>💡 {reason}</T> : null}
+            </View>
             <View style={styles.actions}>
               <Pressable onPress={chosen ? onCook : onChoose} accessibilityRole="button" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}>
                 <T v="bodyBold" c={color.onBrand}>{chosen ? '요리하러 가기' : '이걸로 할래요'}</T>
@@ -206,13 +213,6 @@ const styles = StyleSheet.create({
   counter: { position: 'absolute', left: 0, right: 0, top: 168, height: 8, backgroundColor: '#E9CFA9' },
   floor: { position: 'absolute', left: 0, right: 0, top: 176, bottom: 0, backgroundColor: WALL },
   fridgeSpot: { position: 'absolute', left: '10%', bottom: 18, alignItems: 'center' },
-  fridge: { width: 104, height: 176, borderRadius: 20, backgroundColor: '#FFFDF8', borderWidth: 2, borderColor: '#E3CFB2', padding: 6, gap: 5, ...shadow.card },
-  freezer: { height: 40, borderRadius: 13, backgroundColor: '#EEF5F3', justifyContent: 'center' },
-  handleTop: { position: 'absolute', right: 6, width: 16, height: 4, borderRadius: 2, backgroundColor: '#D9C9B2' },
-  fridgeBody: { flex: 1, borderRadius: 13, backgroundColor: '#FBF5EA', padding: 6 },
-  handle: { position: 'absolute', right: 5, top: 10, width: 4, height: 22, borderRadius: 2, backgroundColor: '#D9C9B2' },
-  window: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', justifyContent: 'center', paddingRight: 8, rowGap: 4 },
-  badge: { position: 'absolute', top: -8, right: -8, minWidth: 26, height: 26, borderRadius: 13, paddingHorizontal: 6, backgroundColor: color.warn, borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   tapHint: { marginTop: 6, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   charSpot: { position: 'absolute', right: '6%', bottom: 14, alignItems: 'center', width: 170 },
   speech: { backgroundColor: color.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4, maxWidth: 170, ...shadow.soft },
@@ -224,6 +224,8 @@ const styles = StyleSheet.create({
   dotOn: { borderColor: color.brandDark },
   markLabel: { position: 'absolute', width: 40, marginLeft: -26, textAlign: 'center', fontWeight: '700' },
   menuCard: { marginHorizontal: space.lg, marginTop: space.md, backgroundColor: color.surface, borderRadius: 22, padding: space.md, gap: space.md, ...shadow.soft },
+  useChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: color.surfaceAlt, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  useChipFirst: { backgroundColor: color.warnSoft },
   menuArt: { width: 56, height: 56, borderRadius: 18, backgroundColor: '#FFF4E2', alignItems: 'center', justifyContent: 'center' },
   menuName: { ...tx({ fontSize: 20, lineHeight: 27, fontWeight: '800', letterSpacing: -0.6, color: color.text }) },
   actions: { flexDirection: 'row', gap: space.sm },

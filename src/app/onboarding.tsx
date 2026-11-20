@@ -197,6 +197,13 @@ export default function Onboarding() {
           <View style={{ height: 8, borderRadius: 4, backgroundColor: color.surfaceAlt, overflow: 'hidden' }} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: STEPS.length, now: i + 1 }}>
             <View style={{ width: `${((i + 1) / STEPS.length) * 100}%`, height: '100%', borderRadius: 4, backgroundColor: color.brand }} />
           </View>
+          {/* 필수/선택을 분명히: 선택 질문은 건너뛰어도 되고 나중에 바꿀 수 있다 */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ backgroundColor: SKIPPABLE.includes(step) ? color.surfaceAlt : color.brandSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <T v="tiny" c={SKIPPABLE.includes(step) ? color.textSub : color.brandDark} style={{ fontWeight: '800' }}>{SKIPPABLE.includes(step) ? '선택' : '필수'}</T>
+            </View>
+            <T v="tiny" c={color.textMuted}>{SKIPPABLE.includes(step) ? '대략만 골라도 돼요 · 설정에서 언제든 바꿀 수 있어요' : '설정에서 언제든 바꿀 수 있어요'}</T>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md, paddingBottom: space.xl }} keyboardShouldPersistTaps="handled">

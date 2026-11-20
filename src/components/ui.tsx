@@ -174,10 +174,11 @@ export function SectionHeader({ title, action, href, onPress }: { title: string;
   );
 }
 
-export function Empty({ emoji, title, body, children }: { emoji: string; title: string; body?: string; children?: ReactNode }) {
+/** 빈 화면: 무엇이 비었는지 + 다음 행동. art가 있으면 이모지 대신 브랜드 그림(손그림 냉장고 등) */
+export function Empty({ emoji, title, body, children, art }: { emoji: string; title: string; body?: string; children?: ReactNode; art?: ReactNode }) {
   return (
     <Card style={{ alignItems: 'center', paddingVertical: space.xl, gap: space.sm }}>
-      <Text style={{ fontSize: 36 }}>{emoji}</Text>
+      {art ?? <Text style={{ fontSize: 36 }}>{emoji}</Text>}
       <T v="bodyBold" style={{ textAlign: 'center' }}>{title}</T>
       {body ? <T v="small" c={color.textSub} style={{ textAlign: 'center' }}>{body}</T> : null}
       {children}

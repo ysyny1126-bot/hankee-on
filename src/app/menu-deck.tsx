@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FridgeArt } from '@/components/fridge-art';
 import { Icon } from '@/components/icon';
 import { T, tx } from '@/components/ui';
 import { color, MAX_WIDTH, shadow, space } from '@/constants/tokens';
@@ -72,7 +73,7 @@ export default function MenuDeck() {
 
         {deck.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={{ fontSize: 48 }}>🧺</Text>
+            <FridgeArt width={96} />
             <T v="h3" style={{ textAlign: 'center' }}>{stock.length ? '지금 재료로는 고를 메뉴가 적어요' : '냉장고가 비어 있어요'}</T>
             <Pressable onPress={() => router.replace(stock.length ? '/cook' : '/scan/fridge')} style={({ pressed }) => [styles.primary, { alignSelf: 'stretch' }, pressed && styles.pressed]}>
               <T v="bodyBold" c={color.onBrand}>{stock.length ? '메뉴 둘러보기' : '재료 넣기'}</T>

@@ -39,6 +39,21 @@ export const color = {
   onBrand: '#FFFFFF',
 } as const;
 
+/**
+ * 브랜드 그림(손그림 냉장고·자석) 전용 색.
+ * 홈·첫 화면·빈 화면의 일러스트에만 쓰고, 버튼·글자·상태 표시에는 쓰지 않는다(포인트 색은 초록 하나).
+ */
+export const art = {
+  ink: '#3A2E26', // 손그림 선
+  paper: '#FFFDF8', // 냉장고 몸통
+  paperShade: '#F3EBDD',
+  carrot: '#F08A3C',
+  leaf: '#5DB36A',
+  tomato: '#E5574A',
+  butter: '#F4C542',
+  sky: '#7FB5E6',
+} as const;
+
 /** 보조 바탕색(강한 색을 여러 개 쓰지 않도록 옅은 색만) */
 export const pastel = {
   lav: '#EFEAF8',
