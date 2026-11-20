@@ -37,7 +37,25 @@ const ITEM_UNITS: Record<string, Record<string, number>> = {
   김: { 봉지: 1, 팩: 1 },
   라면: { 봉지: 1, 개: 1 },
   우유: { 팩: 1000, 통: 1000 },
+  햄: { 장: 20, 캔: 200 },
+  치즈: { 장: 1 },
+  김치: { 포기: 2000 },
+  만두: { 봉: 20, 봉지: 20 },
 };
+
+/**
+ * A7 '내 단위': 사용자가 정한 변환(예: 우리 집 두부 1팩 = 0.5모).
+ * 재료 사전 이름 → { 단위: 사전 기본 단위로 몇 개 }. 저장소(store)가 불러올 때·바뀔 때 넣어 준다.
+ */
+let USER_UNITS: Record<string, Record<string, number>> = {};
+export function setUserUnits(map: Record<string, Record<string, number>> | undefined) {
+  USER_UNITS = map ?? {};
+}
+
+/** 이 재료의 단위를 사전 기본 단위로 바꿀 수 있는지(내 단위 정하기 화면을 보여 줄지 판단용) */
+export function catalogUnitOf(name: string): string | null {
+  return findCatalog(name)?.unit ?? null;
+}
 
 /** 재료별 사전 기본 단위 1개의 대략 무게(g) — '개 ↔ g' 변환용 */
 const GRAMS_PER_UNIT: Record<string, number> = {
@@ -69,6 +87,8 @@ function toCatalogUnit(name: string, unit: string): { amountPerUnit: number; cat
   if (!c) return null;
   const u = norm(unit);
   if (u === norm(c.unit)) return { amountPerUnit: 1, catalogUnit: c.unit };
+  const mine = USER_UNITS[c.name];
+  if (mine && mine[unit] != null && mine[unit] > 0) return { amountPerUnit: mine[unit], catalogUnit: c.unit };
   const item = ITEM_UNITS[c.name];
   if (item && item[unit] != null) return { amountPerUnit: item[unit], catalogUnit: c.unit };
   return null;

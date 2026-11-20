@@ -19,6 +19,7 @@ import type {
 } from './types';
 import { addDays, newId, toDateKey } from '@/logic/dates';
 import { round } from '@/logic/inventory';
+import { setUserUnits } from '@/logic/units';
 
 /**
  * 한끼온 저장소.
@@ -53,6 +54,7 @@ export const initialState: AppState = {
     fridgePhotoUri: null,
     showFridgePhoto: false,
     body: null,
+    myUnits: {},
   },
   consents: { personalization: false, externalAI: false, healthInfo: false, agreedAt: null },
   notifications: {
@@ -122,7 +124,9 @@ let loaded = false;
 const listeners = new Set<Listener>();
 
 function setState(updater: (s: AppState) => AppState) {
+  const before = state.preferences.myUnits;
   state = updater(state);
+  if (state.preferences.myUnits !== before) setUserUnits(state.preferences.myUnits);
   listeners.forEach((l) => l());
   AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
 }
@@ -135,6 +139,7 @@ async function load() {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) state = migrate(JSON.parse(raw));
+    setUserUnits(state.preferences.myUnits);
   } catch {
     state = initialState;
   }
@@ -230,6 +235,14 @@ export const actions = {
   /** 아주 적게 남은 재료를 그대로 두기(정리 안내를 다시 하지 않음) */
   keepSmall(id: string) {
     setState((s) => ({ ...s, ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, keepSmall: true } : x)) }));
+  },
+  /** A7 내 단위 저장: 1 unit = perUnit × 사전 기본 단위 */
+  setMyUnit(catalogName: string, unit: string, perUnit: number) {
+    setState((s) => {
+      const cur = { ...(s.preferences.myUnits ?? {}) };
+      cur[catalogName] = { ...(cur[catalogName] ?? {}), [unit]: perUnit };
+      return { ...s, preferences: { ...s.preferences, myUnits: cur } };
+    });
   },
   /** 다 먹음(사용 완료) — 재고에서 빼되 폐기로 세지 않는다. */
   useUpIngredient(id: string) {

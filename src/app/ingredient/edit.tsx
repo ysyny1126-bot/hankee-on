@@ -6,7 +6,7 @@ import { pickPhoto } from '@/ai/photo';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
-import { findCatalog, INGREDIENT_CATALOG } from '@/data/catalog';
+import { findCatalog, INGREDIENT_CATALOG, keepInfo } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { IngredientLocation, StorageType } from '@/data/types';
 import { addDays, isValidDateKey, toDateKey } from '@/logic/dates';
@@ -103,6 +103,7 @@ export default function IngredientEdit() {
       <Card>
         <T v="bodyBold">소비기한</T>
         <T v="small" c={color.textSub}>포장지에 적힌 날짜나 직접 확인한 날짜만 저장해요. 한끼온이 날짜를 추측하지 않아요.</T>
+        {keepInfo(name) ? <T v="tiny" c={color.textSub}>📦 보관 참고: {keepInfo(name)} (일반적인 대략치 · 제품에 적힌 기한이 우선)</T> : null}
         <Field placeholder="YYYY-MM-DD" value={expiry} onChangeText={(t) => { setExpiry(t); setExpirySource('user'); }} />
         <Row wrap>
           {[0, 1, 3, 7].map((n) => (

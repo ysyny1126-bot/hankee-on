@@ -115,11 +115,119 @@ const DRAFTS: Draft[] = [
     ingredients: [I('소고기', 120, 'g'), I('버섯', 0.5, '봉'), I('양파', 0.3, '개'), I('간장', 2, '큰술'), I('설탕', 0.5, '큰술'), I('대파', 0.3, '대', { optional: true })],
     steps: ['간장·설탕·다진 마늘·참기름으로 양념을 만들어요.', '소고기를 양념에 15분 재워요.', '팬에 고기·양파·버섯을 함께 볶아요.', '대파를 넣어 마무리해요.'],
   },
+  // ── B1: 레시피 확장(1인분 · 10분 · 전자레인지 · 냉동식품 활용) ──
+  {
+    id: 'soft-tofu-stew', name: '순두부찌개', emoji: '🍲', timeMinutes: 15, difficulty: '쉬움', tags: ['국물', '한식'],
+    ingredients: [I('순두부', 1, '봉'), I('계란', 1, '개'), I('대파', 0.3, '대'), I('고춧가루', 1, '큰술'), I('간장', 0.5, '큰술'), I('바지락', 50, 'g', { optional: true }), I('돼지고기', 40, 'g', { optional: true, substitute: '참치캔' })],
+    steps: ['냄비에 기름 1큰술과 고춧가루를 넣고 약불에서 30초 볶아 고추기름을 내요.', '물 250ml와 간장을 넣고 끓으면 바지락·고기를 넣어요.', '순두부를 숟가락으로 크게 떠 넣고 3분 끓여요.', '계란을 깨 넣고 대파를 올려 1분 더 끓여요. 싱거우면 소금으로 맞춰요.'],
+  },
+  {
+    id: 'seaweed-soup', name: '미역국', emoji: '🥣', timeMinutes: 25, difficulty: '쉬움', tags: ['국물', '한식'],
+    ingredients: [I('미역', 5, 'g'), I('소고기', 50, 'g', { substitute: '참치캔' }), I('간장', 1, '큰술'), I('참기름', 0.5, '큰술'), I('마늘', 0.5, '큰술', { optional: true })],
+    steps: ['마른 미역을 찬물에 10분 불린 뒤 물기를 짜고 한입 크기로 잘라요(5g이 불면 한 그릇 분량이 돼요).', '냄비에 참기름을 두르고 소고기를 볶다가 미역을 넣어 2분 더 볶아요.', '물 400ml를 붓고 중불에서 10분 끓여요.', '간장과 마늘로 간해요. 부족하면 소금 조금.'],
+  },
+  {
+    id: 'radish-beef-soup', name: '소고기무국', emoji: '🍲', timeMinutes: 25, difficulty: '쉬움', tags: ['국물', '한식'],
+    ingredients: [I('무', 0.15, '개'), I('소고기', 60, 'g'), I('대파', 0.3, '대'), I('간장', 1, '큰술'), I('참기름', 0.5, '큰술', { optional: true })],
+    steps: ['무를 얇게 나박 썰어요(손바닥 반만큼).', '참기름에 소고기를 볶다가 무를 넣고 2분 더 볶아요.', '물 400ml를 붓고 무가 투명해질 때까지 12분 끓여요.', '간장으로 간하고 대파를 넣어요.'],
+  },
+  {
+    id: 'squid-stir', name: '오징어볶음', emoji: '🦑', timeMinutes: 20, difficulty: '보통', tags: ['볶음', '한식'],
+    ingredients: [I('오징어', 1, '마리'), I('양파', 0.5, '개'), I('고추장', 1, '큰술'), I('고춧가루', 0.5, '큰술'), I('대파', 0.3, '대'), I('설탕', 0.5, '큰술'), I('당근', 0.2, '개', { optional: true })],
+    steps: ['오징어는 내장을 빼고 몸통에 칼집을 낸 뒤 한입 크기로 썰어요.', '고추장·고춧가루·설탕·간장 조금으로 양념을 만들어요.', '센불에 양파·당근을 1분 볶고 오징어와 양념을 넣어 2~3분만 볶아요(오래 볶으면 질겨져요).', '대파를 넣고 불을 꺼요.'],
+  },
+  {
+    id: 'egg-soup', name: '계란국', emoji: '🥚', timeMinutes: 10, difficulty: '쉬움', tags: ['국물', '한식', '초간단'],
+    ingredients: [I('계란', 2, '개'), I('대파', 0.3, '대'), I('간장', 0.5, '큰술'), I('액젓', 0.5, '큰술', { optional: true })],
+    steps: ['물 400ml를 끓여요.', '간장(또는 액젓)으로 간해요.', '끓는 물에 푼 계란을 천천히 돌려 부어요. 바로 젓지 말고 10초 기다려요.', '대파를 넣고 불을 꺼요.'],
+  },
+  {
+    id: 'kimchi-pancake', name: '김치전', emoji: '🥞', timeMinutes: 15, difficulty: '쉬움', tags: ['전', '한식'],
+    ingredients: [I('김치', 100, 'g'), I('부침가루', 70, 'g'), I('양파', 0.2, '개', { optional: true }), I('청양고추', 1, '개', { optional: true })],
+    steps: ['김치를 잘게 썰어요.', '부침가루에 물 100ml와 김치 국물 1큰술을 넣고 섞어요.', '김치·양파를 넣고 반죽해요.', '기름을 넉넉히 두른 팬에 얇게 펴서 앞뒤로 3분씩 바삭하게 부쳐요.'],
+  },
+  {
+    id: 'chive-pancake', name: '부추전', emoji: '🥞', timeMinutes: 15, difficulty: '쉬움', tags: ['전', '한식'],
+    ingredients: [I('부추', 80, 'g', { substitute: '쪽파' }), I('부침가루', 70, 'g'), I('청양고추', 1, '개', { optional: true }), I('새우', 40, 'g', { optional: true })],
+    steps: ['부추를 5cm 길이로 썰어요.', '부침가루에 찬물 100ml를 넣어 묽게 섞어요.', '부추를 넣어 살짝만 버무려요.', '기름 두른 팬에 얇게 펴 앞뒤로 3분씩 부쳐요.'],
+  },
+  {
+    id: 'janchi-noodle', name: '잔치국수', emoji: '🍜', timeMinutes: 20, difficulty: '쉬움', tags: ['국물', '면', '한식'],
+    ingredients: [I('소면', 90, 'g'), I('애호박', 0.2, '개', { optional: true }), I('계란', 1, '개', { optional: true }), I('간장', 1, '큰술'), I('멸치', 10, 'g', { optional: true }), I('김', 0.2, '봉', { optional: true })],
+    steps: ['물 500ml에 멸치를 넣고 10분 끓여 건져 내고 간장으로 간해요(멸치가 없으면 간장·소금만).', '애호박을 채 썰어 국물에 1분 데쳐요.', '다른 냄비에 소면을 3분 삶아 찬물에 헹궈요.', '그릇에 면을 담고 국물을 붓고 계란 지단·김을 올려요.'],
+  },
+  {
+    id: 'spicy-noodle', name: '비빔국수', emoji: '🍜', timeMinutes: 15, difficulty: '쉬움', tags: ['면', '한식'],
+    ingredients: [I('소면', 90, 'g'), I('고추장', 1.5, '큰술'), I('오이', 0.3, '개', { optional: true }), I('김치', 50, 'g', { optional: true }), I('식초', 1, '큰술', { optional: true }), I('설탕', 0.5, '큰술'), I('계란', 1, '개', { optional: true })],
+    steps: ['고추장·식초·설탕·참기름으로 양념장을 만들어요.', '소면을 3분 삶아 찬물에 여러 번 헹궈 물기를 빼요.', '오이와 김치를 채 썰어요.', '면에 양념장과 채소를 넣고 비벼 삶은 계란을 올려요.'],
+  },
+  {
+    id: 'curry-rice', name: '카레라이스', emoji: '🍛', timeMinutes: 25, difficulty: '쉬움', tags: ['덮밥'],
+    ingredients: [I('밥', 1, '공기'), I('카레가루', 25, 'g'), I('감자', 0.5, '개'), I('양파', 0.5, '개'), I('당근', 0.3, '개', { optional: true }), I('돼지고기', 60, 'g', { optional: true, substitute: '닭가슴살' })],
+    steps: ['감자·양파·당근·고기를 깍둑 썰어요.', '기름에 고기와 양파를 3분 볶다가 감자·당근을 넣어요.', '물 200ml를 붓고 감자가 익을 때까지 10분 끓여요.', '불을 줄이고 카레가루를 풀어 3분 저어 가며 끓인 뒤 밥에 올려요.'],
+  },
+  {
+    id: 'dumpling-soup', name: '만두국', emoji: '🥟', timeMinutes: 15, difficulty: '쉬움', tags: ['국물', '냉동식품'],
+    ingredients: [I('만두', 6, '개'), I('계란', 1, '개', { optional: true }), I('대파', 0.3, '대'), I('간장', 1, '큰술'), I('떡', 80, 'g', { optional: true })],
+    steps: ['물 450ml에 간장을 넣고 끓여요.', '냉동 만두(와 떡)를 그대로 넣고 6분 끓여요.', '푼 계란을 둘러 넣고 대파를 올려요.', '소금으로 간을 맞춰요.'],
+  },
+  {
+    id: 'microwave-egg', name: '전자레인지 계란찜', emoji: '🥚', timeMinutes: 5, difficulty: '쉬움', tags: ['반찬', '초간단', '전자레인지'],
+    ingredients: [I('계란', 2, '개'), I('대파', 0.1, '대', { optional: true }), I('소금', 0.3, '작은술')],
+    steps: ['전자레인지용 그릇에 계란 2개와 물 100ml, 소금을 넣고 잘 풀어요.', '송송 썬 대파를 넣어요.', '랩을 씌우고 구멍을 2~3개 뚫어요.', '전자레인지에 2분 30초 돌려요. 덜 익었으면 20초씩 더 돌려요.'],
+  },
+  {
+    id: 'salmon-bowl', name: '연어덮밥', emoji: '🍣', timeMinutes: 10, difficulty: '쉬움', tags: ['덮밥', '초간단'],
+    ingredients: [I('연어', 100, 'g'), I('밥', 1, '공기'), I('양파', 0.2, '개', { optional: true }), I('간장', 1, '큰술'), I('깻잎', 3, '장', { optional: true })],
+    steps: ['양파는 얇게 썰어 찬물에 5분 담가 매운맛을 빼요.', '연어를 도톰하게 썰어요.', '밥 위에 깻잎·양파·연어를 올려요.', '간장(와사비 조금)을 곁들여요.'],
+  },
+  {
+    id: 'cream-pasta', name: '베이컨 크림파스타', emoji: '🍝', timeMinutes: 20, difficulty: '보통', tags: ['양식', '면'],
+    ingredients: [I('파스타면', 90, 'g'), I('베이컨', 50, 'g', { substitute: '햄' }), I('우유', 200, 'ml'), I('치즈', 1, '장'), I('마늘', 0.5, '큰술', { optional: true }), I('버섯', 0.3, '봉', { optional: true })],
+    steps: ['소금 넣은 물에 면을 봉지 시간보다 1분 짧게 삶아요.', '팬에 베이컨·마늘·버섯을 3분 볶아요.', '우유와 치즈를 넣고 약불에서 걸쭉해질 때까지 저어요(센불이면 우유가 분리돼요).', '면을 넣고 1분 버무린 뒤 후추로 마무리해요.'],
+  },
+  {
+    id: 'tortilla-pizza', name: '또띠아 피자', emoji: '🍕', timeMinutes: 15, difficulty: '쉬움', tags: ['양식', '간편식'],
+    ingredients: [I('또띠아', 1, '장'), I('토마토소스', 40, 'g', { substitute: '케첩' }), I('치즈', 2, '장'), I('햄', 30, 'g', { optional: true }), I('파프리카', 0.2, '개', { optional: true }), I('양파', 0.1, '개', { optional: true })],
+    steps: ['또띠아에 토마토소스를 얇게 펴 발라요.', '햄·파프리카·양파를 올리고 치즈를 덮어요.', '프라이팬에 올려 뚜껑을 덮고 약불에서 6~8분 구워요(전자레인지는 2분, 바삭함은 덜해요).', '치즈가 녹으면 잘라서 먹어요.'],
+  },
+  {
+    id: 'oatmeal', name: '오트밀 바나나죽', emoji: '🥣', timeMinutes: 5, difficulty: '쉬움', tags: ['간편식', '아침', '전자레인지', '초간단'],
+    ingredients: [I('오트밀', 40, 'g'), I('우유', 150, 'ml', { substitute: '두유' }), I('바나나', 0.5, '개', { optional: true }), I('블루베리', 30, 'g', { optional: true })],
+    steps: ['큰 그릇에 오트밀과 우유를 넣어요.', '전자레인지에 1분 30초 돌리고 한 번 저어요(넘칠 수 있어 큰 그릇이 좋아요).', '30초 더 돌려요.', '바나나·블루베리를 올려요.'],
+  },
+  {
+    id: 'sprout-pork', name: '숙주 돼지고기볶음', emoji: '🥢', timeMinutes: 15, difficulty: '쉬움', tags: ['볶음'],
+    ingredients: [I('숙주', 150, 'g', { substitute: '콩나물' }), I('돼지고기', 100, 'g'), I('굴소스', 1, '큰술', { substitute: '간장' }), I('대파', 0.3, '대', { optional: true }), I('마늘', 0.5, '큰술', { optional: true })],
+    steps: ['숙주를 씻어 물기를 빼요.', '팬에 마늘·대파를 볶다가 돼지고기를 넣어 익혀요.', '굴소스로 간해요.', '숙주를 넣고 센불에서 30초만 볶아 아삭하게 마무리해요.'],
+  },
+  {
+    id: 'eggplant-stir', name: '가지볶음', emoji: '🍆', timeMinutes: 15, difficulty: '쉬움', tags: ['반찬', '볶음'],
+    ingredients: [I('가지', 1, '개'), I('간장', 1, '큰술'), I('대파', 0.3, '대'), I('마늘', 0.5, '큰술', { optional: true }), I('설탕', 0.3, '큰술', { optional: true })],
+    steps: ['가지를 반 갈라 어슷 썰어요.', '팬에 기름을 두르고 대파·마늘을 볶아 향을 내요.', '가지를 넣고 중불에서 4분 볶아요(기름을 다 먹어도 더 넣지 말고 물 1큰술).', '간장·설탕을 넣고 1분 더 볶아요.'],
+  },
+  {
+    id: 'broccoli-shrimp', name: '브로콜리 새우볶음', emoji: '🥦', timeMinutes: 15, difficulty: '쉬움', tags: ['볶음'],
+    ingredients: [I('브로콜리', 0.5, '개'), I('새우', 80, 'g'), I('마늘', 0.5, '큰술'), I('굴소스', 1, '큰술', { substitute: '간장' }), I('밥', 1, '공기', { optional: true })],
+    steps: ['브로콜리를 한입 크기로 잘라 끓는 물에 1분 데쳐요.', '팬에 마늘을 볶다가 새우를 넣어 색이 바뀔 때까지 볶아요.', '브로콜리와 굴소스를 넣고 1분 볶아요.', '밥 위에 올리면 덮밥이 돼요.'],
+  },
+  {
+    id: 'tuna-riceball', name: '참치마요 주먹밥', emoji: '🍙', timeMinutes: 10, difficulty: '쉬움', tags: ['간편식', '초간단', '도시락'],
+    ingredients: [I('밥', 1, '공기'), I('참치캔', 0.5, '캔'), I('마요네즈', 1, '큰술'), I('김', 0.3, '봉', { optional: true }), I('깻잎', 2, '장', { optional: true })],
+    steps: ['참치 기름을 빼고 마요네즈와 섞어요.', '밥에 참기름·소금 조금을 넣어 섞어요.', '밥을 손바닥에 펴고 참치마요를 넣어 동그랗게 뭉쳐요.', '부순 김에 굴리거나 깻잎으로 감싸요.'],
+  },
+  {
+    id: 'frozen-rice-upgrade', name: '냉동볶음밥 한 끗 업그레이드', emoji: '🍳', timeMinutes: 10, difficulty: '쉬움', tags: ['볶음', '냉동식품', '초간단'],
+    ingredients: [I('냉동볶음밥', 1, '봉'), I('계란', 1, '개'), I('김치', 40, 'g', { optional: true }), I('대파', 0.2, '대', { optional: true }), I('치즈', 1, '장', { optional: true })],
+    steps: ['팬에 기름을 두르고 대파·김치를 1분 볶아요.', '냉동볶음밥을 넣고 중불에서 5분 볶아요.', '한쪽에 계란 프라이를 해요.', '치즈를 올려 녹이고 계란을 얹어요.'],
+  },
 ];
 
 const NUTRITION_REF: Record<string, string> = {
   'egg-roll': '계란말이', 'tofu-braise': '두부조림', 'tuna-mayo': '참치마요덮밥', udon: '우동',
   'egg-toast': '토스트', 'bean-sprout-soup': '콩나물국', 'mushroom-bulgogi': '불고기', 'shrimp-garlic': '볶음밥',
+  'microwave-egg': '계란찜', 'cream-pasta': '크림파스타', 'tortilla-pizza': '또띠아 피자', oatmeal: '오트밀죽',
+  'sprout-pork': '숙주볶음', 'tuna-riceball': '참치 주먹밥', 'frozen-rice-upgrade': '냉동볶음밥',
 };
 
 export const BUILTIN_RECIPES: Recipe[] = DRAFTS.map((d) => {

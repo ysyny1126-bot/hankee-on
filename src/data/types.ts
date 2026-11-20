@@ -156,6 +156,8 @@ export interface FoodPreferences {
   showFridgePhoto: boolean;
   /** 맞춤 영양 계산용 신체 정보(선택). 가입 때 묻지 않는다. */
   body: BodyInfo | null;
+  /** A7 내 단위: 재료 사전 이름 → { 내 단위: 사전 기본 단위로 몇 개 } (예: 두부 { 팩: 0.5 }) */
+  myUnits: Record<string, Record<string, number>>;
 }
 
 export type FridgeSize = 'mini' | 'single' | 'standard' | 'large';

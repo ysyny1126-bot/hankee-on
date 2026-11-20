@@ -7,10 +7,11 @@ import { Sheet } from '@/components/sheet';
 import { TidyCard } from '@/components/tidy-card';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
-import { sameIngredient } from '@/data/catalog';
+import { findCatalog, keepInfo, sameIngredient } from '@/data/catalog';
+import { convert } from '@/logic/units';
 import { actions, useAppState } from '@/data/store';
 import type { Ingredient, StorageType } from '@/data/types';
-import { addDays, dDayLabel, daysUntil, guessMealType, isValidDateKey, toDateKey } from '@/logic/dates';
+import { addDays, dDayLabel, daysUntil, euro, guessMealType, isValidDateKey, toDateKey } from '@/logic/dates';
 import { rankForUser } from '@/logic/suggestions';
 
 const SHELVES: { key: StorageType | 'leftover'; label: string; emoji: string }[] = [
@@ -184,6 +185,11 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         </>
       )}
 
+      {i.kind !== 'leftover' && keepInfo(i.name) ? (
+        <T v="tiny" c={color.textSub}>📦 보관 참고: {keepInfo(i.name)} (대략치 · 제품 기한이 우선)</T>
+      ) : null}
+      {i.kind !== 'leftover' ? <MyUnit item={i} /> : null}
+
       {i.kind === 'leftover' && (
         <Button title={`🍽️ 한 끼 먹기 (${Math.min(1, i.quantity)}인분)`} kind="fresh" onPress={() => { actions.eatLeftover(i.id, 1, guessMealType() === 'snack' ? 'dinner' : guessMealType()); onClose(); notify('맛있게 드세요!', '식사 기록에 남겼어요.'); }} />
       )}
@@ -211,5 +217,39 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         <T v="small" c={color.textMuted}>자세히 수정</T>
       </Pressable>
     </>
+  );
+}
+
+/**
+ * A7 내 단위: 이 재료의 단위를 레시피 단위(사전 기본 단위)로 바꿀 수 없을 때
+ * "1팩 = 몇 모"처럼 한 번만 정해 두면, 그다음부터 추천·차감이 자동으로 맞춰진다.
+ */
+function MyUnit({ item: i }: { item: Ingredient }) {
+  const s = useAppState();
+  const cat = findCatalog(i.name);
+  const saved = cat ? s.preferences.myUnits?.[cat.name]?.[i.unit] : undefined;
+  const auto = cat && cat.unit !== i.unit ? convert(1, i.unit, cat.unit, i.name) : null;
+  const [v, setV] = useState(saved ?? auto ?? 1);
+  const [open, setOpen] = useState(false);
+  if (!cat || cat.unit === i.unit) return null;
+  if (auto != null && saved == null && !open)
+    return (
+      <Pressable onPress={() => setOpen(true)} hitSlop={6}>
+        <T v="tiny" c={color.textMuted}>단위: 1{i.unit} ≈ {Math.round(auto * 100) / 100}{cat.unit}(평균값) · 우리 집 기준으로 바꾸기</T>
+      </Pressable>
+    );
+  return (
+    <View style={{ backgroundColor: color.surfaceAlt, borderRadius: radius.md, padding: space.sm, gap: 6 }}>
+      <T v="small" style={{ fontWeight: '700' }}>{saved != null ? '내 단위' : '단위 맞추기'}: 1{i.unit} = 몇 {cat.unit}인가요?</T>
+      {saved == null && auto == null ? <T v="tiny" c={color.textSub}>레시피는 '{cat.unit}' 단위라서, 정해 두면 이 재료도 추천·차감에 정확히 쓰여요.</T> : null}
+      <Row style={{ justifyContent: 'space-between' }}>
+        <T>1{i.unit} =</T>
+        <Row gap={4}>
+          <Stepper value={v} step={['g', 'ml'].includes(cat.unit) ? 10 : 0.25} min={0.25} onChange={setV} />
+          <T v="small">{cat.unit}</T>
+        </Row>
+      </Row>
+      <Button small title="저장" onPress={() => { actions.setMyUnit(cat.name, i.unit, v); setOpen(false); notify('내 단위를 저장했어요', `${cat.name} 1${i.unit} = ${euro(`${v}${cat.unit}`)} 계산할게요.`); }} />
+    </View>
   );
 }
