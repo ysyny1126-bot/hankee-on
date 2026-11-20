@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { goBack } from '@/logic/nav';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -122,7 +123,7 @@ export default function ScanFridge() {
     }));
     actions.addIngredients(items);
     notify(`${items.length}개 재료를 등록했어요`, items.some((i) => !i.expiryDate) ? '소비기한은 냉장고 화면에서 재료를 눌러 언제든 추가할 수 있어요.' : '');
-    router.back();
+    goBack('/fridge');
   };
 
   const checkedCount = list.filter((c) => c.checked).length;

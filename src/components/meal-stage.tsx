@@ -50,6 +50,7 @@ export function MealStage({
   onAnother,
   canSwap,
   mood,
+  when = '오늘은',
 }: {
   characterId?: string;
   kicker: string;
@@ -63,6 +64,8 @@ export function MealStage({
   onAnother: () => void;
   canSwap: boolean;
   mood: 'happy' | 'idle';
+  /** 제안 문장 앞말: '오늘은' · '저녁은' · '내일 아침은' */
+  when?: string;
 }) {
   const insets = useSafeAreaInsets();
   const [w, setW] = useState(0);
@@ -92,7 +95,7 @@ export function MealStage({
         <T v="small" c={color.textSub} style={{ fontWeight: '700', textAlign: 'center' }}>{kicker}</T>
         {r ? (
           <Text style={styles.headline} accessibilityRole="header">
-            {chosen ? '오늘은 ' : '오늘은 '}
+            {`${when} `}
             <Text style={{ color: color.brandDark }}>{r.name}</Text>
             {chosen ? ' 만들어요!' : ' 어때요?'}
           </Text>

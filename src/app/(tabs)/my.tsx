@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Character } from '@/components/character';
 import { Icon } from '@/components/icon';
 import { Bars, IconButton, PageHeader, ProgressBar, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { clay, color, radius, space } from '@/constants/tokens';
+import { clay, color, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import { analyzePeriod, goalProgress, thisWeek, usedValue, wasteStats } from '@/logic/analysis';
 import { addDays, fromDateKey, toDateKey } from '@/logic/dates';

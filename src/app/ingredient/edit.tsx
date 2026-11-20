@@ -1,4 +1,5 @@
-import { router, Stack as RStack, useLocalSearchParams } from 'expo-router';
+import { Stack as RStack, useLocalSearchParams } from 'expo-router';
+import { goBack } from '@/logic/nav';
 import { useState } from 'react';
 
 import { readExpiryFromPackage, hasAIKey } from '@/ai/gemini';
@@ -6,7 +7,7 @@ import { pickPhoto } from '@/ai/photo';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
-import { findCatalog, INGREDIENT_CATALOG, keepInfo } from '@/data/catalog';
+import { findCatalog, findCatalogExact, INGREDIENT_CATALOG, keepInfo } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { IngredientLocation, StorageType } from '@/data/types';
 import { addDays, isValidDateKey, toDateKey } from '@/logic/dates';
@@ -26,19 +27,31 @@ export default function IngredientEdit() {
   const [expirySource, setExpirySource] = useState<'user' | 'package' | null>(existing?.expirySource ?? null);
   const [price, setPrice] = useState(existing?.price ? String(existing.price) : '');
   const [ocrText, setOcrText] = useState('');
+  const [added, setAdded] = useState<string[]>([]); // '하나 더'로 방금 등록한 재료
   const [ocrLoading, setOcrLoading] = useState(false);
 
   const aiOn = hasAIKey() && s.consents.externalAI;
   const suggestions = name.trim() && !existing ? INGREDIENT_CATALOG.filter((c) => c.name.includes(name.trim()) && c.name !== name.trim()).slice(0, 5) : [];
 
-  const applyCatalog = (n: string) => {
-    setName(n);
+  // 사용자가 직접 바꾼 칸은 사전 값으로 덮어쓰지 않는다
+  const [touched, setTouched] = useState({ unit: false, storage: false, quantity: false });
+  const applyCatalog = (n: string, setTyped = true) => {
+    if (setTyped) setName(n);
     const c = findCatalog(n);
     if (c && !existing) {
-      setUnit(c.unit);
-      setStorage(c.storage);
-      setLocation(c.storage === 'pantry' ? 'outside' : 'fridge');
+      if (!touched.unit) setUnit(c.unit);
+      if (!touched.storage) {
+        setStorage(c.storage);
+        setLocation(c.storage === 'pantry' ? 'outside' : 'fridge');
+      }
+      // g·ml 재료를 '1g'로 넣는 실수를 막기 위한 시작값(언제든 고칠 수 있음)
+      if (!touched.quantity) setQuantity(['g', 'ml'].includes(c.unit) ? 100 : 1);
     }
+  };
+  /** 이름을 칠 때마다: 사전에 정확히 있는 이름이면 단위·보관을 바로 맞춘다(칸을 벗어나지 않고 등록해도 맞게) */
+  const onName = (t: string) => {
+    setName(t);
+    if (findCatalogExact(t.trim())) applyCatalog(t.trim(), false);
   };
 
   const scanPackage = async () => {
@@ -60,7 +73,7 @@ export default function IngredientEdit() {
     }
   };
 
-  const save = () => {
+  const save = (more = false) => {
     if (!name.trim()) return notify('재료 이름을 입력해 주세요');
     if (expiry && !isValidDateKey(expiry)) return notify('소비기한 형식을 확인해 주세요', '예: 2026-11-25');
     const data = {
@@ -75,14 +88,34 @@ export default function IngredientEdit() {
     };
     if (existing) actions.updateIngredient(existing.id, { ...data, emoji: findCatalog(data.name)?.emoji ?? existing.emoji });
     else actions.addIngredients([{ ...data, source: 'user' }]);
-    router.back();
+    if (more && !existing) {
+      // 등록하고 하나 더: 화면을 비우고 이름 칸부터 다시
+      setAdded((l) => [...l, data.name]);
+      setName('');
+      setQuantity(1);
+      setUnit('개');
+      setTouched({ unit: false, storage: false, quantity: false });
+      setExpiry('');
+      setExpirySource(null);
+      setPrice('');
+      return;
+    }
+    goBack('/fridge');
   };
 
   const today = toDateKey();
   return (
-    <Screen edges={['bottom']} footer={<Button title={existing ? '저장' : '냉장고에 등록'} onPress={save} />}>
+    <Screen edges={['bottom']} footer={
+      existing ? <Button title="저장" onPress={() => save()} /> : (
+        <Row gap={space.sm}>
+          <Button title="하나 더" kind="secondary" style={{ flex: 1 }} onPress={() => save(true)} />
+          <Button title="냉장고에 등록" style={{ flex: 2 }} onPress={() => save()} />
+        </Row>
+      )
+    }>
       <RStack.Screen options={{ title: existing ? '식재료 수정' : '식재료 등록' }} />
-      <Field label="재료 이름" placeholder="예: 두부" value={name} onChangeText={setName} onBlur={() => applyCatalog(name.trim())} />
+      {added.length > 0 && <T v="small" c={color.brandDark}>✓ 방금 등록: {added.join(', ')}</T>}
+      <Field label="재료 이름" placeholder="예: 두부" value={name} onChangeText={onName} onBlur={() => applyCatalog(name.trim())} />
       {suggestions.length > 0 && (
         <Row wrap>{suggestions.map((c) => <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => applyCatalog(c.name)} />)}</Row>
       )}
@@ -90,13 +123,13 @@ export default function IngredientEdit() {
       <Row style={{ justifyContent: 'space-between' }}>
         <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>수량</T>
         <Row>
-          <Stepper value={quantity} onChange={setQuantity} step={unit === 'g' || unit === 'ml' ? 50 : 1} />
-          <Field value={unit} onChangeText={setUnit} style={{ width: 64 }} />
+          <Stepper value={quantity} onChange={(n) => { setQuantity(n); setTouched((t) => ({ ...t, quantity: true })); }} step={unit === 'g' || unit === 'ml' ? 50 : 1} />
+          <Field value={unit} onChangeText={(u) => { setUnit(u); setTouched((t) => ({ ...t, unit: true })); }} style={{ width: 64 }} accessibilityLabel="단위" />
         </Row>
       </Row>
 
       <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>보관 방법</T>
-      <Segmented options={[{ key: 'fridge', label: '냉장' }, { key: 'freezer', label: '냉동' }, { key: 'pantry', label: '실온' }]} value={storage} onChange={setStorage} />
+      <Segmented options={[{ key: 'fridge', label: '냉장' }, { key: 'freezer', label: '냉동' }, { key: 'pantry', label: '실온' }]} value={storage} onChange={(k) => { setStorage(k); setTouched((t) => ({ ...t, storage: true })); }} />
       <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>보관 위치</T>
       <Segmented options={[{ key: 'fridge', label: '냉장고 안' }, { key: 'outside', label: '냉장고 밖(찬장 등)' }]} value={location} onChange={setLocation} />
 
@@ -119,14 +152,14 @@ export default function IngredientEdit() {
 
       {existing && (
         <Stack gap={space.sm}>
-          <Button title="다 먹음 (재고에서 빼기)" kind="secondary" onPress={() => { actions.useUpIngredient(existing.id); router.back(); }} />
+          <Button title="다 먹음 (재고에서 빼기)" kind="secondary" onPress={() => { actions.useUpIngredient(existing.id); goBack('/fridge'); }} />
           <Button
             title="버림 (폐기 기록)"
             kind="danger"
             onPress={async () => {
               if (await confirmAsync(`${existing.name} 폐기`, '폐기로 기록하면 이번 달 낭비 통계에 반영돼요.', '폐기 기록')) {
                 actions.discardIngredient(existing.id, existing.expiryDate && existing.expiryDate < today ? 'expired' : 'spoiled');
-                router.back();
+                goBack('/fridge');
               }
             }}
           />

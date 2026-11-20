@@ -6,7 +6,7 @@ import { hasAIKey, recipeFromName } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Icon } from '@/components/icon';
 import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { clay, color, radius, space } from '@/constants/tokens';
+import { clay, color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
 import { addDays, eul, iga, toDateKey } from '@/logic/dates';

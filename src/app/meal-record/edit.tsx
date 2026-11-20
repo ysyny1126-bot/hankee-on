@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { router, Stack as RStack, useLocalSearchParams } from 'expo-router';
+import { Stack as RStack, useLocalSearchParams } from 'expo-router';
+import { goBack } from '@/logic/nav';
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, View } from 'react-native';
 
@@ -132,7 +133,7 @@ export default function MealRecordEdit() {
     const data = { mealDate: date, mealType, mealTime: time.padStart(5, '0'), imageUri, description: memo, sourceType: source, items, cost: source !== 'home' && won > 0 ? won : undefined };
     if (existing) actions.updateMeal(existing.id, data);
     else actions.addMeal(data);
-    router.back();
+    goBack('/log');
   };
 
   const total = items.reduce((a, i) => a + (i.nutrition?.calories ?? 0) * (i.quantity || 1), 0);
@@ -236,7 +237,7 @@ export default function MealRecordEdit() {
           onPress={async () => {
             if (await confirmAsync('식사 기록 삭제', '삭제하면 되돌릴 수 없어요.', '삭제')) {
               actions.deleteMeal(existing.id);
-              router.back();
+              goBack('/log');
             }
           }}
         />

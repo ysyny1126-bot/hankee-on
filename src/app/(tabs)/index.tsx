@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -9,8 +8,8 @@ import { TidyCard } from '@/components/tidy-card';
 import { PlanCatchUp } from '@/components/plan-catch-up';
 import { notify } from '@/components/dialog';
 import { Icon, type IconName } from '@/components/icon';
-import { Button, IconButton, PageHeader, Row, Screen, T, tx } from '@/components/ui';
-import { color, radius, shadow, space } from '@/constants/tokens';
+import { Button, Row, Screen, T } from '@/components/ui';
+import { color, radius, space } from '@/constants/tokens';
 import { actions, useAllRecipes, useAppState } from '@/data/store';
 import type { Ingredient, MealRecord, MealType, Recipe } from '@/data/types';
 import { MEAL_LABEL } from '@/logic/analysis';
@@ -39,7 +38,11 @@ export default function Home() {
   const p = s.preferences;
   const today = toDateKey();
   const hour = new Date().getHours();
-  const slot: MealType = hour < 10 ? 'breakfast' : hour < 15 ? 'lunch' : 'dinner';
+  // 지금 끼니를 이미 먹고 기록했으면 다음 끼니를 제안한다(점심 먹은 뒤엔 저녁 메뉴)
+  const nowSlot: MealType = hour < 10 ? 'breakfast' : hour < 15 ? 'lunch' : 'dinner';
+  const eaten = (t: MealType) => s.meals.some((m) => m.mealDate === today && m.mealType === t);
+  const slot: MealType = SLOTS.slice(SLOTS.indexOf(nowSlot)).find((t) => !eaten(t)) ?? nowSlot;
+  const when = slot === nowSlot && !eaten(slot) ? '오늘은' : eaten(slot) ? '다음 끼니는' : `${MEAL_LABEL[slot]}은`;
 
   const firstUse = expiringIngredients(s).filter((i) => i.kind !== 'leftover' && isUsable(i));
   const todayMeals = s.meals.filter((m) => m.mealDate === today).sort((a, b) => a.mealTime.localeCompare(b.mealTime));
@@ -89,6 +92,7 @@ export default function Home() {
         firstUse={firstUse}
         dateLabel={dateLabel}
         mood={menu ? 'happy' : coach.mood}
+        when={when}
         canSwap={candidates.length > 1 || !!chosen}
         onChoose={() => menu && choose(menu)}
         onCook={() => menu && router.push(`/recipe/${menu.recipe.id}?prep=1`)}
@@ -243,26 +247,6 @@ export function ErrorBoundary({ retry }: { error: Error; retry: () => Promise<vo
 }
 
 const styles = StyleSheet.create({
-  greet: { ...tx({ fontSize: 24, lineHeight: 32, fontWeight: '800', letterSpacing: -0.8, color: color.text }) },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  scene: { backgroundColor: color.scene, borderRadius: 28, padding: 18, paddingBottom: 14, gap: 10 },
-  bubble: { alignSelf: 'center', maxWidth: '88%', backgroundColor: color.surface, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, ...shadow.soft },
-  bubbleTail: { position: 'absolute', bottom: -6, left: '38%', width: 12, height: 12, backgroundColor: color.surface, transform: [{ rotate: '45deg' }] },
-  fridge: { width: 118, height: 156, borderRadius: 22, backgroundColor: '#FFFDF8', borderWidth: 2, borderColor: '#EAD9C0', padding: 6, gap: 5, ...shadow.card },
-  freezer: { height: 34, borderRadius: 14, backgroundColor: '#EEF5F3' },
-  fridgeBody: { flex: 1, borderRadius: 14, backgroundColor: '#FBF5EA', padding: 8, paddingRight: 14, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'flex-start', rowGap: 4 },
-  handle: { position: 'absolute', right: 5, top: 9, width: 4, height: 16, borderRadius: 2, backgroundColor: '#D9C9B2' },
-  fridgeBadge: { position: 'absolute', top: -8, right: -8, backgroundColor: color.warnSoft, borderColor: color.surface, borderWidth: 2, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  sceneFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  openFridge: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 16, paddingHorizontal: 14, minHeight: 48 },
-  menuCard: { backgroundColor: color.surface, borderRadius: 28, overflow: 'hidden', ...shadow.card, marginTop: space.sm },
-  menuArt: { height: 150, backgroundColor: '#FFF7EC', alignItems: 'center', justifyContent: 'center' },
-  plate: { width: 116, height: 116, borderRadius: 58, backgroundColor: color.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: '#F6EBDD' },
-  menuKicker: { position: 'absolute', left: 14, top: 14, backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  menuTitle: { ...tx({ fontSize: 24, lineHeight: 31, fontWeight: '800', letterSpacing: -0.8, color: color.text }) },
-  useChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: color.surfaceAlt, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
-  primary: { flex: 1, minHeight: 50, borderRadius: 999, backgroundColor: color.brandDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16 },
-  secondary: { minHeight: 50, borderRadius: 999, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16 },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   recordBar: { flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: color.surface, borderRadius: radius.md, paddingVertical: 10, paddingLeft: 16, paddingRight: 10 },
   smallAction: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: color.brandSoft, borderRadius: 999, paddingHorizontal: 12, minHeight: 40 },
