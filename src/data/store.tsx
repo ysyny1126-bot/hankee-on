@@ -6,6 +6,7 @@ import { findCatalog } from './catalog';
 import { BUILTIN_RECIPES } from './recipes';
 import type {
   AppState,
+  ProfileKey,
   CookRating,
   CookRecord,
   DietaryGoal,
@@ -20,6 +21,7 @@ import type {
 import { addDays, newId, toDateKey } from '@/logic/dates';
 import { round } from '@/logic/inventory';
 import { setUserUnits } from '@/logic/units';
+import { BUDGET_BANDS, LIFESTYLES } from '@/constants/profile';
 
 /**
  * 한끼온 저장소.
@@ -55,6 +57,8 @@ export const initialState: AppState = {
     showFridgePhoto: false,
     body: null,
     myUnits: {},
+    autoFilled: [],
+    profileSet: [],
   },
   consents: { personalization: false, externalAI: false, healthInfo: false, agreedAt: null },
   notifications: {
@@ -293,6 +297,59 @@ export const actions = {
         ...s,
         ingredients: [...s.ingredients.map((x) => (x.id === id ? { ...x, quantity: round(it.quantity - each * (parts - 1)) } : x)), ...copies],
       };
+    });
+  },
+  /**
+   * 설정에서 사용자가 직접 정한 값 저장: '자동' 표시를 떼고, 이후 생활 유형을 바꿔도 덮어쓰지 않는다.
+   */
+  setProfile(key: ProfileKey, patch: Partial<AppState['preferences']>) {
+    setState((s) => ({
+      ...s,
+      preferences: {
+        ...s.preferences,
+        ...patch,
+        autoFilled: (s.preferences.autoFilled ?? []).filter((k) => k !== key),
+        profileSet: [...new Set([...(s.preferences.profileSet ?? []), key])],
+      },
+    }));
+  },
+  /**
+   * 생활 유형 저장 + 아직 직접 정하지 않은 항목은 그 유형의 흔한 값으로 미리 채우고 '자동' 표시.
+   * (여러 유형이면 뒤에 고른 것이 우선, 함께 먹는 사람은 가장 큰 값)
+   */
+  setLifestyles(ids: string[]) {
+    setState((s) => {
+      const p = s.preferences;
+      const set = new Set(p.profileSet ?? []);
+      const auto = new Set(p.autoFilled ?? []);
+      const patch: Partial<AppState['preferences']> = { lifestyles: ids };
+      for (const id of ids) {
+        const d = LIFESTYLES.find((l) => l.id === id)?.defaults ?? {};
+        if (d.budgetBand && !set.has('budget')) {
+          const b = BUDGET_BANDS.find((x) => x.id === d.budgetBand);
+          if (b) {
+            Object.assign(patch, { budgetBand: b.id, monthlyBudget: b.value, weeklyBudget: Math.round(b.value / 4.3 / 1000) * 1000 });
+            auto.add('budget');
+          }
+        }
+        if (d.maxCookMinutes && !set.has('cookTime')) {
+          patch.maxCookMinutes = d.maxCookMinutes;
+          auto.add('cookTime');
+        }
+        if (d.cookingSkill && !set.has('skill')) {
+          patch.cookingSkill = d.cookingSkill;
+          auto.add('skill');
+        }
+        if (d.householdSize && !set.has('household')) {
+          patch.householdSize = Math.max(patch.householdSize ?? 1, d.householdSize);
+          auto.add('household');
+        }
+        if (d.planHabit && !set.has('planHabit')) {
+          patch.planHabit = d.planHabit;
+          auto.add('planHabit');
+        }
+      }
+      return { ...s, preferences: { ...p, ...patch, autoFilled: [...auto] } };
     });
   },
   /** A7 내 단위 저장: 1 unit = perUnit × 사전 기본 단위 */

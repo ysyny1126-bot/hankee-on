@@ -160,7 +160,14 @@ export interface FoodPreferences {
   body: BodyInfo | null;
   /** A7 내 단위: 재료 사전 이름 → { 내 단위: 사전 기본 단위로 몇 개 } (예: 두부 { 팩: 0.5 }) */
   myUnits: Record<string, Record<string, number>>;
+  /** 생활 유형 기본값으로 미리 채운 항목(설정에서 '자동' 표시). ProfileKey 값 */
+  autoFilled: string[];
+  /** 사용자가 직접 정한 항목 — 생활 유형을 바꿔도 덮어쓰지 않는다 */
+  profileSet: string[];
 }
+
+/** 설정 요약 목록에서 쓰는 항목 이름(자동 채우기·직접 정함 표시용) */
+export type ProfileKey = 'budget' | 'cookTime' | 'skill' | 'household' | 'planHabit';
 
 export type FridgeSize = 'mini' | 'single' | 'standard' | 'large';
 export type FridgeSpace = 'full' | 'some' | 'lots';

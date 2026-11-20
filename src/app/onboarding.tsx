@@ -140,6 +140,16 @@ export default function Onboarding() {
     }
   };
 
+  /** 설정의 '자동' 표시용: 직접 고른 항목과, 생활 유형으로 미리 채워진 항목을 나눠 기록 */
+  const profileMarks = () => {
+    const map: Record<string, string> = { budgetBand: 'budget', monthlyBudget: 'budget', maxCookMinutes: 'cookTime', cookingSkill: 'skill', householdSize: 'household', planHabit: 'planHabit' };
+    const set = new Set([...touched.current].map((k) => map[k as string]).filter(Boolean));
+    const auto = new Set<string>();
+    for (const id of d.lifestyles)
+      for (const k of Object.keys(LIFESTYLES.find((l) => l.id === id)?.defaults ?? {})) if (map[k] && !set.has(map[k])) auto.add(map[k]);
+    return { profileSet: [...set], autoFilled: [...auto] };
+  };
+
   const finish = async (withDemo: boolean) => {
     const savedPhoto = photo && usePhotoAtHome ? storableUri(photo) : null;
     actions.completeOnboarding(
@@ -150,6 +160,7 @@ export default function Onboarding() {
         allergies: healthConsent ? d.allergies : [],
         fridgePhotoUri: savedPhoto,
         showFridgePhoto: !!savedPhoto,
+        ...profileMarks(),
       },
       { personalization: personal, externalAI: aiConsent, healthInfo: healthConsent && d.allergies.length > 0 },
     );
