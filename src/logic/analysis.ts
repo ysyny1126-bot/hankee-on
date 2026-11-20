@@ -209,10 +209,12 @@ export function goalProgress(goal: DietaryGoal, s: AppState): { value: number; r
       return { value: n, ratio: n <= goal.targetValue ? 1 : goal.targetValue / n, basis: '이번 주 버린 식재료 수(적을수록 달성)' };
     }
     case 'budget': {
-      const spent = s.ingredients
-        .filter((i) => i.addedAt.slice(0, 10) >= start && i.price)
-        .reduce((a2, i) => a2 + (i.price ?? 0), 0);
-      return { value: spent, ratio: spent <= goal.targetValue ? 1 : goal.targetValue / spent, basis: '이번 주 등록한 재료의 가격 합(가격을 입력한 재료만)' };
+      // A1: 재료를 '들인 시점'의 지출 기록으로 계산 — 다 먹거나 버려도 줄지 않는다
+      const recs = (s.spend ?? []).filter((x) => x.date >= start && x.date <= end);
+      const spent = recs.reduce((a2, x) => a2 + x.amount, 0);
+      const est = recs.filter((x) => x.estimated).length;
+      const basis = `이번 주(${start.slice(5)}~${end.slice(5)}) 재료를 들일 때 남은 지출 ${recs.length}건${est ? ` · 그중 ${est}건은 가격을 안 적어 평균가로 추정` : ''}`;
+      return { value: spent, ratio: spent <= goal.targetValue ? 1 : goal.targetValue / spent, basis };
     }
     default:
       return null;

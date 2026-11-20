@@ -29,6 +29,10 @@ export interface Ingredient {
   /** 'leftover' = 요리하고 남은 음식(재료 비교에는 쓰지 않음) */
   kind?: 'ingredient' | 'leftover';
   recipeId?: string; // 남은 음식이면 어떤 레시피에서 나왔는지
+  /** 기한이 지난 뒤 사용자가 '아직 괜찮아요'라고 확인한 날(YYYY-MM-DD). 기한 자체는 바꾸지 않는다 */
+  expiryCheckedOn?: string;
+  /** 아주 적게 남았지만 사용자가 '남겨 두기'를 고름 → 정리 안내를 다시 하지 않음 */
+  keepSmall?: boolean;
 }
 
 export interface RecipeIngredient {
@@ -213,6 +217,11 @@ export interface MealPlanEntry {
   mealType: MealType;
   recipeId: string;
   reason: string; // 추천 이유
+  /** A3: 'done' = 이 끼니를 실제로 먹고 기록함(mealId로 연결) */
+  status?: 'done';
+  mealId?: string;
+  /** A5: 남은 음식으로 채운 끼니(냉장고의 남은 음식 id) */
+  leftoverId?: string;
 }
 
 export interface NotificationSettings {

@@ -5,6 +5,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { MealStage } from '@/components/meal-stage';
+import { TidyCard } from '@/components/tidy-card';
+import { PlanCatchUp } from '@/components/plan-catch-up';
+import { notify } from '@/components/dialog';
 import { Icon, type IconName } from '@/components/icon';
 import { Button, IconButton, PageHeader, Row, Screen, T, tx } from '@/components/ui';
 import { color, radius, shadow, space } from '@/constants/tokens';
@@ -17,6 +20,7 @@ import { mealEmoji } from '@/logic/food-emoji';
 import type { RecipeMatch } from '@/logic/inventory';
 import { topReasons } from '@/logic/recommend';
 import { expiringIngredients, rankForUser } from '@/logic/suggestions';
+import { isUsable } from '@/logic/tidy';
 
 const SLOTS: MealType[] = ['breakfast', 'lunch', 'dinner'];
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
@@ -37,14 +41,16 @@ export default function Home() {
   const hour = new Date().getHours();
   const slot: MealType = hour < 10 ? 'breakfast' : hour < 15 ? 'lunch' : 'dinner';
 
-  const stock = s.ingredients;
-  const firstUse = expiringIngredients(s).filter((i) => i.kind !== 'leftover');
+  const firstUse = expiringIngredients(s).filter((i) => i.kind !== 'leftover' && isUsable(i));
   const todayMeals = s.meals.filter((m) => m.mealDate === today).sort((a, b) => a.mealTime.localeCompare(b.mealTime));
 
   // 오늘의 한 끼 후보: 이미 고른 메뉴 → 냉장고 재료로 할 수 있는 순(알레르기·기피는 rankForUser에서 이미 제외)
   const ranked = useMemo(() => rankForUser(s), [s]);
-  const chosenEntry = s.mealPlan.find((e) => e.date === today && e.mealType === slot);
-  const candidates = useMemo(() => ranked.filter((m) => m.coverage >= 0.5), [ranked]);
+  const chosenEntry = s.mealPlan.find((e) => e.date === today && e.mealType === slot && e.status !== 'done' && !e.leftoverId);
+  // A5: 남은 음식이 있으면 같은 메뉴를 또 만들자고 하지 않고, 남은 음식을 먼저 권한다
+  const leftovers = s.ingredients.filter((i) => i.kind === 'leftover' && isUsable(i));
+  const leftoverRecipes = new Set(leftovers.map((l) => l.recipeId).filter(Boolean));
+  const candidates = ranked.filter((m) => m.coverage >= 0.5 && !leftoverRecipes.has(m.recipe.id));
   const [pick, setPick] = useState(0);
   const chosen = chosenEntry ? ranked.find((m) => m.recipe.id === chosenEntry.recipeId) ?? null : null;
   const menu: RecipeMatch | null = chosen ?? (candidates.length ? candidates[pick % candidates.length] : null);
@@ -79,7 +85,7 @@ export default function Home() {
         kicker={kicker}
         m={menu}
         chosen={!!chosen}
-        stock={stock}
+        stock={s.ingredients}
         firstUse={firstUse}
         dateLabel={dateLabel}
         mood={menu ? 'happy' : coach.mood}
@@ -94,6 +100,30 @@ export default function Home() {
         <T v="bodyBold" style={{ flex: 1 }}>먹은 음식 기록하기</T>
         <SmallAction icon="camera" label="사진" onPress={() => router.push(`/meal-record/edit?type=${slot}&mode=photo`)} />
         <SmallAction icon="pencil" label="메모" onPress={() => router.push(`/meal-record/edit?type=${slot}`)} />
+      </View>
+
+      {/* 남은 음식 먼저: 다시 요리하지 않고 바로 한 끼 */}
+      {leftovers.slice(0, 2).map((lo) => (
+        <View key={lo.id} style={[styles.recordBar, { marginTop: space.sm }]}>
+          <Text style={{ fontSize: 22 }}>{lo.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <T v="bodyBold">남은 {lo.name} {lo.quantity}인분</T>
+            <T v="tiny" c={color.textSub}>{lo.expiryDate ? `${whenLabel(lo)} · ` : ''}다시 요리하지 않아도 돼요</T>
+          </View>
+          <Pressable
+            onPress={() => { actions.eatLeftover(lo.id, 1, slot); notify('맛있게 드세요!', '식사 기록에 남겼어요.'); }}
+            accessibilityRole="button"
+            accessibilityLabel={`남은 ${lo.name} 한 끼 먹기`}
+            style={({ pressed }) => [styles.smallAction, pressed && styles.pressed]}>
+            <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>한 끼 먹기</T>
+          </Pressable>
+        </View>
+      ))}
+
+      {/* 정리가 필요한 재료(기한 지남·아주 조금 남음) — 답하면 추천이 바로 정확해진다 */}
+      <View style={{ marginTop: space.md, gap: space.sm }}>
+        <PlanCatchUp max={1} />
+        <TidyCard stock={s.ingredients} />
       </View>
 
       {/* 4. 먼저 활용하면 좋은 재료 */}

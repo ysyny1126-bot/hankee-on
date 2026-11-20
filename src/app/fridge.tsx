@@ -4,7 +4,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import { confirmAsync, notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
-import { Badge, Button, Chip, Empty, Field, Row, Screen, Stepper, T } from '@/components/ui';
+import { TidyCard } from '@/components/tidy-card';
+import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { sameIngredient } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
@@ -25,6 +26,7 @@ export default function Fridge() {
   const [openId, setOpenId] = useState<string | null>(null);
   const open = s.ingredients.find((i) => i.id === openId) ?? null;
   const warn = s.notifications.expiryDaysBefore;
+  const [mode, setMode] = useState<'shelf' | 'list'>('shelf');
 
   return (
     <Screen edges={['bottom']}>
@@ -34,8 +36,15 @@ export default function Fridge() {
         <Button title="직접 추가" icon="✏️" kind="secondary" style={{ flex: 1 }} href="/ingredient/edit" />
       </Row>
 
+      <TidyCard stock={s.ingredients} max={20} />
+      {s.ingredients.length > 0 && (
+        <Segmented options={[{ key: 'shelf', label: '선반으로 보기' }, { key: 'list', label: '빠르게 고치기' }]} value={mode} onChange={setMode} />
+      )}
+
       {s.ingredients.length === 0 ? (
         <Empty emoji="🫙" title="냉장고가 비어 있어요" />
+      ) : mode === 'list' ? (
+        <QuickList items={s.ingredients} warn={warn} />
       ) : (
         SHELVES.map((sh) => {
           const items = s.ingredients
@@ -64,6 +73,54 @@ export default function Fridge() {
         {open ? <IngredientSheet item={open} onClose={() => setOpenId(null)} /> : null}
       </Sheet>
     </Screen>
+  );
+}
+
+/** 양을 하나 줄일 때의 단위(개 → 1, g·ml → 50, 1보다 적으면 0.25) */
+function stepOf(i: Ingredient) {
+  if (['g', 'ml'].includes(i.unit)) return i.quantity > 100 ? 50 : 10;
+  return i.quantity < 1 ? 0.25 : 1;
+}
+
+/**
+ * C1 빠르게 고치기: 편집 화면에 들어가지 않고 한 줄에서 −/다 씀/버림.
+ * 기한이 가까운 순. 다 씀·버림은 화면 아래 '되돌리기'로 바로 취소할 수 있다.
+ */
+function QuickList({ items, warn }: { items: Ingredient[]; warn: number }) {
+  const sorted = [...items].sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999') || a.name.localeCompare(b.name));
+  return (
+    <View style={{ ...clay, overflow: 'hidden' }}>
+      {sorted.map((i, idx) => {
+        const d = i.expiryDate ? daysUntil(i.expiryDate) : null;
+        const tone = d === null ? color.textMuted : d <= 0 ? color.danger : d <= warn ? color.warnDark : color.textSub;
+        const st = stepOf(i);
+        return (
+          <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: space.md, paddingVertical: 8, borderTopWidth: idx ? 1 : 0, borderTopColor: color.border }}>
+            <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T v="bodyBold" numberOfLines={1}>{i.name}</T>
+              <T v="tiny" c={tone}>{i.quantity}{i.unit} · {d === null ? '기한 미입력' : dDayLabel(i.expiryDate!)}</T>
+            </View>
+            <QuickBtn
+              label={`−${st}`}
+              a11y={`${i.name} ${st}${i.unit} 줄이기`}
+              onPress={() => (i.quantity - st > 0.001 ? actions.updateIngredient(i.id, { quantity: Math.round((i.quantity - st) * 100) / 100 }) : actions.useUpIngredient(i.id))}
+            />
+            <QuickBtn label="다 씀" a11y={`${i.name} 다 씀`} onPress={() => actions.useUpIngredient(i.id)} />
+            <QuickBtn label="버림" danger a11y={`${i.name} 버림`} onPress={() => actions.discardIngredient(i.id, d !== null && d < 0 ? 'expired' : 'spoiled')} />
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function QuickBtn({ label, onPress, a11y, danger }: { label: string; onPress: () => void; a11y: string; danger?: boolean }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={4}
+      style={({ pressed }) => ({ minHeight: 40, minWidth: 44, paddingHorizontal: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: danger ? color.dangerSoft : color.surfaceAlt, opacity: pressed ? 0.7 : 1 })}>
+      <T v="small" c={danger ? color.danger : color.text} style={{ fontWeight: '700' }}>{label}</T>
+    </Pressable>
   );
 }
 

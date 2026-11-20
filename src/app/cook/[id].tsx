@@ -27,7 +27,7 @@ export default function CookComplete() {
   const s = useAppState();
   const recipe = findRecipe(s, id);
   const made = Number(scaleParam) || 1;
-  const m = recipe ? matchRecipe(recipe, s.ingredients, s.preferences.allergies, made) : null;
+  const m = recipe ? matchRecipe(recipe, s.ingredients, s.preferences.allergies, made, true) : null;
   // 같은 재료가 여러 묶음이면 소비기한이 가까운 묶음부터 빼도록 미리 채운다(R1)
   const usable = (m?.matches.filter((x) => x.stocks.length) ?? []).map((x) => ({ x, plan: planDeduction(x) }));
 

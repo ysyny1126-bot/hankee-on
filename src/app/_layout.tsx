@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { UndoToast } from '@/components/undo-toast';
 import { color } from '@/constants/tokens';
 import { StoreProvider, useAppState } from '@/data/store';
 import { syncExpiryNotifications } from '@/logic/notify';
@@ -62,6 +63,7 @@ export default function RootLayout() {
         <Stack.Screen name="plan" options={{ title: '이번 주 식단' }} />
         <Stack.Screen name="cook-mode/[id]" options={{ title: '요리 모드' }} />
       </Stack>
+      <UndoToast />
     </StoreProvider>
   );
 }

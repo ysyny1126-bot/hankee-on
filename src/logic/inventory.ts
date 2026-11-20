@@ -3,6 +3,7 @@ import type { Ingredient, Recipe, RecipeIngredient } from '@/data/types';
 import { daysUntil } from './dates';
 import { scoreMatch, type RankContext, type Reason } from './recommend';
 import { checkRecipe } from './safety';
+import { isUsable } from './tidy';
 import { convert } from './units';
 
 export interface IngredientMatch {
@@ -37,9 +38,12 @@ export interface RecipeMatch {
 }
 
 /** 레시피 재료 하나를 재고와 비교 */
-export function matchIngredient(need: RecipeIngredient, stock: Ingredient[]): IngredientMatch {
-  // 남은 음식(예: 김치찌개 남은 것)은 재료로 치지 않는다
-  const stocks = stock.filter((s) => s.kind !== 'leftover' && s.quantity > 0 && sameIngredient(s.name, need.name)).sort(fifo);
+export function matchIngredient(need: RecipeIngredient, stock: Ingredient[], all = false): IngredientMatch {
+  // 남은 음식(예: 김치찌개 남은 것)은 재료로 치지 않는다.
+  // 추천·식단에서는 기한이 지나 확인 전인 재료·아주 적게 남은 재료를 빼고(tidy.ts), 요리 완료 화면(all)에서는 모두 보여 준다.
+  const stocks = stock
+    .filter((s) => s.kind !== 'leftover' && s.quantity > 0 && sameIngredient(s.name, need.name) && (all || isUsable(s)))
+    .sort(fifo);
   if (!stocks.length) {
     const staple = PANTRY_STAPLES.some((p) => sameIngredient(p, need.name));
     return { need, stock: null, stocks, have: null, status: staple ? 'staple' : 'missing' };
@@ -70,9 +74,9 @@ export function planDeduction(m: IngredientMatch): { ingredient: Ingredient; amo
   });
 }
 
-export function matchRecipe(recipe: Recipe, stock: Ingredient[], allergies: string[], scale = 1): RecipeMatch {
+export function matchRecipe(recipe: Recipe, stock: Ingredient[], allergies: string[], scale = 1, all = false): RecipeMatch {
   const scaled = recipe.ingredients.map((i) => ({ ...i, amount: round(i.amount * scale) }));
-  const matches = scaled.map((n) => matchIngredient(n, stock));
+  const matches = scaled.map((n) => matchIngredient(n, stock, all));
   const required = matches.filter((m) => !m.need.optional && m.status !== 'staple');
   const have = required.filter((m) => m.status !== 'missing');
   // 이 레시피가 실제로 꺼내 쓸 묶음 중 임박한 것(선입선출 기준)

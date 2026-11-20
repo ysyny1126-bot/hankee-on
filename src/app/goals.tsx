@@ -15,7 +15,7 @@ const PRESETS: { type: GoalType; title: string; target: number; unit: string; de
   { type: 'vegetables', title: '채소·과일 챙기기', target: 3, unit: '접시/일', desc: '하루 평균 채소·과일 접시 수(추정)' },
   { type: 'home_cooking', title: '집밥 늘리기', target: 5, unit: '회/주', desc: '집밥으로 기록한 식사' },
   { type: 'less_waste', title: '음식물 낭비 줄이기', target: 0, unit: '개/주', desc: '버린 식재료 수 이하로' },
-  { type: 'budget', title: '식비 관리', target: 70000, unit: '원/주', desc: '이번 주 등록한 재료 가격 합' },
+  { type: 'budget', title: '식비 관리', target: 70000, unit: '원/주', desc: '이번 주 장보기·재료 등록 때 남은 지출 합(다 먹어도 줄지 않아요)' },
 ];
 
 export default function Goals() {

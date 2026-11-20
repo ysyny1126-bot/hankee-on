@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, AppState as RNAppState, View } from 'react-native';
 
 import { findCatalog } from './catalog';
 import { BUILTIN_RECIPES } from './recipes';
@@ -17,7 +17,7 @@ import type {
   SpendRecord,
   WasteRecord,
 } from './types';
-import { newId, toDateKey } from '@/logic/dates';
+import { addDays, newId, toDateKey } from '@/logic/dates';
 import { round } from '@/logic/inventory';
 
 /**
@@ -96,6 +96,28 @@ export function migrate(raw: Partial<AppState>): AppState {
 
 type Listener = () => void;
 let state: AppState = initialState;
+
+/**
+ * C6 되돌리기: 지우기·버리기·요리 완료처럼 되돌리기 어려운 동작 직전 상태를 잠깐(8초) 기억한다.
+ * 화면 아래 '되돌리기' 알림을 누르면 그 상태로 돌아간다. 저장은 하지 않는다(앱을 껐다 켜면 사라짐).
+ */
+export interface UndoInfo { label: string; prev: AppState; at: number }
+let undoInfo: UndoInfo | null = null;
+const undoListeners = new Set<Listener>();
+export const UNDO_MS = 8000;
+function remember(label: string) {
+  undoInfo = { label, prev: state, at: Date.now() };
+  undoListeners.forEach((l) => l());
+}
+export function getUndo() {
+  return undoInfo && Date.now() - undoInfo.at < UNDO_MS ? undoInfo : null;
+}
+export function subscribeUndo(l: Listener) {
+  undoListeners.add(l);
+  return () => {
+    undoListeners.delete(l);
+  };
+}
 let loaded = false;
 const listeners = new Set<Listener>();
 
@@ -124,6 +146,23 @@ async function load() {
   AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
   loaded = true;
   listeners.forEach((l) => l());
+}
+
+/**
+ * A3: 식사를 기록하면 같은 날 계획해 둔 끼니를 '먹음'으로 표시한다.
+ * 같은 레시피(또는 같은 이름)인 계획을 찾고, 같은 끼니 계획을 먼저 고른다.
+ */
+function linkPlan(s: AppState, rec: MealRecord): MealPlanEntry[] {
+  const names = rec.items.map((i) => i.foodName.replace(/\s/g, ''));
+  const open = s.mealPlan.filter((e) => e.date === rec.mealDate && e.status !== 'done');
+  const same = (e: MealPlanEntry) => {
+    if (rec.recipeId && e.recipeId === rec.recipeId) return true;
+    const r = findRecipe(s, e.recipeId);
+    return !!r && names.includes(r.name.replace(/\s/g, ''));
+  };
+  const hit = open.find((e) => e.mealType === rec.mealType && same(e)) ?? open.find(same);
+  if (!hit) return s.mealPlan;
+  return s.mealPlan.map((e) => (e.id === hit.id ? { ...e, status: 'done' as const, mealId: rec.id } : e));
 }
 
 // ───────── 동작(액션): 화면은 이 함수들로만 데이터를 바꾼다 ─────────
@@ -184,12 +223,24 @@ export const actions = {
   updateIngredient(id: string, patch: Partial<Ingredient>) {
     setState((s) => ({ ...s, ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
   },
+  /** 기한이 지났지만 '아직 괜찮아요' — 기한은 그대로 두고, 확인한 날만 남긴다(2일 뒤 다시 물어봄) */
+  confirmStillGood(id: string) {
+    setState((s) => ({ ...s, ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, expiryCheckedOn: toDateKey() } : x)) }));
+  },
+  /** 아주 적게 남은 재료를 그대로 두기(정리 안내를 다시 하지 않음) */
+  keepSmall(id: string) {
+    setState((s) => ({ ...s, ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, keepSmall: true } : x)) }));
+  },
   /** 다 먹음(사용 완료) — 재고에서 빼되 폐기로 세지 않는다. */
   useUpIngredient(id: string) {
+    const it = state.ingredients.find((x) => x.id === id);
+    if (it) remember(`${it.name} 다 씀`);
     setState((s) => ({ ...s, ingredients: s.ingredients.filter((x) => x.id !== id) }));
   },
   /** 버림(폐기) — 재고에서 빼고 폐기 기록을 남긴다. */
   discardIngredient(id: string, reason: WasteRecord['reason']) {
+    const found = state.ingredients.find((x) => x.id === id);
+    if (found) remember(`${found.name} 버림`);
     setState((s) => {
       const it = s.ingredients.find((x) => x.id === id);
       if (!it) return s;
@@ -232,6 +283,7 @@ export const actions = {
       servingsMade: extra.servingsMade,
       servingsEaten: extra.servingsEaten,
     };
+    remember(`${recipe.name} 요리 완료`);
     setState((s) => {
       const now = new Date().toISOString();
       const ingredients = s.ingredients
@@ -278,6 +330,7 @@ export const actions = {
     const it = st.ingredients.find((x) => x.id === id);
     if (!it) return;
     const eat = Math.min(servings, it.quantity);
+    remember(`남은 ${it.name} 먹음`);
     const recipe = it.recipeId ? findRecipe(st, it.recipeId) : undefined;
     const now = new Date();
     actions.addMeal({
@@ -309,14 +362,20 @@ export const actions = {
 
   addMeal(m: Omit<MealRecord, 'id' | 'createdAt'>): MealRecord {
     const rec: MealRecord = { ...m, id: newId('meal_'), createdAt: new Date().toISOString() };
-    setState((s) => ({ ...s, meals: [rec, ...s.meals] }));
+    setState((s) => ({ ...s, meals: [rec, ...s.meals], mealPlan: linkPlan(s, rec) }));
     return rec;
   },
   updateMeal(id: string, patch: Partial<MealRecord>) {
     setState((s) => ({ ...s, meals: s.meals.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
   },
   deleteMeal(id: string) {
-    setState((s) => ({ ...s, meals: s.meals.filter((m) => m.id !== id) }));
+    remember('식사 기록 삭제');
+    // 이 기록으로 완료 처리된 식단은 다시 '계획'으로
+    setState((s) => ({
+      ...s,
+      meals: s.meals.filter((m) => m.id !== id),
+      mealPlan: s.mealPlan.map((e) => (e.mealId === id ? { ...e, status: undefined, mealId: undefined } : e)),
+    }));
   },
 
   /** 장보기 추가. 이미 목록에 있거나 재고가 충분하면 추가하지 않는다(중복 구매 방지). */
@@ -337,9 +396,11 @@ export const actions = {
     setState((s) => ({ ...s, shopping: s.shopping.map((x) => (x.id === id ? { ...x, done: !x.done } : x)) }));
   },
   removeShopping(id: string) {
+    remember('장보기 항목 삭제');
     setState((s) => ({ ...s, shopping: s.shopping.filter((x) => x.id !== id) }));
   },
   clearDoneShopping() {
+    remember('산 것 정리');
     setState((s) => ({ ...s, shopping: s.shopping.filter((x) => !x.done) }));
   },
 
@@ -350,25 +411,57 @@ export const actions = {
     setState((s) => ({ ...s, goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) }));
   },
   removeGoal(id: string) {
+    remember('목표 삭제');
     setState((s) => ({ ...s, goals: s.goals.filter((g) => g.id !== id) }));
   },
 
+  /** 식단 다시 짜기: 이미 먹은(완료) 끼니는 남기고, 그 날짜의 나머지만 바꾼다 */
   setMealPlan(entries: MealPlanEntry[], replaceDates: string[]) {
-    setState((s) => ({ ...s, mealPlan: [...s.mealPlan.filter((e) => !replaceDates.includes(e.date)), ...entries] }));
+    setState((s) => ({ ...s, mealPlan: [...s.mealPlan.filter((e) => e.status === 'done' || !replaceDates.includes(e.date)), ...entries] }));
+  },
+  /**
+   * A3: 못 먹은 끼니 미루기 — 다음 날(지난 날짜면 오늘부터) 같은 끼니의 빈자리로 옮긴다.
+   * 자리가 차 있으면 하루씩 더 뒤로(최대 7일).
+   */
+  postponePlan(id: string): string | null {
+    let moved: string | null = null;
+    setState((s) => {
+      const e = s.mealPlan.find((x) => x.id === id);
+      if (!e) return s;
+      const today = toDateKey();
+      let target = e.date < today ? today : addDays(e.date, 1);
+      for (let i = 0; i < 7 && s.mealPlan.some((x) => x.id !== id && x.date === target && x.mealType === e.mealType); i++) target = addDays(target, 1);
+      moved = target;
+      return { ...s, mealPlan: s.mealPlan.map((x) => (x.id === id ? { ...x, date: target } : x)) };
+    });
+    return moved;
   },
   /** 오늘의 한 끼 고르기: 같은 날·같은 끼니에 있던 계획은 이 메뉴로 바꾼다(다른 끼니는 그대로) */
   chooseMeal(date: string, mealType: MealPlanEntry['mealType'], recipeId: string, reason: string) {
     setState((s) => ({
       ...s,
-      mealPlan: [...s.mealPlan.filter((e) => !(e.date === date && e.mealType === mealType)), { id: newId('plan_'), date, mealType, recipeId, reason }],
+      mealPlan: [...s.mealPlan.filter((e) => !(e.date === date && e.mealType === mealType && e.status !== 'done')), { id: newId('plan_'), date, mealType, recipeId, reason }],
     }));
   },
   removeMealPlan(id: string) {
+    remember('식단에서 뺌');
     setState((s) => ({ ...s, mealPlan: s.mealPlan.filter((e) => e.id !== id) }));
   },
 
   dismissSuggestion(id: string) {
     setState((s) => ({ ...s, dismissedSuggestions: { ...s.dismissedSuggestions, [id]: toDateKey() } }));
+  },
+
+  undo() {
+    const u = getUndo();
+    if (!u) return;
+    undoInfo = null;
+    undoListeners.forEach((l) => l());
+    setState(() => u.prev);
+  },
+  clearUndo() {
+    undoInfo = null;
+    undoListeners.forEach((l) => l());
   },
 
   replaceAll(next: AppState) {
@@ -386,6 +479,7 @@ const Ctx = createContext<AppState>(initialState);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [snap, setSnap] = useState(state);
   const [ready, setReady] = useState(loaded);
+  const [day, setDay] = useState(toDateKey());
   useEffect(() => {
     const l = () => {
       setSnap(state);
@@ -397,6 +491,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       listeners.delete(l);
     };
   }, []);
+  // A8: 앱을 켜 둔 채 자정을 넘기거나, 다음 날 앱으로 돌아오면 '오늘'·D-day·임박 계산을 새로 한다
+  useEffect(() => {
+    const check = () => {
+      const now = toDateKey();
+      setDay((prev) => {
+        if (prev === now) return prev;
+        state = { ...state, visit: { last: new Date().toISOString(), previous: state.visit.last } };
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
+        setSnap(state);
+        return now;
+      });
+    };
+    const timer = setInterval(check, 60_000);
+    const sub = RNAppState.addEventListener('change', (st) => st === 'active' && check());
+    return () => {
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, []);
+  void day;
   // 불러오는 동안: 빈 화면 대신 작은 표시(보통 순간이라 문구 없이)
   if (!ready)
     return (
