@@ -478,8 +478,8 @@ export const actions = {
   },
 
   /** C5 백업 불러오기: 지금 기록을 통째로 바꾼다(직후 8초 동안 되돌리기 가능) */
-  restoreBackup(next: AppState) {
-    remember('백업 불러오기');
+  restoreBackup(next: AppState, label = '백업 불러오기') {
+    remember(label);
     setState(() => migrate(next));
   },
   replaceAll(next: AppState) {

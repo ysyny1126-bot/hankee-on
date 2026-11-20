@@ -4,6 +4,7 @@ import { goalProgress } from './analysis';
 import { daysSince, eul, toDateKey } from './dates';
 import { isSafeIngredient, restrictionsOf } from './safety';
 import { expiringIngredients } from './suggestions';
+import { isUsable } from './tidy';
 
 /**
  * 홈 캐릭터(AI 코치)의 지금 상태.
@@ -47,12 +48,13 @@ export function coachState(s: AppState, nextMenuName?: string | null, now = new 
     if (p && p.value > 0 && p.ratio >= 1) return say('goal_done', g.title);
   }
 
-  const leftover = s.ingredients.find((i) => i.kind === 'leftover');
+  const leftover = s.ingredients.find((i) => i.kind === 'leftover' && isUsable(i));
   if (leftover) return say('leftover', leftover.name);
 
   // 알레르기·기피 재료는 코치가 '써 보자'고 권하지 않는다
   const rs = restrictionsOf(s.preferences);
-  const expiring = expiringIngredients(s).filter((i) => i.kind !== 'leftover' && isSafeIngredient(i.name, rs));
+  // 기한이 지나 확인 전인 재료·아주 조금 남은 재료는 권하지 않는다(정리 카드에서 따로 묻는다)
+  const expiring = expiringIngredients(s).filter((i) => i.kind !== 'leftover' && isUsable(i) && isSafeIngredient(i.name, rs));
   if (expiring.length) return say('expiring', expiring[0].name, 0, 'idle');
 
   const todayMeals = s.meals.filter((m) => m.mealDate === today).sort((a, b) => b.mealTime.localeCompare(a.mealTime));

@@ -14,7 +14,7 @@ import { confirmAsync, notify } from '@/components/dialog';
 import { Badge, Button, Card, Chip, Field, Row, Screen, SectionHeader, Segmented, Stepper, T, OnOff, TagPicker } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
-import { buildDemoState } from '@/data/demo';
+import { buildDemoState, buildScenario, DEMO_SCENES } from '@/data/demo';
 import { actions, getState, initialState, useAppState } from '@/data/store';
 import { requestNotificationPermission } from '@/logic/notify';
 import { backupSummary, exportBackup, parseBackup, pickBackupFileWeb } from '@/logic/backup';
@@ -189,6 +189,21 @@ export default function Settings() {
             }
           }}
         />
+        <T v="tiny" c={color.textMuted} style={{ marginTop: space.xs }}>시연용 장면 바꾸기(예시 데이터로 바뀌고, 직후 되돌리기 가능)</T>
+        <Row wrap>
+          {DEMO_SCENES.map((sc) => (
+            <Chip
+              key={sc.key}
+              label={sc.label}
+              onPress={async () => {
+                if (await confirmAsync(`장면: ${sc.label}`, `${sc.desc}\n지금 기록이 예시 데이터로 바뀌어요.`, '바꾸기')) {
+                  actions.restoreBackup({ ...buildScenario(getState(), sc.key), onboarded: true }, `장면: ${sc.label}`);
+                  router.replace('/');
+                }
+              }}
+            />
+          ))}
+        </Row>
         <Button
           title="모든 기록 지우기"
           kind="danger"
