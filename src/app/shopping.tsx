@@ -122,7 +122,7 @@ export default function Shopping() {
 
       <Sheet visible={!!form} onClose={() => setForm(null)}>
         <T v="h3">냉장고에 넣기 전에 확인해요</T>
-        <T v="small" c={color.textSub}>가격을 적으면 식비에, 소비기한을 적으면 '먼저 쓸 재료' 알림에 들어가요. 모르면 비워 둬도 돼요.</T>
+        <T v="small" c={color.textSub}>가격을 적으면 식비에, 소비기한을 적으면 ‘먼저 쓸 재료’ 알림에 들어가요. 모르면 비워 둬도 돼요.</T>
         <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: space.md }} keyboardShouldPersistTaps="handled">
           {form?.map((x) => (
             <View key={x.id} style={{ gap: space.sm, paddingBottom: space.sm, borderBottomWidth: 1, borderBottomColor: color.border }}>

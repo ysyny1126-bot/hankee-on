@@ -1,12 +1,11 @@
 import { router, Stack as RStack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, Text, Vibration, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
 
 import { Button, Empty, Row, Screen, T, tx } from '@/components/ui';
-import { clay } from '@/constants/tokens';
-import { color, MAX_WIDTH, radius, space } from '@/constants/tokens';
+import { clay, color, MAX_WIDTH, radius, space } from '@/constants/tokens';
 import { findRecipe, useAppState } from '@/data/store';
 
 /** 단계 문장에서 시간 읽기: '5분', '3~4분' → 분(범위면 긴 쪽). 없으면 null */
@@ -27,25 +26,36 @@ const fmt = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:$
  */
 function useTimers() {
   const [timers, setTimers] = useState<RunTimer[]>([]);
-  const [now, setNow] = useState(Date.now());
-  const active = timers.some((t) => !t.done);
+  const [now, setNow] = useState(() => Date.now());
+  const notified = useRef(new Set<string>()); // 이미 알린 타이머(한 번만 알림)
+  const latest = useRef(timers);
   useEffect(() => {
-    if (!active) return;
-    const h = setInterval(() => setNow(Date.now()), 500);
+    latest.current = timers;
+  }, [timers]);
+  const count = timers.length;
+  useEffect(() => {
+    if (!count) return;
+    // 0.5초마다 시계를 넘기고, 막 끝난 타이머가 있으면 그때 한 번 알린다(효과 안에서 바로 상태를 바꾸지 않음)
+    const h = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      const fin = latest.current.filter((x) => x.endAt <= t && !notified.current.has(x.id));
+      if (!fin.length) return;
+      fin.forEach((f) => notified.current.add(f.id));
+      if (Platform.OS !== 'web') Vibration.vibrate([0, 400, 200, 400]);
+      notify('⏰ 시간이 다 됐어요', fin.map((f) => `${f.step + 1}단계 ${f.minutes}분 타이머`).join('\n'));
+    }, 500);
     return () => clearInterval(h);
-  }, [active]);
-  useEffect(() => {
-    const fin = timers.filter((t) => !t.done && t.endAt <= now);
-    if (!fin.length) return;
-    setTimers((l) => l.map((t) => (fin.some((f) => f.id === t.id) ? { ...t, done: true } : t)));
-    if (Platform.OS !== 'web') Vibration.vibrate([0, 400, 200, 400]);
-    notify('⏰ 시간이 다 됐어요', fin.map((f) => `${f.step + 1}단계 ${f.minutes}분 타이머`).join('\n'));
-  }, [now, timers]);
+  }, [count]);
   const left = (t: RunTimer) => Math.max(0, Math.ceil((t.endAt - now) / 1000));
   return {
-    timers,
+    timers: timers.map((t) => ({ ...t, done: t.endAt <= now })),
     left,
-    start: (step: number, minutes: number) => setTimers((l) => [...l.filter((t) => t.step !== step), { id: `${step}-${Date.now()}`, step, minutes, endAt: Date.now() + minutes * 60000, done: false }]),
+    start: (step: number, minutes: number) => {
+      const at = Date.now();
+      setNow(at);
+      setTimers((l) => [...l.filter((t) => t.step !== step), { id: `${step}-${at}`, step, minutes, endAt: at + minutes * 60000, done: false }]);
+    },
     cancel: (id: string) => setTimers((l) => l.filter((t) => t.id !== id)),
   };
 }

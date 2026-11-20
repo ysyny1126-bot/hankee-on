@@ -38,12 +38,6 @@ export default function ScanFridge() {
   const [picked, setPicked] = useState<PickedPhoto | null>(null);
   const [stat, setStat] = useState<{ kb: number; sec: number; found: number } | null>(null);
 
-  // 온보딩에서 찍어 온 사진이 있으면 바로 분석
-  useEffect(() => {
-    const p = takePendingPhoto();
-    if (p) analyze(p);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const run = async (src: 'camera' | 'library') => {
     setError('');
@@ -56,7 +50,7 @@ export default function ScanFridge() {
     }
   };
 
-  const analyze = async (p: PickedPhoto) => {
+  async function analyze(p: PickedPhoto) {
     setError('');
     setPhoto(p.uri);
     setPicked(p);
@@ -90,7 +84,15 @@ export default function ScanFridge() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+
+  // 온보딩에서 찍어 온 사진이 있으면 바로 분석
+  useEffect(() => {
+    const p = takePendingPhoto();
+    if (p) analyze(p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const remove = (key: string) => setList((l) => l.filter((c) => c.key !== key));
   const useAsHome = () => {

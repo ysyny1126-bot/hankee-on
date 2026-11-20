@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -65,7 +65,7 @@ export function KitchenHero({
   const reason = m ? topReasons(m, 1)[0] : '';
 
   // 냉장고를 살짝 흔들어 '눌러 보세요'를 알린다(처음 한 번)
-  const wiggle = useRef(new Animated.Value(0)).current;
+  const [wiggle] = useState(() => new Animated.Value(0));
   useEffect(() => {
     Animated.sequence([
       Animated.delay(600),

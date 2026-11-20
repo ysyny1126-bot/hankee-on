@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -26,10 +26,12 @@ export default function Log() {
   const today = toDateKey();
   const params = useLocalSearchParams<{ date?: string }>();
   const [date, setDate] = useState(params.date && params.date <= today ? params.date : today);
-  // 홈 요일 줄에서 다른 날을 누르고 들어오면 그날로 맞춘다
-  useEffect(() => {
+  // 홈 요일 줄에서 다른 날을 누르고 들어오면 그날로 맞춘다(주소 값이 바뀐 순간에만)
+  const [seenParam, setSeenParam] = useState(params.date);
+  if (params.date !== seenParam) {
+    setSeenParam(params.date);
     if (params.date && params.date <= today) setDate(params.date);
-  }, [params.date, today]);
+  }
   const meals = s.meals.filter((m) => m.mealDate === date);
 
   return (

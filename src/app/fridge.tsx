@@ -243,7 +243,7 @@ function MyUnit({ item: i }: { item: Ingredient }) {
   return (
     <View style={{ backgroundColor: color.surfaceAlt, borderRadius: radius.md, padding: space.sm, gap: 6 }}>
       <T v="small" style={{ fontWeight: '700' }}>{saved != null ? '내 단위' : '단위 맞추기'}: 1{i.unit} = 몇 {cat.unit}인가요?</T>
-      {saved == null && auto == null ? <T v="tiny" c={color.textSub}>레시피는 '{cat.unit}' 단위라서, 정해 두면 이 재료도 추천·차감에 정확히 쓰여요.</T> : null}
+      {saved == null && auto == null ? <T v="tiny" c={color.textSub}>레시피는 ‘{cat.unit}’ 단위라서, 정해 두면 이 재료도 추천·차감에 정확히 쓰여요.</T> : null}
       <Row style={{ justifyContent: 'space-between' }}>
         <T>1{i.unit} =</T>
         <Row gap={4}>

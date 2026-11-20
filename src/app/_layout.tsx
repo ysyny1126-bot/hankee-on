@@ -16,7 +16,9 @@ function NotificationSync() {
   const s = useAppState();
   useEffect(() => {
     syncExpiryNotifications(s).catch(() => {});
-  }, [s.ingredients, s.notifications]); // 알림 설정이나 재고가 바뀌면 다시 예약
+    // 재고나 알림 설정이 바뀔 때만 다시 예약한다(다른 기록이 바뀔 때마다 예약하지 않도록 s 전체는 넣지 않음)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.ingredients, s.notifications]);
   return null;
 }
 

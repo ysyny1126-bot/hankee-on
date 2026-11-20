@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { hasAIKey, recipeFromName } from '@/ai/gemini';
@@ -32,13 +32,16 @@ export default function Cook() {
   const today = toDateKey();
   // 홈의 '먼저 활용하면 좋은 재료'를 누르면 그 재료로 만들 수 있는 메뉴를 바로 보여 준다
   const { ingredient } = useLocalSearchParams<{ ingredient?: string }>();
-  useEffect(() => {
+  const [seenIngredient, setSeenIngredient] = useState<string | undefined>(undefined);
+  if (ingredient !== seenIngredient) {
+    // 주소의 재료가 바뀐 순간에만 검색 상태를 맞춘다(React 권장: 렌더 중 이전 값과 비교)
+    setSeenIngredient(ingredient);
     if (ingredient) {
       setSearchOpen(true);
       setQ(ingredient);
       setPage(0);
     }
-  }, [ingredient]);
+  }
 
   const ranked = useMemo(() => rankForUser(s), [s]);
   // C3: '두부 애호박', '두부+애호박'처럼 여러 단어를 쓰면 모두 들어간 메뉴만

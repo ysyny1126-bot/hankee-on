@@ -11,7 +11,7 @@ import { Badge, Button, Card, Chip, EstimateBadge, Field, Row, Screen, Segmented
 import { color, radius, space } from '@/constants/tokens';
 import { findFoodReference } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
-import type { MealItem, MealSourceType, MealType } from '@/data/types';
+import type { MealItem, MealRecord, MealSourceType, MealType } from '@/data/types';
 import { addDays, guessMealType, isValidDateKey, newId, nowTime, toDateKey } from '@/logic/dates';
 import { MEAL_LABEL, SOURCE_LABEL } from '@/logic/analysis';
 
@@ -63,7 +63,7 @@ export default function MealRecordEdit() {
   }, [s.meals, date, mealType]);
   const recentCombos = useMemo(() => {
     const seen = new Set<string>();
-    const out: typeof s.meals = [];
+    const out: MealRecord[] = [];
     for (const m of [...s.meals].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
       if (!m.items.length) continue;
       const k = m.items.map((i) => i.foodName).sort().join('+');
@@ -74,7 +74,7 @@ export default function MealRecordEdit() {
     }
     return out;
   }, [s.meals, existing?.id]);
-  const copyFrom = (m: (typeof s.meals)[number]) => {
+  const copyFrom = (m: MealRecord) => {
     setItems(m.items.map((i) => ({ ...i, id: newId('item_') })));
     setSource(m.sourceType);
     setCost(m.cost ? String(m.cost) : '');
@@ -120,6 +120,8 @@ export default function MealRecordEdit() {
 
   // 홈의 '사진으로 기록'에서 왔으면 휴대폰에서는 카메라를 바로 연다(웹은 브라우저가 막아서 아래 버튼으로)
   useEffect(() => {
+    // 화면이 열릴 때 한 번 카메라(외부 기능)를 연다 — 결과는 사진을 고른 뒤에 비동기로 들어온다
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (mode === 'photo' && !existing && Platform.OS !== 'web') photoFlow('camera');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

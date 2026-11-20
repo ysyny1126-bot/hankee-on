@@ -40,7 +40,7 @@ export default function RecipeDetail() {
           .map((d) => ({ x, b: d.ingredient, amount: d.amount }))
       : [],
   );
-  const toggle = (bid: string) => setTaken((t) => { const n = new Set(t); n.has(bid) ? n.delete(bid) : n.add(bid); return n; });
+  const toggle = (bid: string) => setTaken((t) => { const n = new Set(t); if (n.has(bid)) n.delete(bid); else n.add(bid); return n; });
 
   const addToShopping = () => {
     const n = actions.addShopping(
