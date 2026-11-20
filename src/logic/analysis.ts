@@ -211,9 +211,10 @@ export function goalProgress(goal: DietaryGoal, s: AppState): { value: number; r
     case 'budget': {
       // A1: 재료를 '들인 시점'의 지출 기록으로 계산 — 다 먹거나 버려도 줄지 않는다
       const recs = (s.spend ?? []).filter((x) => x.date >= start && x.date <= end);
-      const spent = recs.reduce((a2, x) => a2 + x.amount, 0);
       const est = recs.filter((x) => x.estimated).length;
-      const basis = `이번 주(${start.slice(5)}~${end.slice(5)}) 재료를 들일 때 남은 지출 ${recs.length}건${est ? ` · 그중 ${est}건은 가격을 안 적어 평균가로 추정` : ''}`;
+      const out = s.meals.filter((m) => m.mealDate >= start && m.mealDate <= end && m.sourceType !== 'home' && (m.cost ?? 0) > 0);
+      const spent = recs.reduce((a2, x) => a2 + x.amount, 0) + out.reduce((a2, m) => a2 + (m.cost ?? 0), 0);
+      const basis = `이번 주(${start.slice(5)}~${end.slice(5)}) 장보기 ${recs.length}건${est ? `(${est}건은 평균가 추정)` : ''} + 배달·외식 ${out.length}건`;
       return { value: spent, ratio: spent <= goal.targetValue ? 1 : goal.targetValue / spent, basis };
     }
     default:
@@ -260,5 +261,41 @@ export function pantryFlow(s: AppState, start: string, end: string) {
   const spent = spendRecs.reduce((a, x) => a + x.amount, 0);
   const estimatedShare = spendRecs.length ? spendRecs.filter((x) => x.estimated).length / spendRecs.length : 0;
   const leftovers = s.ingredients.filter((i) => i.kind === 'leftover').length;
-  return { added, cookCount: cooks.length, usedKinds: usedNames.size, wasted, spent, estimatedShare, spendCount: spendRecs.length, leftovers };
+  // B4: 배달·외식·편의점 금액(기록에 적은 것만)
+  const paidMeals = s.meals.filter((m) => inRange(m.mealDate) && m.sourceType !== 'home' && (m.cost ?? 0) > 0);
+  const mealCost = paidMeals.reduce((a, m) => a + (m.cost ?? 0), 0);
+  const outMeals = s.meals.filter((m) => inRange(m.mealDate) && m.sourceType !== 'home').length;
+  return {
+    added, cookCount: cooks.length, usedKinds: usedNames.size, wasted, spent, estimatedShare, spendCount: spendRecs.length, leftovers,
+    mealCost, mealCostCount: paidMeals.length, outMealsNoCost: outMeals - paidMeals.length, total: spent + mealCost,
+  };
+}
+
+/**
+ * B7 재료별 장부(기간): 산 횟수·금액 / 요리에 쓴 횟수 / 버린 횟수·금액.
+ * 이름은 재료 사전 기준으로 묶는다(삼겹살 → 돼지고기). 기록에 있는 것만 센다.
+ */
+export function ingredientLedger(s: AppState, start: string, end: string) {
+  const inRange = (d: string) => d >= start && d <= end;
+  const key = (n: string) => findCatalog(n)?.name ?? n;
+  const rows = new Map<string, { name: string; bought: number; spent: number; used: number; wasted: number; wasteValue: number }>();
+  const row = (n: string) => {
+    const k = key(n);
+    let r = rows.get(k);
+    if (!r) rows.set(k, (r = { name: k, bought: 0, spent: 0, used: 0, wasted: 0, wasteValue: 0 }));
+    return r;
+  };
+  for (const x of s.spend ?? []) if (inRange(x.date)) { const r = row(x.name); r.bought++; r.spent += x.amount; }
+  for (const c of s.cooks) if (inRange(c.date)) new Set(c.usedIngredients.map((u) => key(u.name))).forEach((n) => row(n).used++);
+  for (const w of s.waste) if (inRange(w.date)) { const r = row(w.ingredientName); r.wasted++; r.wasteValue += w.price ?? 0; }
+  const list = [...rows.values()].sort((a, b) => b.wasted - a.wasted || b.wasteValue - a.wasteValue || b.bought - a.bought);
+  return list;
+}
+
+/** 최근 60일 동안 2번 이상 버린 재료(자주 버리는 재료 안내용) */
+export function oftenWasted(s: AppState, today = toDateKey()): { name: string; count: number }[] {
+  const from = addDays(today, -59);
+  const c = new Map<string, number>();
+  for (const w of s.waste) if (w.date >= from) { const k = findCatalog(w.ingredientName)?.name ?? w.ingredientName; c.set(k, (c.get(k) ?? 0) + 1); }
+  return [...c.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
 }

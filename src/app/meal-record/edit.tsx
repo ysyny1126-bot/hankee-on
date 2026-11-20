@@ -11,7 +11,8 @@ import { color, radius, space } from '@/constants/tokens';
 import { findFoodReference } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { MealItem, MealSourceType, MealType } from '@/data/types';
-import { guessMealType, isValidDateKey, newId, nowTime, toDateKey } from '@/logic/dates';
+import { addDays, guessMealType, isValidDateKey, newId, nowTime, toDateKey } from '@/logic/dates';
+import { MEAL_LABEL, SOURCE_LABEL } from '@/logic/analysis';
 
 function itemFromName(name: string, prev?: MealItem): MealItem {
   const ref = findFoodReference(name);
@@ -40,6 +41,7 @@ export default function MealRecordEdit() {
   const [imageUri, setImageUri] = useState<string | null>(existing?.imageUri ?? null);
   const [items, setItems] = useState<MealItem[]>(existing?.items ?? []);
   const [memo, setMemo] = useState(existing?.description ?? '');
+  const [cost, setCost] = useState(existing?.cost ? String(existing.cost) : '');
   const [newName, setNewName] = useState('');
   const [aiNote, setAiNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,30 @@ export default function MealRecordEdit() {
     s.meals.flatMap((m) => m.items).forEach((i) => c.set(i.foodName, (c.get(i.foodName) ?? 0) + 1));
     return [...c.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([n]) => n);
   }, [s.meals, s.consents.personalization]);
+
+  // C2: 어제 같은 끼니, 최근에 먹은 조합(같은 메뉴 묶음은 한 번만) — 누르면 그대로 채워진다
+  const yesterday = useMemo(() => {
+    const y = addDays(date, -1);
+    return s.meals.find((m) => m.mealDate === y && m.mealType === mealType && m.items.length);
+  }, [s.meals, date, mealType]);
+  const recentCombos = useMemo(() => {
+    const seen = new Set<string>();
+    const out: typeof s.meals = [];
+    for (const m of [...s.meals].sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      if (!m.items.length) continue;
+      const k = m.items.map((i) => i.foodName).sort().join('+');
+      if (seen.has(k) || m.id === existing?.id) continue;
+      seen.add(k);
+      out.push(m);
+      if (out.length >= 5) break;
+    }
+    return out;
+  }, [s.meals, existing?.id]);
+  const copyFrom = (m: (typeof s.meals)[number]) => {
+    setItems(m.items.map((i) => ({ ...i, id: newId('item_') })));
+    setSource(m.sourceType);
+    setCost(m.cost ? String(m.cost) : '');
+  };
 
   const addItem = (name: string) => {
     const n = name.trim();
@@ -101,7 +127,9 @@ export default function MealRecordEdit() {
     if (!items.length && !memo.trim()) return notify('음식을 하나 이상 추가해 주세요');
     if (!isValidDateKey(date)) return notify('날짜 형식을 확인해 주세요', '예: 2026-11-18');
     if (!/^\d{1,2}:\d{2}$/.test(time)) return notify('시간 형식을 확인해 주세요', '예: 12:30');
-    const data = { mealDate: date, mealType, mealTime: time.padStart(5, '0'), imageUri, description: memo, sourceType: source, items };
+    const won = Number(cost.replace(/[^\d]/g, ''));
+    if (cost.trim() && !(won > 0)) return notify('금액을 숫자로 적어 주세요', '예: 12000');
+    const data = { mealDate: date, mealType, mealTime: time.padStart(5, '0'), imageUri, description: memo, sourceType: source, items, cost: source !== 'home' && won > 0 ? won : undefined };
     if (existing) actions.updateMeal(existing.id, data);
     else actions.addMeal(data);
     router.back();
@@ -122,6 +150,36 @@ export default function MealRecordEdit() {
           <Chip key={k} label={{ home: '🍚 집밥', delivery: '🛵 배달', eat_out: '🍽️ 외식', convenience: '🏪 편의점' }[k]} selected={source === k} onPress={() => setSource(k)} />
         ))}
       </Row>
+
+      {source !== 'home' && (
+        <View style={{ gap: 6 }}>
+          <Field label={`${SOURCE_LABEL[source]} 금액 (선택)`} placeholder="예: 12000" keyboardType="number-pad" value={cost} onChangeText={setCost} hint="적으면 이번 달 식비에 함께 계산돼요" />
+          <Row wrap>
+            {[5000, 10000, 15000, 20000].map((n) => <Chip key={n} label={`${n.toLocaleString()}원`} selected={cost === String(n)} onPress={() => setCost(String(n))} />)}
+          </Row>
+        </View>
+      )}
+
+      {!existing && (yesterday || recentCombos.length > 0) && (
+        <Card>
+          <T v="bodyBold">빠르게 채우기</T>
+          {yesterday ? (
+            <Button
+              small
+              kind="secondary"
+              icon="↺"
+              title={`어제 ${MEAL_LABEL[mealType]}과 같게 · ${yesterday.items.map((i) => i.foodName).join(', ')}`}
+              onPress={() => copyFrom(yesterday)}
+            />
+          ) : null}
+          {recentCombos.length > 0 && (
+            <Row wrap>
+              <T v="tiny" c={color.textMuted}>최근 먹은 것</T>
+              {recentCombos.map((m) => <Chip key={m.id} label={m.items.map((i) => i.foodName).join('+')} onPress={() => copyFrom(m)} />)}
+            </Row>
+          )}
+        </Card>
+      )}
 
       <Card>
         {imageUri ? <Image source={{ uri: imageUri }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} contentFit="cover" /> : null}

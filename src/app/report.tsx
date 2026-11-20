@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { color, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
 import type { NutritionInfo } from '@/data/types';
-import { analyzePeriod, buildInsights, DAILY_REFERENCE, goalProgress, MEAL_LABEL, pantryFlow, SOURCE_LABEL, wasteStats } from '@/logic/analysis';
+import { analyzePeriod, buildInsights, DAILY_REFERENCE, goalProgress, ingredientLedger, MEAL_LABEL, oftenWasted, pantryFlow, SOURCE_LABEL, wasteStats } from '@/logic/analysis';
 import { isSafeIngredient, restrictionsOf } from '@/logic/safety';
 import { addDays, eul, formatKoreanDate, fromDateKey, toDateKey, weekStart } from '@/logic/dates';
 
@@ -77,6 +77,10 @@ export default function Report() {
           <Stat label="버린 재료" value={`${flow.wasted}개`} />
         </Row>
         <T v="tiny" c={color.textMuted}>한끼온 레시피로 요리 {flow.cookCount}회{flow.leftovers ? ` · 냉장고에 남은 음식 ${flow.leftovers}개` : ''}</T>
+        <LedgerTable rows={ingredientLedger(s, range.start, range.end)} />
+        {oftenWasted(s).slice(0, 2).map((w) => (
+          <T key={w.name} v="small" c={color.warnDark}>· {eul(w.name)} 최근 두 달 {w.count}번 버렸어요. 다음엔 조금씩 사거나, 사 오자마자 소분해 냉동해 보세요.</T>
+        ))}
       </Card>
 
       {/* 2. 집밥 빈도 */}
@@ -92,19 +96,24 @@ export default function Report() {
       {/* 3. 월간 식비 */}
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T v="h3">💰 이번 달 장보기</T>
-          <T v="bodyBold">약 {monthFlow.spent.toLocaleString()}원</T>
+          <T v="h3">💰 이번 달 식비</T>
+          <T v="bodyBold">약 {monthFlow.total.toLocaleString()}원</T>
+        </Row>
+        <Row style={{ justifyContent: 'space-between' }}>
+          <Stat label="장보기" value={`${monthFlow.spent.toLocaleString()}원`} />
+          <Stat label="배달·외식·편의점" value={`${monthFlow.mealCost.toLocaleString()}원`} />
         </Row>
         {budget ? (
           <>
-            <ProgressBar ratio={Math.min(1, monthFlow.spent / budget)} tone={monthFlow.spent > budget ? 'warn' : 'fresh'} />
-            <T v="tiny" c={color.textMuted}>한 달 식비 약 {budget.toLocaleString()}원 기준 · 배달·외식비는 아직 세지 않아요</T>
+            <ProgressBar ratio={Math.min(1, monthFlow.total / budget)} tone={monthFlow.total > budget ? 'warn' : 'fresh'} />
+            <T v="tiny" c={color.textMuted}>한 달 식비 약 {budget.toLocaleString()}원 기준 · {monthFlow.total <= budget ? `남은 금액 약 ${(budget - monthFlow.total).toLocaleString()}원` : '기준보다 조금 더 썼어요'}</T>
           </>
         ) : (
           <T v="tiny" c={color.textMuted}>설정에서 한 달 식비를 정하면 예산 대비로 보여 드려요.</T>
         )}
         {monthFlow.spendCount > 0 && monthFlow.estimatedShare > 0 && <T v="tiny" c={color.textMuted}>가격을 적지 않은 재료 {Math.round(monthFlow.estimatedShare * 100)}%는 평균 가격으로 추정했어요.</T>}
         {monthFlow.spendCount === 0 && <T v="tiny" c={color.textMuted}>재료를 등록하면 그때부터 장보기 금액이 쌓여요.</T>}
+        {monthFlow.outMealsNoCost > 0 && <T v="tiny" c={color.textMuted}>금액을 적지 않은 배달·외식 기록 {monthFlow.outMealsNoCost}건은 빠져 있어요. 기록을 눌러 금액을 넣을 수 있어요.</T>}
       </Card>
 
       {/* 4. 다음 주 제안 */}
@@ -217,6 +226,34 @@ export default function Report() {
       )}
       <T v="tiny" c={color.textMuted} style={{ textAlign: 'center', marginTop: space.sm }}>한끼온의 분석은 건강한 습관을 위한 참고 정보이며 의료적 진단을 대신하지 않아요.</T>
     </Screen>
+  );
+}
+
+/** B7 재료별 산 것·쓴 것·버린 것 표(많이 버린 재료가 위로, 최대 6줄) */
+function LedgerTable({ rows }: { rows: ReturnType<typeof ingredientLedger> }) {
+  const [all, setAll] = useState(false);
+  if (!rows.length) return null;
+  const shown = all ? rows : rows.slice(0, 6);
+  const cell = { width: 54, textAlign: 'right' as const };
+  return (
+    <View style={{ gap: 4, marginTop: space.xs }}>
+      <Row>
+        <T v="tiny" c={color.textMuted} style={{ flex: 1 }}>재료</T>
+        <T v="tiny" c={color.textMuted} style={cell}>산 것</T>
+        <T v="tiny" c={color.textMuted} style={cell}>요리</T>
+        <T v="tiny" c={color.textMuted} style={cell}>버림</T>
+      </Row>
+      {shown.map((r) => (
+        <Row key={r.name}>
+          <T v="small" style={{ flex: 1 }} numberOfLines={1}>{r.name}</T>
+          <T v="small" c={color.textSub} style={cell}>{r.bought ? `${r.bought}번` : '—'}</T>
+          <T v="small" c={color.textSub} style={cell}>{r.used ? `${r.used}번` : '—'}</T>
+          <T v="small" c={r.wasted ? color.danger : color.textSub} style={cell}>{r.wasted ? `${r.wasted}번` : '—'}</T>
+        </Row>
+      ))}
+      {rows.length > 6 ? <Chip label={all ? '접기' : `${rows.length - 6}개 더 보기`} onPress={() => setAll(!all)} /> : null}
+      <T v="tiny" c={color.textMuted}>재료 등록·요리 완료·버림 기록에서만 세요(직접 다 먹음 처리한 것은 빠져요).</T>
+    </View>
   );
 }
 

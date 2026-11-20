@@ -9,11 +9,13 @@ import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
-import { addDays, toDateKey } from '@/logic/dates';
+import { addDays, eul, iga, toDateKey } from '@/logic/dates';
 import type { RecipeMatch } from '@/logic/inventory';
 import { generatePlan } from '@/logic/planner';
 import { aiRecipeToRecipe } from '@/logic/recipe-convert';
 import { rankForUser } from '@/logic/suggestions';
+import { isUsable } from '@/logic/tidy';
+import { sameIngredient } from '@/data/catalog';
 
 const ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -21,7 +23,8 @@ const ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 export default function Cook() {
   const s = useAppState();
   const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState<'all' | 'expiring' | 'quick'>('all');
+  const [filter, setFilter] = useState<'all' | 'expiring' | 'quick' | 'clear'>('all');
+  const [picked, setPicked] = useState<string[]>([]); // 냉장고 털기: 고른 재료
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -38,12 +41,28 @@ export default function Cook() {
   }, [ingredient]);
 
   const ranked = useMemo(() => rankForUser(s), [s]);
-  const pool = ranked.filter((m) => {
-    if (q.trim()) return m.recipe.name.includes(q.trim()) || m.recipe.ingredients.some((i) => i.name.includes(q.trim()));
-    if (filter === 'expiring') return m.usesExpiring.length > 0;
-    if (filter === 'quick') return m.recipe.timeMinutes <= 15;
-    return true;
-  });
+  // C3: '두부 애호박', '두부+애호박'처럼 여러 단어를 쓰면 모두 들어간 메뉴만
+  const tokens = q.split(/[\s,+·]+/).map((t) => t.trim()).filter(Boolean);
+  const uses = (m: RecipeMatch, word: string) =>
+    m.recipe.name.includes(word) || m.recipe.ingredients.some((i) => i.name.includes(word) || sameIngredient(i.name, word));
+  // E1 냉장고 털기에 쓸 재료 후보: 실제로 있는 재료(남은 음식·양념 제외), 기한 가까운 순
+  const clearable = useMemo(() => {
+    const seen = new Set<string>();
+    return s.ingredients
+      .filter((i) => i.kind !== 'leftover' && i.category !== '양념' && isUsable(i))
+      .sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999'))
+      .filter((i) => (seen.has(i.name) ? false : (seen.add(i.name), true)));
+  }, [s.ingredients]);
+  const pool = ranked
+    .filter((m) => {
+      if (tokens.length) return tokens.every((w) => uses(m, w));
+      if (filter === 'clear') return picked.length > 0 && picked.every((w) => uses(m, w));
+      if (filter === 'expiring') return m.usesExpiring.length > 0;
+      if (filter === 'quick') return m.recipe.timeMinutes <= 15;
+      return true;
+    })
+    // 냉장고 털기는 '부족한 재료가 적은 순'이 먼저
+    .sort((a, b) => (filter === 'clear' && !tokens.length ? a.missingRequired.length - b.missingRequired.length : 0));
   const pages = Math.max(1, Math.ceil(pool.length / 3));
   const three = pool.slice((page % pages) * 3, (page % pages) * 3 + 3);
 
@@ -83,7 +102,33 @@ export default function Cook() {
           <Chip label="전체" selected={filter === 'all'} onPress={() => { setFilter('all'); setPage(0); }} />
           <Chip label="먼저 쓸 재료" selected={filter === 'expiring'} onPress={() => { setFilter('expiring'); setPage(0); }} />
           <Chip label="15분 이내" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
+          <Chip label="🧺 냉장고 털기" selected={filter === 'clear'} onPress={() => { setFilter('clear'); setPage(0); }} />
         </Row>
+      )}
+      {searchOpen && tokens.length > 1 ? <T v="tiny" c={color.textSub}>{iga(tokens.join(' + '))} 모두 들어간 메뉴</T> : null}
+
+      {!searchOpen && filter === 'clear' && (
+        <View style={{ gap: 6 }}>
+          <T v="bodyBold">남은 재료 2~3개를 골라 보세요</T>
+          <T v="tiny" c={color.textSub}>고른 재료가 모두 들어가는 메뉴를, 더 살 게 적은 순으로 보여 줘요.</T>
+          {clearable.length ? (
+            <Row wrap>
+              {clearable.slice(0, 18).map((i) => {
+                const on = picked.includes(i.name);
+                return (
+                  <Chip
+                    key={i.id}
+                    label={`${i.emoji} ${i.name}`}
+                    selected={on}
+                    onPress={() => { setPicked(on ? picked.filter((x) => x !== i.name) : [...picked, i.name].slice(-4)); setPage(0); }}
+                  />
+                );
+              })}
+            </Row>
+          ) : (
+            <T v="small" c={color.textMuted}>냉장고에 쓸 수 있는 재료가 없어요.</T>
+          )}
+        </View>
       )}
 
       {three.length ? (
@@ -94,7 +139,15 @@ export default function Cook() {
       ) : (
         <View style={{ alignItems: 'center', paddingVertical: space.xl, gap: space.sm }}>
           <Text style={{ fontSize: 36 }}>🔍</Text>
-          <T c={color.textSub}>{q.trim() ? `‘${q.trim()}’로 만들 수 있는 기본 메뉴가 없어요` : '맞는 메뉴가 없어요'}</T>
+          <T c={color.textSub}>
+            {q.trim()
+              ? `‘${q.trim()}’로 만들 수 있는 기본 메뉴가 없어요`
+              : filter === 'clear' && !picked.length
+                ? '위에서 재료를 골라 주세요'
+                : filter === 'clear'
+                  ? `${eul(picked.join('·'))} 한 번에 쓰는 메뉴가 없어요. 하나를 빼 보세요`
+                  : '맞는 메뉴가 없어요'}
+          </T>
         </View>
       )}
 

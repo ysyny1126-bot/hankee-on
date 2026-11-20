@@ -17,6 +17,7 @@ import { ALLERGEN_OPTIONS } from '@/data/catalog';
 import { buildDemoState } from '@/data/demo';
 import { actions, getState, initialState, useAppState } from '@/data/store';
 import { requestNotificationPermission } from '@/logic/notify';
+import { backupSummary, exportBackup, parseBackup, pickBackupFileWeb } from '@/logic/backup';
 
 const join = (l: string[]) => l.join(', ');
 const split = (t: string) => t.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
@@ -176,6 +177,7 @@ export default function Settings() {
       <SectionHeader title="데이터 관리" />
       <Card>
         <T v="small" c={color.textSub}>재료 {s.ingredients.length} · 식사 {s.meals.length} · 요리 {s.cooks.length} · 목표 {s.goals.length} · 장보기 {s.shopping.length}</T>
+        <BackupBox />
         <Button
           title="예시 데이터 넣기(시연용)"
           kind="secondary"
@@ -214,5 +216,45 @@ function Toggle({ label, value, onChange, sub }: { label: string; value: boolean
       </View>
       <OnOff value={value} onValueChange={onChange} />
     </Row>
+  );
+}
+
+/** C5 백업 내보내기·가져오기 */
+function BackupBox() {
+  const s = useAppState();
+  const [paste, setPaste] = useState<string | null>(null);
+  const load = async (text: string | null) => {
+    if (!text) return;
+    try {
+      const next = parseBackup(text);
+      if (!(await confirmAsync('백업 불러오기', `백업: ${backupSummary(next)}\n지금 기록(${backupSummary(s)})을 이 백업으로 바꿔요.`, '불러오기'))) return;
+      actions.restoreBackup(next);
+      setPaste(null);
+      notify('백업을 불러왔어요', '잘못 불러왔다면 화면 아래 되돌리기를 누르세요.');
+    } catch (e) {
+      notify('불러오지 못했어요', (e as Error).message);
+    }
+  };
+  return (
+    <View style={{ gap: space.sm, paddingVertical: space.xs }}>
+      <T v="bodyBold">백업</T>
+      <T v="tiny" c={color.textMuted}>기기를 바꾸거나 브라우저 기록을 지우면 기록이 사라질 수 있어요. 가끔 내보내 두세요. (사진은 이 기기 경로만 들어가요)</T>
+      <Row gap={space.sm}>
+        <Button small kind="secondary" title={Platform.OS === 'web' ? '백업 파일 내려받기' : '백업 내보내기(공유)'} style={{ flex: 1 }} onPress={() => exportBackup(s).catch((e) => notify('내보내지 못했어요', (e as Error).message))} />
+        <Button small kind="secondary" title="백업 불러오기" style={{ flex: 1 }} onPress={async () => (Platform.OS === 'web' ? load(await pickBackupFileWeb()) : setPaste(''))} />
+      </Row>
+      {Platform.OS === 'web' && paste === null ? (
+        <Pressable onPress={() => setPaste('')} hitSlop={6}><T v="tiny" c={color.textSub}>파일 대신 글로 붙여 넣기</T></Pressable>
+      ) : null}
+      {paste !== null && (
+        <>
+          <Field label="백업 글 붙여 넣기" multiline value={paste} onChangeText={setPaste} placeholder='{"app":"hankeeon-backup", ...}' style={{ minHeight: 90 }} />
+          <Row gap={space.sm}>
+            <Button small title="불러오기" style={{ flex: 1 }} disabled={!paste.trim()} onPress={() => load(paste)} />
+            <Button small kind="ghost" title="닫기" onPress={() => setPaste(null)} />
+          </Row>
+        </>
+      )}
+    </View>
   );
 }

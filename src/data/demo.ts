@@ -92,10 +92,18 @@ export function buildDemoState(base: AppState): AppState {
     meal(9, 'dinner', '20:30', ['피자'], 'delivery'),
   ];
 
+  // 예시 지출: 재료는 사전 평균가로 '추정' 표시, 배달·외식·편의점은 흔한 금액(시연용 예시)
+  const spend = ingredients
+    .filter((i) => i.price)
+    .map((i) => ({ id: `demo_sp_${i.name}`, date: i.addedAt.slice(0, 10) <= today ? toDateKey(new Date(i.addedAt)) : today, name: i.name, amount: i.price!, estimated: true }));
+  const OUT_COST = { delivery: 17000, eat_out: 11000, convenience: 5500 } as const;
+  const paidMeals = meals.map((m) => (m.sourceType === 'home' ? m : { ...m, cost: OUT_COST[m.sourceType] }));
+
   return {
     ...base,
     ingredients,
-    meals,
+    meals: paidMeals,
+    spend,
     goals: [
       { id: 'demo_goal_veg', goalType: 'vegetables', title: '채소·과일 챙기기', targetValue: 3, unit: '접시/일', startDate: addDays(today, -7), endDate: null, status: 'active' },
       { id: 'demo_goal_home', goalType: 'home_cooking', title: '집밥 주 5회', targetValue: 5, unit: '회', startDate: addDays(today, -7), endDate: null, status: 'active' },

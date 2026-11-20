@@ -99,6 +99,8 @@ export interface MealRecord {
   description: string; // 메모
   sourceType: MealSourceType;
   recipeId?: string; // 직접 요리한 경우 연결된 레시피
+  /** B4: 배달·외식·편의점에서 쓴 금액(원, 선택). 집밥은 장보기 지출로 따로 센다 */
+  cost?: number;
   items: MealItem[];
   createdAt: string;
 }

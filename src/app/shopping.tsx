@@ -7,7 +7,7 @@ import { Button, Card, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T } 
 import { color, radius, space } from '@/constants/tokens';
 import { findCatalog, sameIngredient } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
-import type { StorageType } from '@/data/types';
+import type { SpendRecord, StorageType } from '@/data/types';
 import { addDays, isValidDateKey, toDateKey } from '@/logic/dates';
 
 /** 산 재료를 냉장고에 넣기 전에 확인하는 값(R5) */
@@ -90,7 +90,21 @@ export default function Shopping() {
       {todo.length > 0 && (
         <Card>
           <T v="h3">살 것 {todo.length}</T>
-          {todo.map((x) => <ItemRow key={x.id} id={x.id} name={x.name} sub={`${x.amount ? `${x.amount}${x.unit} · ` : ''}${x.reason}`} done={false} />)}
+          {/* B5: 매장 코너별로 묶고, 지난번에 산 가격을 함께 */}
+          {AISLES.map((a) => {
+            const list = todo.filter((x) => aisleOf(x.name) === a.key);
+            if (!list.length) return null;
+            return (
+              <View key={a.key} style={{ gap: 2 }}>
+                <T v="tiny" c={color.textSub} style={{ fontWeight: '700', marginTop: 6 }}>{a.label}</T>
+                {list.map((x) => {
+                  const last = lastBuy(s.spend ?? [], x.name);
+                  const sub = [x.amount ? `${x.amount}${x.unit}` : '', x.reason, last ? `지난번 ${last.amount.toLocaleString()}원${last.estimated ? '(추정)' : ''} · ${last.date.slice(5).replace('-', '/')}` : ''].filter(Boolean).join(' · ');
+                  return <ItemRow key={x.id} id={x.id} name={x.name} sub={sub} done={false} />;
+                })}
+              </View>
+            );
+          })}
         </Card>
       )}
 
@@ -139,6 +153,24 @@ export default function Shopping() {
       </Sheet>
     </Screen>
   );
+}
+
+const AISLES = [
+  { key: 'veg', label: '🥬 채소·과일', cats: ['채소', '과일'] },
+  { key: 'meat', label: '🥩 고기·생선', cats: ['육류', '해산물'] },
+  { key: 'dairy', label: '🥛 유제품·계란·두부', cats: ['유제품·계란', '콩·두부'] },
+  { key: 'frozen', label: '🧊 냉동식품', cats: ['냉동식품'] },
+  { key: 'dry', label: '🍚 곡물·가공·반찬', cats: ['곡류', '가공식품', '반찬'] },
+  { key: 'sauce', label: '🧂 양념', cats: ['양념'] },
+  { key: 'etc', label: '🛍️ 기타', cats: [] as string[] },
+];
+function aisleOf(name: string): string {
+  const c = findCatalog(name)?.category;
+  return AISLES.find((a) => c && a.cats.includes(c))?.key ?? 'etc';
+}
+/** 같은 재료를 마지막으로 산 기록(재료 등록 때 남은 지출) */
+function lastBuy(spend: SpendRecord[], name: string): SpendRecord | undefined {
+  return spend.filter((x) => sameIngredient(x.name, name)).sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
 function ItemRow({ id, name, sub, done }: { id: string; name: string; sub: string; done: boolean }) {
