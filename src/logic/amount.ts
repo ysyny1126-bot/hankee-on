@@ -77,3 +77,8 @@ export function packSizes(name: string, unit: string): number[] {
   if (unit === 'ml') return [200, 500, 1000];
   return [];
 }
+
+/** 사전에 등록된 '흔한 포장 크기'만(일반 추정값 제외). 근거 없는 조언을 하지 않기 위해 */
+export function knownPacks(name: string): number[] | null {
+  return Object.entries(PACKS).find(([k]) => name.includes(k))?.[1] ?? null;
+}

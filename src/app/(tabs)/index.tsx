@@ -6,6 +6,7 @@ import { Character } from '@/components/character';
 import { KitchenHero } from '@/components/kitchen-hero';
 import { WeekStrip } from '@/components/week-strip';
 import { TidyCard } from '@/components/tidy-card';
+import { BackupNudge } from '@/components/backup-nudge';
 import { FirstWeekGuide } from '@/components/first-week';
 import { PlanCatchUp } from '@/components/plan-catch-up';
 import { notify } from '@/components/dialog';
@@ -139,6 +140,7 @@ export default function Home() {
       {/* 정리가 필요한 재료(기한 지남·아주 조금 남음) — 답하면 추천이 바로 정확해진다 */}
       <PlanCatchUp max={1} wrapStyle={{ marginTop: space.md }} />
       <TidyCard stock={s.ingredients} wrapStyle={{ marginTop: space.md }} lastCheckAt={s.preferences.lastCheckAt} />
+      <BackupNudge />
 
       {/* 4. 먼저 활용하면 좋은 재료 */}
       {firstUse.length > 0 && (

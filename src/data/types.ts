@@ -141,6 +141,9 @@ export interface FoodPreferences {
   nickname: string;
   /** 마지막 '이번 주 냉장고 점검' 날(YYYY-MM-DD) */
   lastCheckAt?: string;
+  /** 마지막으로 백업을 내보낸 날 · 홈 백업 안내를 닫은 날 */
+  lastBackupAt?: string;
+  backupNudgeAt?: string;
   characterId?: string; // 선택한 캐릭터(constants/characters.ts)
   preferredFoods: string[];
   dislikedFoods: string[];

@@ -26,6 +26,7 @@ export function frequentAdds(s: AppState, limit = 6): FrequentItem[] {
       ...s.waste.filter((w) => w.date >= since).map((w) => w.ingredientName),
     ];
     for (const n of names) {
+      if (!n) continue; // 예전 기록에 이름이 비어 있을 수 있다
       const c = findCatalog(n);
       if (!c || c.category === '양념') continue;
       const f = map.get(c.name);

@@ -18,6 +18,7 @@ import { color, radius, space } from '@/constants/tokens';
 import { ALLERGEN_OPTIONS } from '@/data/catalog';
 import { buildDemoState, buildScenario, DEMO_SCENES } from '@/data/demo';
 import { actions, getState, initialState, useAppState } from '@/data/store';
+import { daysUntil, toDateKey } from '@/logic/dates';
 import { requestNotificationPermission } from '@/logic/notify';
 import { backupSummary, exportBackup, parseBackup, pickBackupFileWeb } from '@/logic/backup';
 
@@ -112,7 +113,7 @@ export default function Settings() {
       <Group title="앱">
         <Line label="알림" value={`${notiOn}개 켜짐`} onPress={() => setOpen('notify')} first />
         <Line label="개인정보·AI" value={s.consents.personalization ? '기록 기억 켜짐' : '기록 기억 꺼짐'} onPress={() => setOpen('privacy')} />
-        <Line label="데이터 관리" value="백업 · 예시 데이터" onPress={() => setOpen('data')} />
+        <Line label="데이터 관리" value={backupLabel(s.preferences.lastBackupAt)} onPress={() => setOpen('data')} />
       </Group>
       <View style={{ height: space.lg }} />
 
@@ -390,6 +391,13 @@ function Toggle({ label, value, onChange, sub }: { label: string; value: boolean
   );
 }
 
+/** 설정 요약 줄: 마지막 백업이 언제인지 */
+function backupLabel(at?: string) {
+  if (!at) return '백업 아직 안 함';
+  const d = daysUntil(at) * -1;
+  return d <= 0 ? '오늘 백업함' : `마지막 백업 ${d}일 전`;
+}
+
 /** C5 백업 내보내기·가져오기 */
 function BackupBox() {
   const s = useAppState();
@@ -411,7 +419,7 @@ function BackupBox() {
       <T v="bodyBold">백업</T>
       <T v="tiny" c={color.textMuted}>기기를 바꾸거나 브라우저 기록을 지우면 기록이 사라질 수 있어요. 가끔 내보내 두세요. (사진은 이 기기 경로만 들어가요)</T>
       <Row gap={space.sm}>
-        <Button small kind="secondary" title={Platform.OS === 'web' ? '백업 파일 내려받기' : '백업 내보내기(공유)'} style={{ flex: 1 }} onPress={() => exportBackup(s).catch((e) => notify('내보내지 못했어요', (e as Error).message))} />
+        <Button small kind="secondary" title={Platform.OS === 'web' ? '백업 파일 내려받기' : '백업 내보내기(공유)'} style={{ flex: 1 }} onPress={() => exportBackup(s).then(() => actions.updatePreferences({ lastBackupAt: toDateKey() })).catch((e) => notify('내보내지 못했어요', (e as Error).message))} />
         <Button small kind="secondary" title="백업 불러오기" style={{ flex: 1 }} onPress={async () => (Platform.OS === 'web' ? load(await pickBackupFileWeb()) : setPaste(''))} />
       </Row>
       {Platform.OS === 'web' && paste === null ? (

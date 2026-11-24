@@ -13,7 +13,7 @@ import { allRecipes } from './suggestions';
  * R4: 앞 끼니에서 쓴 재료는 '가상 재고'에서 빼고 다음 끼니를 고른다.
  * (월요일에 두부를 다 쓰면 화요일 추천에서는 두부가 없는 것으로 본다. 실제 재고는 바꾸지 않는다)
  */
-export function generatePlan(s: AppState, startDate: string, days: number, mealTypes: MealType[] = ['lunch', 'dinner']): MealPlanEntry[] {
+export function generatePlan(s: AppState, startDate: string, days: number, mealTypes: MealType[] = ['lunch', 'dinner'], now = new Date()): MealPlanEntry[] {
   const recipes = allRecipes(s);
   const ctx = rankContext(s);
   let stock = s.ingredients;
@@ -37,6 +37,8 @@ export function generatePlan(s: AppState, startDate: string, days: number, mealT
     const date = addDays(startDate, d);
     for (const type of mealTypes) {
       if (done.has(`${date}|${type}`)) continue; // 이미 먹은 끼니는 그대로
+      // 오늘 이미 지난 끼니(저녁 6시에 점심 등)는 계획하지 않는다 → 짜자마자 '지난 끼니 확인'이 뜨지 않게
+      if (date === toDateKey(now) && passed(type, now)) continue;
       const lo = type !== 'breakfast' ? queue.find((q) => q.left > 0 && (!q.expiry || daysUntil(q.expiry, date) >= 0)) : undefined;
       if (lo) {
         lo.left--;
@@ -73,4 +75,10 @@ export function nextMealSlot(s: AppState, now = new Date()): MealType {
   const today = toDateKey(now);
   const eaten = (t: MealType) => s.meals.some((m) => m.mealDate === today && m.mealType === t);
   return order.slice(order.indexOf(cur)).find((t) => !eaten(t)) ?? cur;
+}
+
+/** 오늘 이 끼니 시간이 이미 지났나(아침 10시, 점심 15시, 저녁 22시 기준) */
+function passed(type: MealType, now: Date): boolean {
+  const h = now.getHours();
+  return (type === 'breakfast' && h >= 10) || (type === 'lunch' && h >= 15) || (type === 'dinner' && h >= 22);
 }

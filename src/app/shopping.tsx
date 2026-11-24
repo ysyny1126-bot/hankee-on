@@ -5,6 +5,7 @@ import { notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { Button, Card, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
+import { buyAdvice } from '@/logic/buy-advice';
 import { findCatalog, sameIngredient } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { SpendRecord, StorageType } from '@/data/types';
@@ -101,7 +102,7 @@ export default function Shopping() {
                 {list.map((x) => {
                   const last = lastBuy(s.spend ?? [], x.name);
                   const sub = [x.amount ? `${x.amount}${x.unit}` : '', x.reason, last ? `지난번 ${last.amount.toLocaleString()}원${last.estimated ? '(추정)' : ''} · ${last.date.slice(5).replace('-', '/')}` : ''].filter(Boolean).join(' · ');
-                  return <ItemRow key={x.id} id={x.id} name={x.name} sub={sub} done={false} />;
+                  return <ItemRow key={x.id} id={x.id} name={x.name} sub={sub} advice={buyAdvice(s, x)} done={false} />;
                 })}
               </View>
             );
@@ -174,7 +175,7 @@ function lastBuy(spend: SpendRecord[], name: string): SpendRecord | undefined {
   return spend.filter((x) => sameIngredient(x.name, name)).sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
-function ItemRow({ id, name, sub, done }: { id: string; name: string; sub: string; done: boolean }) {
+function ItemRow({ id, name, sub, done, advice }: { id: string; name: string; sub: string; done: boolean; advice?: string | null }) {
   return (
     <Row style={{ paddingVertical: 6 }}>
       <Pressable onPress={() => actions.toggleShopping(id)} hitSlop={8} style={{ width: 26, height: 26, borderRadius: radius.sm, borderWidth: 2, borderColor: done ? color.fresh : color.border, backgroundColor: done ? color.fresh : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
@@ -183,6 +184,7 @@ function ItemRow({ id, name, sub, done }: { id: string; name: string; sub: strin
       <View style={{ flex: 1, gap: 2 }}>
         <T v="bodyBold" c={done ? color.textMuted : color.text} style={done ? { textDecorationLine: 'line-through' } : undefined}>{findCatalog(name)?.emoji ?? '🛍️'} {name}</T>
         <T v="tiny" c={color.textMuted}>{sub}</T>
+        {advice ? <T v="tiny" c={color.brandDark}>🛒 {advice}</T> : null}
       </View>
       <Pressable onPress={() => actions.removeShopping(id)} hitSlop={8} style={{ padding: space.xs }}><T v="small" c={color.textMuted}>✕</T></Pressable>
     </Row>

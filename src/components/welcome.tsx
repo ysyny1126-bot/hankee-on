@@ -65,7 +65,7 @@ export function Welcome({ characterId, onStart, onDemo }: { characterId?: string
           <Pressable onPress={onDemo} accessibilityRole="button" style={({ pressed }) => [styles.secondary, pressed && { opacity: 0.85 }]}>
             <T v="bodyBold" c={color.brandDark}>예시 데이터로 먼저 둘러보기</T>
           </Pressable>
-          <T v="tiny" c={color.textSub} style={{ textAlign: 'center' }}>로그인은 준비 중이에요. 지금은 이 기기에만 저장돼요.</T>
+          <T v="tiny" c={color.textSub} style={{ textAlign: 'center' }}>무료 · 광고 없음 · 내 기록은 이 휴대폰에만 저장돼요</T>
         </View>
       </View>
     </SafeAreaView>
