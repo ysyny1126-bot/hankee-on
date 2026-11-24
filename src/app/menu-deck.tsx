@@ -141,7 +141,7 @@ function MenuCard({ m, width, art, tint, onPress }: { m: RecipeMatch; width: num
   const first = m.usesExpiring.slice(0, 2);
   const missing = m.missingRequired;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${r.name}, ${r.timeMinutes}분, ${missing.length ? `${missing.length}개 더 필요` : '재료 다 있어요'}. 눌러서 레시피 보기`} style={({ pressed }) => [styles.card, { width }, pressed && { transform: [{ scale: 0.99 }] }]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${r.name}, ${r.timeMinutes}분, ${missing.length ? `${missing.length}개 더 필요` : '재료 다 있어요'}. 눌러서 레시피 보기`} style={({ pressed }) => [styles.card, { width }, pressed && { opacity: 0.9 }]}>
       <View style={[styles.art, { backgroundColor: tint, height: art }]}>
         <View style={styles.plate}><Text style={{ fontSize: 64, lineHeight: 76 }}>{r.emoji}</Text></View>
         <View style={styles.time}><T v="tiny" style={{ fontWeight: '800' }}>{r.timeMinutes}분 · {r.difficulty}</T></View>
@@ -188,6 +188,6 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, paddingBottom: space.sm },
   primary: { minHeight: 54, borderRadius: 999, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
   secondary: { minHeight: 54, borderRadius: 999, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  pressed: { opacity: 0.8 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, paddingHorizontal: space.xl },
 });

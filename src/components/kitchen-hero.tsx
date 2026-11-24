@@ -116,7 +116,7 @@ export function KitchenHero({
             onPress={openFridge}
             accessibilityRole="button"
             accessibilityLabel={empty ? '냉장고가 비어 있어요. 재료 넣기' : `냉장고 열기. 재료 ${ingredients.length}개, 만들 수 있는 메뉴 보기`}
-            style={({ pressed }) => [pressed && { transform: [{ scale: 0.97 }] }]}>
+            style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
             <FridgeArt width={112} items={empty ? [] : peek.map((i) => i.emoji)} badge={firstUse.length} />
           </Pressable>
           <View style={styles.tapHint}><T v="tiny" c={color.textSub} style={{ fontWeight: '700' }}>{empty ? '눌러서 채우기' : '눌러서 열기'}</T></View>
@@ -239,5 +239,5 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: space.sm },
   primary: { flex: 1, minHeight: 50, borderRadius: 999, backgroundColor: color.brandDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16 },
   secondary: { minHeight: 50, borderRadius: 999, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 18 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  pressed: { opacity: 0.8 },
 });

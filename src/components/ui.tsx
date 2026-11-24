@@ -107,7 +107,7 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
         styles.btn,
         small && styles.btnSmall,
         { backgroundColor: palette.bg, borderColor: palette.bd, opacity: disabled ? 0.45 : 1 },
-        pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 },
+        pressed && { opacity: 0.8 },
         style,
       ]}>
       {loading ? (
