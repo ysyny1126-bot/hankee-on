@@ -1,13 +1,14 @@
+import { useState } from 'react';
 import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { notify } from '@/components/dialog';
-import { shortAmount } from '@/logic/amount';
+import { lowerLevel, quantityFor, shortAmount } from '@/logic/amount';
 import { Button, Row, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { actions } from '@/data/store';
 import type { Ingredient } from '@/data/types';
-import { dDayLabel } from '@/logic/dates';
-import { RECHECK_DAYS, tidyList } from '@/logic/tidy';
+import { addDays, dDayLabel, toDateKey } from '@/logic/dates';
+import { isUsable, RECHECK_DAYS, tidyList } from '@/logic/tidy';
 
 /**
  * 냉장고 정리 카드(A2·A4).
@@ -15,9 +16,10 @@ import { RECHECK_DAYS, tidyList } from '@/logic/tidy';
  * 아주 적게 남은 재료: 다 썼어요 / 남겨 두기
  * 답하기 전까지 이 재료들은 추천·식단 계산에 쓰지 않는다(화면에 안내).
  */
-export function TidyCard({ stock, max = 3, wrapStyle }: { stock: Ingredient[]; max?: number; wrapStyle?: StyleProp<ViewStyle> }) {
+export function TidyCard({ stock, max = 3, wrapStyle, lastCheckAt }: { stock: Ingredient[]; max?: number; wrapStyle?: StyleProp<ViewStyle>; lastCheckAt?: string }) {
   const { expired, tiny, total } = tidyList(stock);
-  if (!total) return null;
+  // 정리할 게 없으면, 일주일에 한 번 '30초 점검'을 같은 자리에서
+  if (!total) return weeklyDue(stock, lastCheckAt) ? <WeeklyCheck stock={stock} wrapStyle={wrapStyle} /> : null;
   const rows = [...expired.map((i) => ({ i, kind: 'expired' as const })), ...tiny.map((i) => ({ i, kind: 'tiny' as const }))].slice(0, max);
   return (
     <View style={[{ backgroundColor: color.warnSoft, borderRadius: radius.lg, padding: space.md, gap: space.sm }, wrapStyle]} accessibilityRole="summary">
@@ -56,6 +58,67 @@ export function TidyCard({ stock, max = 3, wrapStyle }: { stock: Ingredient[]; m
         </View>
       ))}
       {total > rows.length ? <T v="tiny" c={color.textSub}>나머지 {total - rows.length}개는 냉장고 화면에서 볼 수 있어요.</T> : null}
+    </View>
+  );
+}
+
+const CHECK_DAYS = 7;
+const checkable = (stock: Ingredient[]) =>
+  stock
+    .filter((i) => i.kind !== 'leftover' && i.category !== '양념' && isUsable(i))
+    .sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999') || a.addedAt.localeCompare(b.addedAt));
+
+/** 점검할 때가 됐나: 마지막 점검(없으면 가장 오래된 재료를 넣은 날)이 7일 넘게 지났고, 점검할 재료가 3개 이상 */
+function weeklyDue(stock: Ingredient[], lastCheckAt?: string) {
+  const list = checkable(stock);
+  if (list.length < 3) return false;
+  const since = lastCheckAt ?? list.map((i) => i.addedAt.slice(0, 10)).sort()[0];
+  return since <= addDays(toDateKey(), -CHECK_DAYS);
+}
+
+/** 일주일 30초 점검: 재료 5개까지 [그대로 · 줄었어요 · 다 썼어요] */
+function WeeklyCheck({ stock, wrapStyle }: { stock: Ingredient[]; wrapStyle?: StyleProp<ViewStyle> }) {
+  const [done, setDone] = useState<string[]>([]);
+  const [ids] = useState(() => checkable(stock).slice(0, 5).map((i) => i.id));
+  const rows = ids.map((id) => stock.find((i) => i.id === id)).filter((i): i is Ingredient => !!i && !done.includes(i.id));
+  const answer = (id: string) => {
+    const next = [...done, id];
+    setDone(next);
+    if (ids.every((x) => next.includes(x) || !stock.some((i) => i.id === x))) actions.updatePreferences({ lastCheckAt: toDateKey() });
+  };
+  if (!rows.length) return null;
+  return (
+    <View style={[{ backgroundColor: color.brandSoft, borderRadius: radius.lg, padding: space.md, gap: space.sm }, wrapStyle]} accessibilityRole="summary">
+      <Row style={{ justifyContent: 'space-between' }}>
+        <T v="bodyBold">이번 주 냉장고 점검</T>
+        <T v="tiny" c={color.textSub}>{done.length}/{ids.length}</T>
+      </Row>
+      <T v="small" c={color.textSub}>30초면 돼요. 맞춰 두면 추천이 정확해져요.</T>
+      {rows.slice(0, 3).map((i) => {
+        const low = lowerLevel(i);
+        return (
+          <View key={i.id} style={{ backgroundColor: color.surface, borderRadius: radius.md, padding: space.sm, gap: 8 }}>
+            <Row>
+              <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
+              <T v="bodyBold" style={{ flex: 1 }}>{i.name} <T v="small" c={color.textSub}>{shortAmount(i)}</T></T>
+            </Row>
+            <Row gap={6} wrap>
+              <Button small kind="secondary" title="그대로" onPress={() => answer(i.id)} />
+              <Button
+                small
+                kind="secondary"
+                title="줄었어요"
+                onPress={() => {
+                  if (low) actions.updateIngredient(i.id, { quantity: quantityFor(i, low) });
+                  else actions.useUpIngredient(i.id);
+                  answer(i.id);
+                }}
+              />
+              <Button small kind="ghost" title="다 썼어요" onPress={() => { actions.useUpIngredient(i.id); answer(i.id); }} />
+            </Row>
+          </View>
+        );
+      })}
     </View>
   );
 }

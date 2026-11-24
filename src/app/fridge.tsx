@@ -42,7 +42,7 @@ export default function Fridge() {
       </Row>
 
       <Intro>재료를 누르면 수량·소비기한을 고치거나 다 썼다고 표시할 수 있어요.</Intro>
-      <TidyCard stock={s.ingredients} max={20} />
+      <TidyCard stock={s.ingredients} max={20} lastCheckAt={s.preferences.lastCheckAt} />
       {s.ingredients.length > 0 && (
         <Segmented options={[{ key: 'shelf', label: '선반으로 보기' }, { key: 'list', label: '빠르게 고치기' }]} value={mode} onChange={setMode} />
       )}

@@ -262,7 +262,10 @@ export const actions = {
           lastUsedAt: null,
         });
       }
-      return { ...s, ingredients: list.map((x) => ({ ...x })), spend: [...spend, ...(s.spend ?? [])] };
+      const adds = items
+        .filter((it) => it.kind !== 'leftover')
+        .map((it) => ({ name: it.name, quantity: it.quantity, unit: it.unit, storage: it.storage, date: toDateKey() }));
+      return { ...s, ingredients: list.map((x) => ({ ...x })), spend: [...spend, ...(s.spend ?? [])], recentAdds: [...adds, ...(s.recentAdds ?? [])].slice(0, 60) };
     });
   },
   updateIngredient(id: string, patch: Partial<Ingredient>) {

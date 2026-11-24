@@ -1,6 +1,6 @@
 import { Stack as RStack, useLocalSearchParams } from 'expo-router';
 import { goBack } from '@/logic/nav';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { readExpiryFromPackage, hasAIKey } from '@/ai/gemini';
@@ -10,6 +10,7 @@ import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T, I
 import { color, space } from '@/constants/tokens';
 import { KeepInfo } from '@/components/keep-info';
 import { packSizes } from '@/logic/amount';
+import { frequentAdds } from '@/logic/frequent';
 import { findCatalog, findCatalogExact, INGREDIENT_CATALOG } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { IngredientLocation, StorageType } from '@/data/types';
@@ -34,6 +35,7 @@ export default function IngredientEdit() {
   const [ocrLoading, setOcrLoading] = useState(false);
 
   const aiOn = hasAIKey() && s.consents.externalAI;
+  const frequent = useMemo(() => (existing ? [] : frequentAdds(s)), [s, existing]);
   const suggestions = name.trim() && !existing ? INGREDIENT_CATALOG.filter((c) => c.name.includes(name.trim()) && c.name !== name.trim()).slice(0, 5) : [];
 
   // 사용자가 직접 바꾼 칸은 사전 값으로 덮어쓰지 않는다
@@ -119,6 +121,30 @@ export default function IngredientEdit() {
       <RStack.Screen options={{ title: existing ? '식재료 수정' : '식재료 등록' }} />
       {added.length > 0 && <T v="small" c={color.brandDark}>✓ 방금 등록: {added.join(', ')}</T>}
       {!existing && <Intro>이름만 적어도 등록돼요. 나머지는 나중에 고칠 수 있어요.</Intro>}
+      {!existing && frequent.length > 0 && (
+        <View style={{ gap: 4 }}>
+          <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>자주 넣는 재료</T>
+          <Row wrap gap={4}>
+            {frequent.map((f) => (
+              <Chip
+                key={f.name}
+                label={`${f.emoji} ${f.name}`}
+                selected={name === f.name}
+                onPress={() => {
+                  setName(f.name);
+                  setQuantity(f.quantity);
+                  setUnit(f.unit);
+                  setStorage(f.storage);
+                  setLocation(f.storage === 'pantry' ? 'outside' : 'fridge');
+                  setTouched({ unit: true, storage: true, quantity: true });
+                }}
+              />
+            ))}
+          </Row>
+          <T v="tiny" c={color.textMuted}>누르면 지난번 양으로 채워져요. 확인하고 등록해요.</T>
+        </View>
+      )}
+
       <Field label="재료 이름" placeholder="예: 두부" value={name} onChangeText={onName} onBlur={() => applyCatalog(name.trim())} />
       {suggestions.length > 0 && (
         <Row wrap>{suggestions.map((c) => <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => applyCatalog(c.name)} />)}</Row>

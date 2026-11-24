@@ -139,6 +139,8 @@ export interface DietaryGoal {
 
 export interface FoodPreferences {
   nickname: string;
+  /** 마지막 '이번 주 냉장고 점검' 날(YYYY-MM-DD) */
+  lastCheckAt?: string;
   characterId?: string; // 선택한 캐릭터(constants/characters.ts)
   preferredFoods: string[];
   dislikedFoods: string[];
@@ -302,4 +304,6 @@ export interface AppState {
   recipeNotes: Record<string, { note: string; updatedAt: string }>;
   /** 앱을 연 기록. previous는 이번에 열기 직전의 마지막 방문(오랜만에 돌아온 사용자 반기기용) */
   visit: { last: string | null; previous: string | null };
+  /** 최근 등록한 재료(최근 60개). '자주 넣는 재료' 칩에 쓴다 */
+  recentAdds?: { name: string; quantity: number; unit: string; storage: StorageType; date: string }[];
 }

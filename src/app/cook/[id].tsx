@@ -2,12 +2,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { notify } from '@/components/dialog';
+import { confirmAsync, notify } from '@/components/dialog';
 import { isRough } from '@/logic/amount';
 import { Badge, Button, Card, Chip, Empty, Field, OnOff, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { findFoodReference } from '@/data/catalog';
-import { actions, findRecipe, useAppState } from '@/data/store';
+import { actions, findRecipe, getState, useAppState } from '@/data/store';
+import { nextUse } from '@/logic/bridge';
 import type { CookRating, MealType } from '@/data/types';
 import { addDays, guessMealType, newId, nowTime, toDateKey } from '@/logic/dates';
 import { matchRecipe, planDeduction, round } from '@/logic/inventory';
@@ -88,10 +89,16 @@ export default function CookComplete() {
     if (saveMeal && eaten > 0) lines.push('식사 기록 저장');
     if (left > 0) lines.push(`남은 ${recipe.name} ${left}인분 냉장고에`);
     if (rating) lines.push('맛 평가 기억');
-    notify('맛있게 드세요! 🍽️', lines.join('\n'));
+    // 남은 재료 이어주기: 반 이하로 남은 재료로 내일 만들 메뉴 하나(없으면 기존 알림만)
+    const bridge = nextUse(getState(), rec.usedIngredients.map((u) => u.name), recipe.id);
     router.dismissAll();
     // 식사 기록을 남겼으면 기록 탭에서 바로 확인
     router.replace(saveMeal && eaten > 0 ? '/log' : '/');
+    if (bridge) {
+      confirmAsync('맛있게 드세요! 🍽️', `${lines.join('\n')}\n\n${bridge.line}`, '내일 식단에 넣기', '괜찮아요', false).then((ok) => {
+        if (ok) actions.chooseMeal(bridge.date, bridge.mealType, bridge.recipe.id, '남은 재료 이어 쓰기');
+      });
+    } else notify('맛있게 드세요! 🍽️', lines.join('\n'));
   };
 
   return (
