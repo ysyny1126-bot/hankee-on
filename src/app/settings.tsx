@@ -11,7 +11,7 @@ import { BUDGET_BANDS, budgetLabel, COOK_TIME_BANDS, DISLIKE_OPTIONS, FRIDGE_SIZ
 
 import { AI_MODEL_NAME, hasAIKey } from '@/ai/gemini';
 import { confirmAsync, notify } from '@/components/dialog';
-import { Badge, Button, Chip, Choice, Field, Intro, OnOff, ProgressBar, Row, Screen, Stepper, T, TagPicker } from '@/components/ui';
+import { Badge, Button, Chip, Choice, Field, OnOff, ProgressBar, Row, Screen, Stepper, T, TagPicker } from '@/components/ui';
 import { Group, Line } from '@/components/summary-list';
 import { Sheet } from '@/components/sheet';
 import { color, radius, space } from '@/constants/tokens';
@@ -66,7 +66,6 @@ export default function Settings() {
 
   return (
     <Screen edges={['bottom']}>
-      <Intro>지금 값만 모아 보여 줘요. 줄을 누르면 하나씩 바꿀 수 있어요.</Intro>
 
       {/* 추천에 쓰는 정보: 채운 정도 + 아직 안 정한 항목(재촉하지 않음) */}
       <View style={styles.box}>
