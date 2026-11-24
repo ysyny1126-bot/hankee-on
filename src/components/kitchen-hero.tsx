@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -35,6 +36,8 @@ export function KitchenHero({
   onChoose,
   onCook,
   onAnother,
+  intentBar,
+  cardOverride,
 }: {
   characterId?: string;
   dateLabel: string;
@@ -50,6 +53,10 @@ export function KitchenHero({
   onChoose: () => void;
   onCook: () => void;
   onAnother: () => void;
+  /** 카드 맨 위: 끼니 전 '집밥·외식·간단히' 고르기 */
+  intentBar?: ReactNode;
+  /** 외식·간단히를 골랐을 때 레시피 대신 보여 줄 내용 */
+  cardOverride?: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
   const ingredients = stock.filter((i) => i.kind !== 'leftover');
@@ -147,7 +154,8 @@ export function KitchenHero({
 
       {/* 4. 오늘의 한 끼 */}
       <View style={styles.menuCard}>
-        {r ? (
+        {intentBar}
+        {cardOverride ? cardOverride : r ? (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
               <View style={styles.menuArt}><Text style={{ fontSize: 30 }}>{r.emoji}</Text></View>

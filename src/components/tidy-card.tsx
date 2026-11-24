@@ -69,7 +69,7 @@ const checkable = (stock: Ingredient[]) =>
     .sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999') || a.addedAt.localeCompare(b.addedAt));
 
 /** 점검할 때가 됐나: 마지막 점검(없으면 가장 오래된 재료를 넣은 날)이 7일 넘게 지났고, 점검할 재료가 3개 이상 */
-function weeklyDue(stock: Ingredient[], lastCheckAt?: string) {
+export function weeklyDue(stock: Ingredient[], lastCheckAt?: string) {
   const list = checkable(stock);
   if (list.length < 3) return false;
   const since = lastCheckAt ?? list.map((i) => i.addedAt.slice(0, 10)).sort()[0];

@@ -5,24 +5,25 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Character } from '@/components/character';
 import { KitchenHero } from '@/components/kitchen-hero';
 import { WeekStrip } from '@/components/week-strip';
-import { TidyCard } from '@/components/tidy-card';
-import { BackupNudge } from '@/components/backup-nudge';
-import { FirstWeekGuide } from '@/components/first-week';
-import { PlanCatchUp } from '@/components/plan-catch-up';
+import { TidyCard, weeklyDue } from '@/components/tidy-card';
+import { IntentBar, OutsideCard } from '@/components/meal-intent';
+import { intentOf } from '@/logic/meal-intent';
+import { BackupNudge, backupDue } from '@/components/backup-nudge';
+import { FirstWeekGuide, firstWeekActive } from '@/components/first-week';
+import { missedPlans, PlanCatchUp } from '@/components/plan-catch-up';
 import { notify } from '@/components/dialog';
 import { Icon, type IconName } from '@/components/icon';
-import { Button, Row, Screen, T } from '@/components/ui';
+import { Button, Screen, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
-import { actions, useAllRecipes, useAppState } from '@/data/store';
-import type { Ingredient, MealRecord, MealType, Recipe } from '@/data/types';
+import { actions, useAppState } from '@/data/store';
+import type { Ingredient, MealType } from '@/data/types';
 import { MEAL_LABEL } from '@/logic/analysis';
 import { coachState } from '@/logic/coach';
 import { addDays, daysUntil, fromDateKey, toDateKey, weekStart } from '@/logic/dates';
-import { mealEmoji } from '@/logic/food-emoji';
 import type { RecipeMatch } from '@/logic/inventory';
 import { topReasons } from '@/logic/recommend';
 import { expiringIngredients, rankForUser } from '@/logic/suggestions';
-import { isUsable } from '@/logic/tidy';
+import { isUsable, tidyList } from '@/logic/tidy';
 
 const SLOTS: MealType[] = ['breakfast', 'lunch', 'dinner'];
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
@@ -37,7 +38,6 @@ const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
  */
 export default function Home() {
   const s = useAppState();
-  const recipes = useAllRecipes();
   const p = s.preferences;
   const today = toDateKey();
   const hour = new Date().getHours();
@@ -48,7 +48,6 @@ export default function Home() {
   const when = slot === nowSlot && !eaten(slot) ? '오늘은' : eaten(slot) ? '다음 끼니는' : `${MEAL_LABEL[slot]}은`;
 
   const firstUse = expiringIngredients(s).filter((i) => i.kind !== 'leftover' && isUsable(i));
-  const todayMeals = s.meals.filter((m) => m.mealDate === today).sort((a, b) => a.mealTime.localeCompare(b.mealTime));
 
   // 오늘의 한 끼 후보: 이미 고른 메뉴 → 냉장고 재료로 할 수 있는 순(알레르기·기피는 rankForUser에서 이미 제외)
   const ranked = useMemo(() => rankForUser(s), [s]);
@@ -89,6 +88,21 @@ export default function Home() {
     setPick((n) => n + 1);
   };
 
+  // 끼니 전 선택: 집밥(기본)이면 냉장고 레시피, 외식·간단히면 고르는 기준 카드
+  const intent = intentOf(s, today, slot);
+
+  const alert: 'leftover' | 'missed' | 'tidy' | 'firstWeek' | 'backup' | null = leftovers.length
+    ? 'leftover'
+    : missedPlans(s).length
+      ? 'missed'
+      : tidyList(s.ingredients).total || weeklyDue(s.ingredients, p.lastCheckAt)
+        ? 'tidy'
+        : firstWeekActive(s)
+          ? 'firstWeek'
+          : backupDue(s)
+            ? 'backup'
+            : null;
+
   return (
     <Screen edges={[]}>
       {/* 1~3. 오늘의 한 끼 무대: 코치 한마디 → 냉장고 재료가 캐릭터 주위로 → 캐릭터가 요리를 들고 제안 */}
@@ -107,20 +121,21 @@ export default function Home() {
         onChoose={() => menu && choose(menu)}
         onCook={() => menu && router.push(`/recipe/${menu.recipe.id}?prep=1`)}
         onAnother={another}
+        intentBar={menu || intent !== 'home' ? <IntentBar date={today} slot={slot} value={intent} /> : undefined}
+        cardOverride={intent !== 'home' ? <OutsideCard s={s} slot={slot} kind={intent} /> : undefined}
       />
 
-      {/* 메뉴 카드 바로 아래: 먹은 음식 기록하기 */}
-      <View style={[styles.recordBar, { marginTop: space.md }]}>
+      {/* ① 오늘: 메뉴 카드 바로 아래 먹은 음식 기록하기 */}
+      {intent === 'home' && <View style={[styles.recordBar, { marginTop: space.md }]}>
         <T v="bodyBold" style={{ flex: 1 }}>먹은 음식 기록하기</T>
         <SmallAction icon="camera" label="사진" onPress={() => router.push(`/meal-record/edit?type=${slot}&mode=photo`)} />
         <SmallAction icon="pencil" label="메모" onPress={() => router.push(`/meal-record/edit?type=${slot}`)} />
-      </View>
+      </View>}
 
-      {/* 첫 주 안내(가입 7일 동안, 셋 다 하면 사라짐) */}
-      <FirstWeekGuide wrapStyle={{ marginTop: space.sm }} />
-
-      {/* 남은 음식 먼저: 다시 요리하지 않고 바로 한 끼 */}
-      {leftovers.slice(0, 2).map((lo) => (
+      {/* ② 알려 줄 것은 하나만: 남은 음식 → 지난 끼니 확인 → 냉장고 정리·점검 → 첫 주 안내 → 백업 */}
+      {alert === 'leftover' && (
+        <>
+      {leftovers.slice(0, 1).map((lo) => (
         <View key={lo.id} style={[styles.recordBar, { marginTop: space.sm }]}>
           <Text style={{ fontSize: 22 }}>{lo.emoji}</Text>
           <View style={{ flex: 1 }}>
@@ -136,60 +151,24 @@ export default function Home() {
           </Pressable>
         </View>
       ))}
-
-      {/* 정리가 필요한 재료(기한 지남·아주 조금 남음) — 답하면 추천이 바로 정확해진다 */}
-      <PlanCatchUp max={1} wrapStyle={{ marginTop: space.md }} />
-      <TidyCard stock={s.ingredients} wrapStyle={{ marginTop: space.md }} lastCheckAt={s.preferences.lastCheckAt} />
-      <BackupNudge />
-
-      {/* 4. 먼저 활용하면 좋은 재료 */}
-      {firstUse.length > 0 && (
-        <View style={{ gap: space.sm, marginTop: space.md }}>
-          <T v="h3">먼저 활용하면 좋은 재료</T>
-          <T v="small" c={color.textSub}>눌러서 이 재료로 만들 수 있는 메뉴를 볼 수 있어요.</T>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-            {firstUse.slice(0, 6).map((i) => (
-              <Pressable
-                key={i.id}
-                onPress={() => router.push(`/cook?ingredient=${encodeURIComponent(i.name)}`)}
-                accessibilityRole="button"
-                accessibilityLabel={`${i.name}, ${whenLabel(i)}, 이 재료로 만들 메뉴 보기`}
-                style={({ pressed }) => [styles.ingChip, pressed && { opacity: 0.8 }]}>
-                <Text style={{ fontSize: 20 }}>{i.emoji}</Text>
-                <View>
-                  <T v="bodyBold">{i.name}</T>
-                  <T v="tiny" c={color.warnDark}>{whenLabel(i)}</T>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        </>
       )}
+      {alert === 'missed' && <PlanCatchUp max={1} wrapStyle={{ marginTop: space.md }} />}
+      {alert === 'tidy' && <TidyCard stock={s.ingredients} wrapStyle={{ marginTop: space.md }} lastCheckAt={p.lastCheckAt} />}
+      {alert === 'firstWeek' && <FirstWeekGuide wrapStyle={{ marginTop: space.md }} />}
+      {alert === 'backup' && <BackupNudge />}
 
-      {/* 5. 오늘 식사 */}
-      <View style={{ gap: space.sm, marginTop: space.md }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T v="h3">오늘 식사</T>
-          <Pressable onPress={() => router.push('/log')} hitSlop={8} accessibilityRole="link">
-            <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>기록 전체 보기</T>
-          </Pressable>
-        </Row>
+      {/* ③ 이번 주: 요일 줄(누르면 그날 기록) + 바로 가기 */}
+      <View style={{ gap: space.sm, marginTop: space.lg }}>
+        <T v="h3">이번 주</T>
         <View style={[styles.listCard, { paddingVertical: space.md, paddingHorizontal: space.sm }]}>
           <WeekStrip meals={s.meals} plan={s.mealPlan} onSelect={(d) => router.push(d === today ? '/log' : `/log?date=${d}`)} />
         </View>
         <View style={styles.listCard}>
-          {SLOTS.map((t, i) => (
-            <MealRow key={t} type={t} meals={todayMeals.filter((m) => m.mealType === t)} recipes={recipes} first={i === 0} />
-          ))}
+          <LinkRow icon="calendar" label="주간 식단" sub={weekPlanned ? `이번 주 ${weekPlanned}끼 계획` : '일주일 계획은 원할 때만'} onPress={() => router.push(p.planHabit === 'week' ? '/plan?view=week' : '/plan')} first />
+          <LinkRow icon="cart" label="장보기 목록" sub={shoppingLeft ? `살 것 ${shoppingLeft}개` : '비어 있어요'} onPress={() => router.push('/shopping')} />
+          <LinkRow icon="bulb" label="식생활 요약" sub="재료·집밥·장보기 흐름" onPress={() => router.push('/report')} />
         </View>
-        {!todayMeals.length && <T v="small" c={color.textMuted}>지금 먹은 것부터 편하게 기록해요. 이름만 적어도 돼요.</T>}
-      </View>
-
-      {/* 6. 보조 진입점: 작게 한 줄씩 */}
-      <View style={[styles.listCard, { marginTop: space.md }]}>
-        <LinkRow icon="calendar" label="주간 식단" sub={weekPlanned ? `이번 주 ${weekPlanned}끼 계획` : '일주일 계획은 원할 때만'} onPress={() => router.push(p.planHabit === 'week' ? '/plan?view=week' : '/plan')} first />
-        <LinkRow icon="cart" label="장보기 목록" sub={shoppingLeft ? `살 것 ${shoppingLeft}개` : '비어 있어요'} onPress={() => router.push('/shopping')} />
-        <LinkRow icon="bulb" label="식생활 요약" sub="재료·집밥·장보기 흐름" onPress={() => router.push('/report')} />
       </View>
     </Screen>
   );
@@ -203,26 +182,6 @@ function whenLabel(i: Ingredient): string {
   if (n === 0) return '오늘까지';
   if (n === 1) return '내일까지';
   return `${n}일 남음`;
-}
-
-// ───────── 5. 오늘 식사: 끼니 줄 ─────────
-function MealRow({ type, meals, recipes, first }: { type: MealType; meals: MealRecord[]; recipes: Recipe[]; first?: boolean }) {
-  const m = meals[0];
-  const names = meals.flatMap((x) => x.items.map((i) => i.foodName)).filter(Boolean);
-  return (
-    <View style={[styles.row, !first && styles.rowLine]}>
-      <View style={styles.rowIcon}>
-        <Text style={{ fontSize: 18 }}>{m ? mealEmoji(m, recipes) : type === 'breakfast' ? '🌤️' : type === 'lunch' ? '☀️' : '🌙'}</Text>
-      </View>
-      <Pressable style={{ flex: 1, minWidth: 0 }} onPress={() => m && router.push(`/meal-record/edit?id=${m.id}`)} disabled={!m} accessibilityRole={m ? 'button' : undefined}>
-        <T v="bodyBold">{MEAL_LABEL[type]}</T>
-        <T v="small" c={m ? color.textSub : color.textMuted} numberOfLines={1}>{m ? names.join(', ') || m.description || '기록함' : '아직 기록 전이에요'}</T>
-      </Pressable>
-      <Pressable onPress={() => router.push(`/meal-record/edit?type=${type}`)} accessibilityRole="button" accessibilityLabel={`${MEAL_LABEL[type]} 기록 추가`} hitSlop={6} style={styles.plusBtn}>
-        <Icon name="plus" size={18} c={color.text} />
-      </Pressable>
-    </View>
-  );
 }
 
 // ───────── 작은 부품 ─────────

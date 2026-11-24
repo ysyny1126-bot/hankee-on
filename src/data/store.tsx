@@ -13,6 +13,8 @@ import type {
   Ingredient,
   MealPlanEntry,
   MealRecord,
+  MealSourceType,
+  MealType,
   Recipe,
   ShoppingItem,
   SpendRecord,
@@ -266,6 +268,13 @@ export const actions = {
         .filter((it) => it.kind !== 'leftover')
         .map((it) => ({ name: it.name, quantity: it.quantity, unit: it.unit, storage: it.storage, date: toDateKey() }));
       return { ...s, ingredients: list.map((x) => ({ ...x })), spend: [...spend, ...(s.spend ?? [])], recentAdds: [...adds, ...(s.recentAdds ?? [])].slice(0, 60) };
+    });
+  },
+  /** 끼니 전 선택(집밥·외식·간단히). 오래된 선택은 14일만 남긴다 */
+  setMealIntent(date: string, slot: MealType, kind: MealSourceType) {
+    setState((s) => {
+      const keep = Object.fromEntries(Object.entries(s.mealIntents ?? {}).filter(([k]) => k.slice(0, 10) >= addDays(toDateKey(), -14)));
+      return { ...s, mealIntents: { ...keep, [`${date}|${slot}`]: kind } };
     });
   },
   updateIngredient(id: string, patch: Partial<Ingredient>) {

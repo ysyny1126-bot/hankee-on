@@ -5,21 +5,31 @@ import { Icon } from '@/components/icon';
 import { Row, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { useAppState } from '@/data/store';
+import type { AppState } from '@/data/types';
 import { daysSince } from '@/logic/dates';
 
 /**
  * E16 첫 주 안내: 가입 후 7일 동안, 부담 없는 3단계(재료 넣기 → 한 끼 요리 → 식사 기록).
  * 실제 기록으로 완료를 판단하고, 셋 다 하면 사라진다.
  */
-export function FirstWeekGuide({ wrapStyle }: { wrapStyle?: StyleProp<ViewStyle> } = {}) {
-  const s = useAppState();
-  const start = s.consents.agreedAt;
-  if (!start || daysSince(start) >= 7) return null;
-  const steps = [
+function stepsOf(s: AppState) {
+  return [
     { done: s.ingredients.filter((i) => i.kind !== 'leftover').length >= 3 || (s.spend?.length ?? 0) >= 3, label: '냉장고 재료 3개 넣기', sub: '사진 한 장이나 직접 입력', href: '/scan/fridge' as const },
     { done: s.cooks.length > 0, label: '한 끼 요리해 보기', sub: '홈의 오늘 메뉴로 시작', href: '/cook' as const },
     { done: s.meals.length > 0, label: '먹은 것 하나 기록하기', sub: '이름만 적어도 돼요', href: '/meal-record/edit' as const },
   ];
+}
+
+/** 첫 주 안내가 보일 때인가(가입 7일 안, 3단계 중 남은 게 있음) */
+export function firstWeekActive(s: AppState): boolean {
+  const start = s.consents.agreedAt;
+  return !!start && daysSince(start) < 7 && stepsOf(s).some((x) => !x.done);
+}
+
+export function FirstWeekGuide({ wrapStyle }: { wrapStyle?: StyleProp<ViewStyle> } = {}) {
+  const s = useAppState();
+  if (!firstWeekActive(s)) return null;
+  const steps = stepsOf(s);
   const n = steps.filter((x) => x.done).length;
   if (n === steps.length) return null;
   return (
