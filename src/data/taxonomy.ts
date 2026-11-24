@@ -34,16 +34,16 @@ const KIND_OF: Record<KindKey, string[]> = {
   noodle: ['udon', 'janchi-noodle', 'spicy-noodle', 'pho', 'naengmyeon', 'ramen-upgrade', 'clam-kalguksu'],
   side: ['tofu-braise', 'egg-roll', 'potato-stir', 'microwave-egg', 'eggplant-stir', 'fishcake-stir', 'potato-braise', 'spinach-namul', 'sprout-namul', 'quail-egg-braise'],
   easy: ['chicken-salad', 'egg-toast', 'oatmeal', 'french-toast', 'yogurt-bowl', 'spring-roll'],
-  western: ['tomato-pasta', 'cream-pasta', 'tortilla-pizza', 'gambas'],
-  snack: ['tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake'],
+  western: ['tomato-pasta', 'cream-pasta', 'tortilla-pizza', 'gambas', 'aglio-olio', 'mushroom-risotto', 'omurice', 'chicken-steak'],
+  snack: ['tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake', 'eomuk-tang', 'potato-pancake', 'gun-mandu', 'tteok-kkochi'],
 };
 
 // quick(15분 이하)·challenge(난이도 보통 이상)는 자동. 나머지는 직접 정한다.
 const MOOD_OF: Partial<Record<MoodKey, string[]>> = {
-  lunchbox: ['tuna-riceball', 'egg-roll', 'kimchi-fried-rice', 'egg-fried-rice', 'chicken-teriyaki', 'tofu-braise', 'potato-stir', 'fishcake-stir', 'potato-braise', 'quail-egg-braise', 'eggplant-stir', 'spinach-namul', 'sprout-namul', 'curry-rice', 'mushroom-bulgogi', 'jeyuk', 'tomato-pasta'],
-  light: ['chicken-salad', 'spring-roll', 'bibimbap', 'cabbage-stir', 'tomato-egg', 'oatmeal', 'yogurt-bowl', 'egg-soup', 'bean-sprout-soup', 'spinach-namul', 'sprout-namul', 'microwave-egg', 'doenjang-stew', 'seaweed-soup', 'broccoli-shrimp', 'eggplant-stir', 'naengmyeon'],
-  night: ['tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake', 'gambas', 'tofu-kimchi', 'squid-stir', 'ramen-upgrade', 'tortilla-pizza', 'sprout-pork', 'janchi-noodle', 'spicy-noodle'],
-  hearty: ['jeyuk', 'mushroom-bulgogi', 'curry-rice', 'pork-cutlet-bowl', 'chicken-teriyaki', 'chicken-salad', 'kimchi-stew', 'radish-beef-soup', 'sprout-pork', 'salmon-bowl', 'cream-pasta', 'shrimp-garlic', 'kimchi-fried-rice', 'bibimbap', 'mackerel', 'clam-kalguksu', 'dumpling-soup', 'rice-cake-soup', 'udon', 'pho'],
+  lunchbox: ['omurice', 'chicken-steak', 'gun-mandu', 'tuna-riceball', 'egg-roll', 'kimchi-fried-rice', 'egg-fried-rice', 'chicken-teriyaki', 'tofu-braise', 'potato-stir', 'fishcake-stir', 'potato-braise', 'quail-egg-braise', 'eggplant-stir', 'spinach-namul', 'sprout-namul', 'curry-rice', 'mushroom-bulgogi', 'jeyuk', 'tomato-pasta'],
+  light: ['chicken-steak', 'eomuk-tang', 'chicken-salad', 'spring-roll', 'bibimbap', 'cabbage-stir', 'tomato-egg', 'oatmeal', 'yogurt-bowl', 'egg-soup', 'bean-sprout-soup', 'spinach-namul', 'sprout-namul', 'microwave-egg', 'doenjang-stew', 'seaweed-soup', 'broccoli-shrimp', 'eggplant-stir', 'naengmyeon'],
+  night: ['aglio-olio', 'eomuk-tang', 'potato-pancake', 'gun-mandu', 'tteok-kkochi', 'tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake', 'gambas', 'tofu-kimchi', 'squid-stir', 'ramen-upgrade', 'tortilla-pizza', 'sprout-pork', 'janchi-noodle', 'spicy-noodle'],
+  hearty: ['omurice', 'chicken-steak', 'mushroom-risotto', 'jeyuk', 'mushroom-bulgogi', 'curry-rice', 'pork-cutlet-bowl', 'chicken-teriyaki', 'chicken-salad', 'kimchi-stew', 'radish-beef-soup', 'sprout-pork', 'salmon-bowl', 'cream-pasta', 'shrimp-garlic', 'kimchi-fried-rice', 'bibimbap', 'mackerel', 'clam-kalguksu', 'dumpling-soup', 'rice-cake-soup', 'udon', 'pho'],
   challenge: ['gambas', 'spring-roll', 'pho', 'quail-egg-braise'],
 };
 
