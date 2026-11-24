@@ -53,7 +53,7 @@ async function generateJSON<T>(prompt: string, image?: ImageInput): Promise<T> {
       res = await send();
     }
   } catch (e) {
-    throw new Error((e as Error).name === 'AbortError' ? '분석이 너무 오래 걸려요. 사진을 한 칸씩 나눠 찍거나 잠시 후 다시 시도해 주세요.' : '인터넷 연결을 확인해 주세요.');
+    throw new Error((e as Error).name === 'AbortError' ? (image ? 'AI 응답이 너무 오래 걸려요. 사진을 한 칸씩 나눠 찍거나 잠시 후 다시 시도해 주세요.' : 'AI 응답이 너무 오래 걸려요. 잠시 후 다시 시도해 주세요.') : '인터넷 연결을 확인해 주세요.');
   } finally {
     clearTimeout(timer);
   }
