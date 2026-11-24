@@ -25,7 +25,7 @@ function BottomBar({ state, descriptors, emitter, navigateToTab, onAdd }: Bottom
           if (route.name === 'add') {
             return (
               <View key={route.key} style={{ flex: 1, alignItems: 'center' }}>
-                <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="추가하기: 냉장고 찍기, 먹은 음식 기록" style={({ pressed }) => ({ width: 56, height: 56, marginTop: -26, borderRadius: 28, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.surface, transform: [{ scale: pressed ? 0.96 : 1 }], ...shadow.button })}>
+                <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="추가하기: 냉장고 찍기, 먹은 음식 기록" style={({ pressed }) => ({ width: 56, height: 56, marginTop: -26, borderRadius: 28, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', borderWidth: 4, borderColor: color.surface, opacity: pressed ? 0.85 : 1, ...shadow.button })}>
                   <Icon name="plus" c={color.onBrand} size={24} stroke={2.4} />
                 </Pressable>
                 <T v="tiny" c={color.textSub} style={{ fontWeight: '700', marginTop: 2 }}>추가</T>

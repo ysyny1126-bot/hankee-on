@@ -165,8 +165,8 @@ export default function ScanFridge() {
 
       {list.length > 0 && (
         <>
-          <T v="h3">찾은 재료 확인하기</T>
-          <T v="small" c={color.textSub}>AI 결과는 틀릴 수 있어요. 이름·수량·보관을 고치고, 맞는 것만 체크해 주세요.</T>
+          <T v="h3">{aiOn ? '찾은 재료 확인하기' : '넣을 재료 확인하기'}</T>
+          <T v="small" c={color.textSub}>{aiOn ? 'AI 결과는 틀릴 수 있어요. 이름·수량·보관을 고치고, 맞는 것만 체크해 주세요.' : '수량·보관을 확인하고 등록해요. 소비기한은 몰라도 괜찮아요.'}</T>
           {list.map((c) => (
             <Card key={c.key} style={{ opacity: c.checked ? 1 : 0.55 }}>
               <Row style={{ justifyContent: 'space-between' }}>

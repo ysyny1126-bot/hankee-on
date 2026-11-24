@@ -47,8 +47,8 @@ export default function ScanFood() {
       {!aiOn ? (
         <Card tone="warn">
           <T v="bodyBold">AI 사진 분석이 꺼져 있어요</T>
-          <T v="small" c={color.textSub}>{hasAIKey() ? '설정 › 개인정보에서 ‘사진을 AI로 분석하기’에 동의하면 쓸 수 있어요.' : 'AI 키가 아직 연결되지 않았어요(개발 중). 지금은 COOK 탭에서 음식 이름으로 레시피를 찾을 수 있어요.'}</T>
-          <Button title="COOK에서 검색하기" kind="secondary" small onPress={() => router.replace('/cook')} />
+          <T v="small" c={color.textSub}>{hasAIKey() ? '설정 › 개인정보에서 ‘사진을 AI로 분석하기’에 동의하면 쓸 수 있어요.' : '사진 인식은 준비 중이에요. 지금은 메뉴 탭에서 음식 이름으로 레시피를 찾을 수 있어요.'}</T>
+          <Button title="메뉴에서 찾기" kind="secondary" small onPress={() => router.replace('/cook')} />
         </Card>
       ) : (
         <Card>

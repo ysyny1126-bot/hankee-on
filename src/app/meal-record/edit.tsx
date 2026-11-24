@@ -127,12 +127,15 @@ export default function MealRecordEdit() {
   }, []);
 
   const save = () => {
-    if (!items.length && !memo.trim()) return notify('음식을 하나 이상 추가해 주세요');
+    // 이름 칸에 적어 두고 '추가'를 안 눌렀어도 그 음식을 넣어 저장한다(이름만 적어도 기록)
+    const pending = newName.trim();
+    const all = pending && !items.some((i) => i.foodName === pending) ? [...items, itemFromName(pending)] : items;
+    if (!all.length && !memo.trim()) return notify('먹은 음식 이름을 적어 주세요');
     if (!isValidDateKey(date)) return notify('날짜 형식을 확인해 주세요', '예: 2026-11-18');
     if (!/^\d{1,2}:\d{2}$/.test(time)) return notify('시간 형식을 확인해 주세요', '예: 12:30');
     const won = Number(cost.replace(/[^\d]/g, ''));
     if (cost.trim() && !(won > 0)) return notify('금액을 숫자로 적어 주세요', '예: 12000');
-    const data = { mealDate: date, mealType, mealTime: time.padStart(5, '0'), imageUri, description: memo, sourceType: source, items, cost: source !== 'home' && won > 0 ? won : undefined };
+    const data = { mealDate: date, mealType, mealTime: time.padStart(5, '0'), imageUri, description: memo, sourceType: source, items: all, cost: source !== 'home' && won > 0 ? won : undefined };
     if (existing) actions.updateMeal(existing.id, data);
     else actions.addMeal(data);
     goBack('/log');
