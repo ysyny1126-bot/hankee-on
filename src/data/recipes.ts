@@ -1,4 +1,5 @@
 import { allergensOf, findFoodReference } from './catalog';
+import { NUTRITION_DB } from './nutrition-db';
 import type { Recipe, RecipeIngredient } from './types';
 
 /**
@@ -442,12 +443,15 @@ function keepOf(d: Draft): Pick<Recipe, 'leftover' | 'reheat' | 'safety'> {
 
 export const BUILTIN_RECIPES: Recipe[] = DRAFTS.map((d) => {
   const ref = findFoodReference(NUTRITION_REF[d.id] ?? d.name);
+  // 식약처 식품영양성분 DB 값이 있으면 그걸 쓰고, 없으면 기존 추정값
+  const db = NUTRITION_DB[d.id];
   return {
     ...d,
     ...keepOf(d),
+    nutritionSource: db ? { kind: 'mfds', dbName: db.dbName, servingGram: db.servingGram } : ref ? { kind: 'estimate' } : undefined,
     servings: 1,
     origin: 'builtin',
-    nutrition: ref?.nutrition,
+    nutrition: db?.nutrition ?? ref?.nutrition,
     allergens: allergensOf(d.ingredients.map((i) => i.name)),
   };
 });

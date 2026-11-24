@@ -63,8 +63,10 @@ export interface Recipe {
   /** 식품 안전 팁(고기 익힘·해감 등) */
   safety?: string[];
   tags: string[]; // 국물, 볶음, 한식 ...
-  /** 1인분 기준 참고 영양값(추정). */
+  /** 1인분 기준 영양값 */
   nutrition?: NutritionInfo;
+  /** 영양값 근거: 식약처 식품영양성분 DB면 그 음식 이름과 1인분 무게, 아니면 추정 */
+  nutritionSource?: { kind: 'mfds'; dbName: string; servingGram: number } | { kind: 'estimate' };
   allergens: string[]; // 계란, 우유, 땅콩, 밀, 대두, 갑각류 ...
   origin: 'builtin' | 'ai_photo' | 'user';
   createdAt?: string;

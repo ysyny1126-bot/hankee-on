@@ -7,14 +7,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = mkdtempSync(join(tmpdir(), 'hankee-check-'));
-for (const f of ['recipes', 'catalog', 'types', 'keep', 'taxonomy']) {
+for (const f of ['recipes', 'catalog', 'types', 'keep', 'taxonomy', 'nutrition-db']) {
   let src;
   try {
     src = readFileSync(join(root, 'src/data', f + '.ts'), 'utf8');
   } catch {
     continue;
   }
-  writeFileSync(join(tmp, f + '.ts'), src.replace(/from '\.\/(\w+)'/g, "from './$1.ts'"));
+  writeFileSync(join(tmp, f + '.ts'), src.replace(/from '\.\/([\w-]+)'/g, "from './$1.ts'"));
 }
 const { BUILTIN_RECIPES } = await import(pathToFileURL(join(tmp, 'recipes.ts')).href);
 const cat = await import(pathToFileURL(join(tmp, 'catalog.ts')).href);

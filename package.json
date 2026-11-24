@@ -44,7 +44,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "check:data": "node scripts/check-recipes.mjs"
+    "check:data": "node scripts/check-recipes.mjs",
+    "data:nutrition": "node scripts/build-nutrition.mjs",
+    "data:fetch": "node scripts/fetch-public-data.mjs"
   },
   "private": true
 }

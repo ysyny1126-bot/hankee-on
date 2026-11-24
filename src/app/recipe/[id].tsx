@@ -87,7 +87,11 @@ export default function RecipeDetail() {
         <Row gap={4} wrap style={{ justifyContent: 'center' }}>
           <Badge label={`⏱ ${recipe.timeMinutes}분`} />
           <Badge label={recipe.difficulty} />
-          {recipe.nutrition ? <Badge label={`약 ${Math.round(recipe.nutrition.calories * scale)}kcal · 단백질 ${Math.round(recipe.nutrition.protein * scale)}g (추정)`} /> : null}
+          {recipe.nutrition ? (
+            <Badge
+              label={`${recipe.nutritionSource?.kind === 'mfds' ? '' : '약 '}${Math.round(recipe.nutrition.calories * scale)}kcal · 단백질 ${Math.round(recipe.nutrition.protein * scale)}g${recipe.nutritionSource?.kind === 'mfds' ? '' : ' (추정)'}`}
+            />
+          ) : null}
           {recipe.origin !== 'builtin' && <Badge label="AI 추정 레시피" tone="info" />}
         </Row>
       </View>
@@ -195,6 +199,14 @@ export default function RecipeDetail() {
       )}
 
       <KeepCard recipe={recipe} />
+
+      {recipe.nutrition ? (
+        <T v="tiny" c={color.textMuted} style={{ textAlign: 'center' }}>
+          {recipe.nutritionSource?.kind === 'mfds'
+            ? `영양 근거: 식약처 식품영양성분 DB '${recipe.nutritionSource.dbName.replace(/_/g, ' ')}' 1인분 ${recipe.nutritionSource.servingGram}g 기준 · 나트륨 ${Math.round(recipe.nutrition.sodium * scale)}mg`
+            : '영양값은 비슷한 음식으로 낸 추정값이에요'}
+        </T>
+      ) : null}
 
       <Pressable onPress={() => WebBrowser.openBrowserAsync(youtubeSearchUrl(recipe.videoQuery || `${recipe.name} 레시피`))} style={{ alignSelf: 'center', padding: space.sm }}>
         <T v="small" c={color.textSub}>▶️ 조리 영상 찾아보기</T>
