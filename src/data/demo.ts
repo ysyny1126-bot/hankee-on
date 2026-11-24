@@ -143,7 +143,8 @@ export function buildScenario(base: AppState, key: DemoScene): AppState {
   };
   switch (key) {
     case 'empty':
-      return { ...demo, ingredients: [], meals: [], cooks: [], waste: [], spend: [], mealPlan: [], shopping: [], goals: [] };
+      // 첫날 사용자: 방금 동의한 것으로 두어 '첫 주 3단계 안내'가 보이게
+      return { ...demo, ingredients: [], meals: [], cooks: [], waste: [], spend: [], mealPlan: [], shopping: [], goals: [], recentAdds: [], mealIntents: {}, consents: { ...demo.consents, agreedAt: now } };
     case 'expiring':
       return {
         ...demo,
