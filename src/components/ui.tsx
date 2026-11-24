@@ -83,15 +83,21 @@ export function Stack({ children, gap = space.md, style }: { children: ReactNode
 }
 
 type BtnKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'fresh';
+/**
+ * 버튼은 모양 3가지로만 쓴다(화면마다 섞이지 않게).
+ * - 주요(primary): 초록 채움 — 화면의 대표 행동 하나
+ * - 보조(secondary): 흰 바탕 + 테두리 — 나란히 놓이는 다른 행동
+ * - 약한(ghost): 글자만 — 취소·나중에·건너뛰기
+ * danger는 '보조' 모양에 빨간 글자(버리기·지우기), fresh는 예전 이름으로 주요와 같다.
+ */
 export function Button({ title, onPress, kind = 'primary', small, disabled, loading, icon, style, href }: { title: string; onPress?: () => void; kind?: BtnKind; small?: boolean; disabled?: boolean; loading?: boolean; icon?: string; style?: StyleProp<ViewStyle>; href?: Href }) {
-  // 알약 버튼: 주요 = 네이비, 완료 = 민트, 보조 = 흰 바탕 + 테두리
+  const shape = kind === 'fresh' ? 'primary' : kind;
   const palette = {
-    primary: { bg: color.navy, fg: color.onBrand, bd: 'transparent' },
-    fresh: { bg: color.brandDark, fg: color.onBrand, bd: 'transparent' },
-    secondary: { bg: color.surface, fg: color.navy, bd: color.borderStrong },
+    primary: { bg: color.brandDark, fg: color.onBrand, bd: 'transparent' },
+    secondary: { bg: color.surface, fg: color.brandDark, bd: color.borderStrong },
     ghost: { bg: 'transparent', fg: color.textSub, bd: 'transparent' },
-    danger: { bg: color.dangerSoft, fg: color.dangerDark, bd: 'transparent' },
-  }[kind];
+    danger: { bg: color.surface, fg: color.dangerDark, bd: color.borderStrong },
+  }[shape];
   const body = (
     <Pressable
       onPress={href ? () => router.push(href) : onPress}

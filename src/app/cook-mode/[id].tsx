@@ -136,7 +136,7 @@ export default function CookMode() {
         <Row gap={space.sm}>
           <Button title="‹ 이전" kind="secondary" style={{ flex: 1 }} onPress={() => setI(Math.max(0, i - 1))} disabled={i === 0} />
           {last ? (
-            <Button title="완성! 🍽️" kind="fresh" style={{ flex: 2 }} onPress={() => router.replace(`/cook/${recipe.id}?scale=${scale ?? 1}`)} />
+            <Button title="완성! 🍽️" style={{ flex: 2 }} onPress={() => router.replace(`/cook/${recipe.id}?scale=${scale ?? 1}`)} />
           ) : (
             <Button title="다음 ›" style={{ flex: 2 }} onPress={() => setI(i + 1)} />
           )}

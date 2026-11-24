@@ -102,7 +102,7 @@ export default function CookComplete() {
   };
 
   return (
-    <Screen edges={['bottom']} footer={<Button title="완료하고 저장" kind="fresh" onPress={done} />}>
+    <Screen edges={['bottom']} footer={<Button title="완료하고 저장" onPress={done} />}>
       <T v="h2">{recipe.emoji} {recipe.name} 완성!</T>
 
       {/* 1. 맛 평가 */}

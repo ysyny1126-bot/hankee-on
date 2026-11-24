@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   dotOn: { width: 18, backgroundColor: color.brandDark },
   actions: { flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, paddingBottom: space.sm },
   primary: { minHeight: 54, borderRadius: 999, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  secondary: { minHeight: 54, borderRadius: 999, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22 },
+  secondary: { minHeight: 54, borderRadius: 999, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22 },
   pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.md, paddingHorizontal: space.xl },
 });

@@ -264,7 +264,7 @@ export function ErrorBoundary({ retry }: { error: Error; retry: () => Promise<vo
 const styles = StyleSheet.create({
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   recordBar: { flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: color.surface, borderRadius: radius.md, paddingVertical: 10, paddingLeft: 16, paddingRight: 10 },
-  smallAction: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: color.brandSoft, borderRadius: 999, paddingHorizontal: 12, minHeight: 40 },
+  smallAction: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, borderRadius: 999, paddingHorizontal: 12, minHeight: 40 },
   ingChip: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: color.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: color.border, minHeight: 48 },
   listCard: { backgroundColor: color.surface, borderRadius: 20, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 60, paddingVertical: 10 },

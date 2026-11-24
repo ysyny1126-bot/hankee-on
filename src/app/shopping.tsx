@@ -117,7 +117,7 @@ export default function Shopping() {
             <Pressable onPress={() => actions.clearDoneShopping()}><T v="small" c={color.textMuted}>목록에서 지우기</T></Pressable>
           </Row>
           {done.map((x) => <ItemRow key={x.id} id={x.id} name={x.name} sub={x.reason} done />)}
-          <Button title="산 재료 냉장고에 넣기" kind="fresh" onPress={openStock} />
+          <Button title="산 재료 냉장고에 넣기" onPress={openStock} />
         </Card>
       )}
       <T v="tiny" c={color.textMuted}>쇼핑몰 연동은 출시 이후 단계에서 추가할 예정이에요.</T>

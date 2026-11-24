@@ -179,8 +179,8 @@ export function KitchenHero({
               </Pressable>
               {canSwap && (
                 <Pressable onPress={onAnother} accessibilityRole="button" accessibilityLabel="다른 메뉴 보기" style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-                  <Icon name="refresh" size={16} c={color.text} />
-                  <T v="small" style={{ fontWeight: '700' }}>{chosen ? '바꾸기' : '다른 거'}</T>
+                  <Icon name="refresh" size={16} c={color.brandDark} />
+                  <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>{chosen ? '바꾸기' : '다른 거'}</T>
                 </Pressable>
               )}
             </View>
@@ -230,6 +230,6 @@ const styles = StyleSheet.create({
   menuName: { ...tx({ fontSize: 20, lineHeight: 27, fontWeight: '800', letterSpacing: -0.6, color: color.text }) },
   actions: { flexDirection: 'row', gap: space.sm },
   primary: { flex: 1, minHeight: 50, borderRadius: 999, backgroundColor: color.brandDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16 },
-  secondary: { minHeight: 50, borderRadius: 999, backgroundColor: color.surfaceAlt, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 18 },
+  secondary: { minHeight: 50, borderRadius: 999, backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 18 },
   pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
 });

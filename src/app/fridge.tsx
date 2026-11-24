@@ -164,8 +164,8 @@ function Gauge({ ratio, on }: { ratio: number; on: boolean }) {
 function QuickBtn({ label, onPress, a11y, danger }: { label: string; onPress: () => void; a11y: string; danger?: boolean }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={4}
-      style={({ pressed }) => ({ minHeight: 40, minWidth: 44, paddingHorizontal: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: danger ? color.dangerSoft : color.surfaceAlt, opacity: pressed ? 0.7 : 1 })}>
-      <T v="small" c={danger ? color.danger : color.text} style={{ fontWeight: '700' }}>{label}</T>
+      style={({ pressed }) => ({ minHeight: 40, minWidth: 44, paddingHorizontal: 10, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: color.surface, borderWidth: 1, borderColor: color.borderStrong, opacity: pressed ? 0.7 : 1 })}>
+      <T v="small" c={danger ? color.dangerDark : color.brandDark} style={{ fontWeight: '700' }}>{label}</T>
     </Pressable>
   );
 }
@@ -249,7 +249,7 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
       {i.kind !== 'leftover' ? <StoreTools item={i} onMoved={() => setEditing(true)} /> : null}
 
       {i.kind === 'leftover' && (
-        <Button title={`🍽️ 한 끼 먹기 (${Math.min(1, i.quantity)}인분)`} kind="fresh" onPress={() => { actions.eatLeftover(i.id, 1, guessMealType() === 'snack' ? 'dinner' : guessMealType()); onClose(); notify('맛있게 드세요!', '식사 기록에 남겼어요.'); }} />
+        <Button title={`🍽️ 한 끼 먹기 (${Math.min(1, i.quantity)}인분)`} onPress={() => { actions.eatLeftover(i.id, 1, guessMealType() === 'snack' ? 'dinner' : guessMealType()); onClose(); notify('맛있게 드세요!', '식사 기록에 남겼어요.'); }} />
       )}
       <Row gap={space.sm}>
         <Button title={i.kind === 'leftover' ? '다 먹음(기록 없이)' : '다 먹음'} kind="secondary" style={{ flex: 1 }} onPress={() => { actions.useUpIngredient(i.id); onClose(); }} />
