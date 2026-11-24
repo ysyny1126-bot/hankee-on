@@ -9,7 +9,8 @@ import type { NutritionInfo, StorageType } from '@/data/types';
  * ⚠️ 무료 등급은 입력 데이터가 구글의 서비스 개선에 쓰일 수 있다 → 출시 땐 유료 등급으로 전환.
  */
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
-const MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+// 2026-11: 새 키는 gemini-2.5 계열을 쓸 수 없어 3.8-flash가 기본(바꾸려면 .env의 EXPO_PUBLIC_GEMINI_MODEL)
+const MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.8-flash';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 export const AI_MODEL_NAME = MODEL;
@@ -35,22 +36,34 @@ async function generateJSON<T>(prompt: string, image?: ImageInput): Promise<T> {
   const timer = setTimeout(() => ctrl.abort(), 40_000);
   let res: Response;
   try {
-    res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.3 },
-      }),
-      signal: ctrl.signal,
-    });
+    const send = () =>
+      fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.3 },
+        }),
+        signal: ctrl.signal,
+      });
+    res = await send();
+    // 혼잡(503)이면 잠깐 쉬었다가 두 번까지 다시 시도
+    for (let i = 0; i < 2 && res.status === 503; i++) {
+      await new Promise((r) => setTimeout(r, 2500 * (i + 1)));
+      res = await send();
+    }
   } catch (e) {
     throw new Error((e as Error).name === 'AbortError' ? '분석이 너무 오래 걸려요. 사진을 한 칸씩 나눠 찍거나 잠시 후 다시 시도해 주세요.' : '인터넷 연결을 확인해 주세요.');
   } finally {
     clearTimeout(timer);
   }
   if (!res.ok) {
-    const msg = res.status === 429 ? '오늘 무료 AI 사용량을 다 썼어요. 잠시 후 다시 시도해 주세요.' : `AI 요청 실패 (${res.status})`;
+    const msg =
+      res.status === 429
+        ? '오늘 무료 AI 사용량을 다 썼어요. 잠시 후 다시 시도해 주세요.'
+        : res.status === 503
+          ? '지금 AI가 붐벼요. 잠시 후 다시 시도하거나 재료를 직접 골라 주세요.'
+          : `AI 요청 실패 (${res.status})`;
     throw new Error(msg);
   }
   const data = await res.json();
