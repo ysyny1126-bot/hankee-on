@@ -23,7 +23,7 @@ export const INGREDIENT_CATALOG: CatalogEntry[] = [
   { name: '계란', aliases: ['달걀'], emoji: '🥚', category: '유제품·계란', storage: 'fridge', unit: '개', avgPrice: 300 },
   { name: '우유', emoji: '🥛', category: '유제품·계란', storage: 'fridge', unit: 'ml', avgPrice: 3 },
   { name: '치즈', aliases: ['슬라이스치즈', '모짜렐라치즈', '피자치즈'], emoji: '🧀', category: '유제품·계란', storage: 'fridge', unit: '장', avgPrice: 400 },
-  { name: '두부', emoji: '🧈', category: '콩·두부', storage: 'fridge', unit: '모', avgPrice: 1500 },
+  { name: '두부', emoji: '🫘', category: '콩·두부', storage: 'fridge', unit: '모', avgPrice: 1500 },
   { name: '대파', aliases: ['파'], emoji: '🌿', category: '채소', storage: 'fridge', unit: '대', avgPrice: 700 },
   { name: '양파', emoji: '🧅', category: '채소', storage: 'pantry', unit: '개', avgPrice: 600 },
   { name: '마늘', aliases: ['다진마늘'], emoji: '🧄', category: '채소', storage: 'fridge', unit: '큰술', avgPrice: 200 },
@@ -65,7 +65,7 @@ export const INGREDIENT_CATALOG: CatalogEntry[] = [
   { name: '사과', emoji: '🍎', category: '과일', storage: 'fridge', unit: '개', avgPrice: 1500 },
   { name: '바나나', emoji: '🍌', category: '과일', storage: 'pantry', unit: '개', avgPrice: 500 },
   { name: '요거트', aliases: ['요구르트'], emoji: '🥣', category: '유제품·계란', storage: 'fridge', unit: '개', avgPrice: 1000 },
-  { name: '김', aliases: ['조미김'], emoji: '🟩', category: '반찬', storage: 'pantry', unit: '봉', avgPrice: 500 },
+  { name: '김', aliases: ['조미김'], emoji: '🍙', category: '반찬', storage: 'pantry', unit: '봉', avgPrice: 500 },
 
   // ── A6: 사전 확장(1인 가구가 자주 사는 재료) ──
   // 채소
@@ -111,7 +111,7 @@ export const INGREDIENT_CATALOG: CatalogEntry[] = [
   { name: '치킨너겟', aliases: ['너겟'], emoji: '🍗', category: '냉동식품', storage: 'freezer', unit: '개', avgPrice: 250 },
   { name: '동그랑땡', aliases: ['떡갈비'], emoji: '🧆', category: '냉동식품', storage: 'freezer', unit: '개', avgPrice: 250 },
   { name: '유부', aliases: ['유부초밥'], emoji: '🟫', category: '콩·두부', storage: 'fridge', unit: '장', avgPrice: 150 },
-  { name: '순두부', aliases: ['연두부'], emoji: '🧈', category: '콩·두부', storage: 'fridge', unit: '봉', avgPrice: 1200 },
+  { name: '순두부', aliases: ['연두부'], emoji: '🫘', category: '콩·두부', storage: 'fridge', unit: '봉', avgPrice: 1200 },
   { name: '낫또', emoji: '🫘', category: '콩·두부', storage: 'fridge', unit: '개', avgPrice: 800 },
   // 곡류·면
   { name: '소면', aliases: ['국수', '중면'], emoji: '🍜', category: '곡류', storage: 'pantry', unit: 'g', avgPrice: 5 },

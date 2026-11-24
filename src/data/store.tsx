@@ -94,10 +94,20 @@ export const initialState: AppState = {
  * 예전 버전에서 저장한 데이터에 새로 생긴 항목을 기본값으로 채운다.
  * (얕게 합치면 preferences 안의 새 항목이 비어 버리므로 묶음별로 합친다)
  */
+/** 예전에 잘못 붙였던 재료 그림(두부=버터 등)을 지금 사전 그림으로 고친다 */
+const OLD_EMOJI: Record<string, string> = { 두부: '🧈', 순두부: '🧈', 김: '🟩' };
+function fixEmoji(list: Ingredient[] | undefined): Ingredient[] | undefined {
+  return list?.map((i) => {
+    const c = i.kind === 'leftover' ? undefined : findCatalog(i.name);
+    return c && OLD_EMOJI[c.name] === i.emoji ? { ...i, emoji: c.emoji } : i;
+  });
+}
+
 export function migrate(raw: Partial<AppState>): AppState {
   return {
     ...initialState,
     ...raw,
+    ingredients: fixEmoji(raw.ingredients) ?? initialState.ingredients,
     preferences: { ...initialState.preferences, ...raw.preferences },
     notifications: { ...initialState.notifications, ...raw.notifications },
     consents: { ...initialState.consents, ...raw.consents },

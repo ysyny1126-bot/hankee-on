@@ -42,7 +42,7 @@ const DRAFTS: Draft[] = [
     steps: ['고추장·고춧가루·설탕·간장을 섞어 양념을 만들어요.', '돼지고기를 양념에 10분 재워요.', '팬에 고기를 볶다가 양파를 넣어요.', '대파를 넣고 1분 더 볶아요.'],
   },
   {
-    id: 'tofu-braise', name: '두부조림', emoji: '🧈', timeMinutes: 20, difficulty: '쉬움', tags: ['반찬', '한식'],
+    id: 'tofu-braise', name: '두부조림', emoji: '🫘', timeMinutes: 20, difficulty: '쉬움', tags: ['반찬', '한식'],
     ingredients: [I('두부', 1, '모'), I('간장', 2, '큰술'), I('고춧가루', 0.5, '큰술'), I('대파', 0.3, '대'), I('설탕', 0.3, '큰술')],
     steps: ['두부를 1cm 두께로 썰어 노릇하게 부쳐요.', '간장·고춧가루·설탕·물 4큰술을 섞어요.', '양념을 붓고 약불에서 5분 졸여요.', '대파를 올려 마무리해요.'],
   },
@@ -82,7 +82,7 @@ const DRAFTS: Draft[] = [
     steps: ['양배추를 채 썰어 계란과 섞어요.', '팬에 네모나게 부쳐요.', '구운 식빵에 계란·햄·치즈를 올려요.', '설탕이나 케첩을 살짝 곁들여요.'],
   },
   {
-    id: 'bibimbap', name: '비빔밥', emoji: '🥢', timeMinutes: 20, difficulty: '보통', tags: ['한식', '채소듬뿍'],
+    id: 'bibimbap', name: '비빔밥', emoji: '🍚', timeMinutes: 20, difficulty: '보통', tags: ['한식', '채소듬뿍'],
     ingredients: [I('밥', 1, '공기'), I('계란', 1, '개'), I('시금치', 50, 'g', { optional: true }), I('콩나물', 50, 'g', { optional: true }), I('당근', 0.3, '개', { optional: true }), I('애호박', 0.3, '개', { optional: true }), I('고추장', 1, '큰술'), I('참기름', 0.5, '큰술')],
     steps: ['채소를 각각 살짝 데치거나 볶아요.', '밥 위에 채소를 둘러 담아요.', '계란 프라이를 올려요.', '고추장과 참기름을 넣어 비벼요.'],
   },
@@ -198,7 +198,7 @@ const DRAFTS: Draft[] = [
     steps: ['큰 그릇에 오트밀과 우유를 넣어요.', '전자레인지에 1분 30초 돌리고 한 번 저어요(넘칠 수 있어 큰 그릇이 좋아요).', '30초 더 돌려요.', '바나나·블루베리를 올려요.'],
   },
   {
-    id: 'sprout-pork', name: '숙주 돼지고기볶음', emoji: '🥢', timeMinutes: 15, difficulty: '쉬움', tags: ['볶음'],
+    id: 'sprout-pork', name: '숙주 돼지고기볶음', emoji: '🍖', timeMinutes: 15, difficulty: '쉬움', tags: ['볶음'],
     ingredients: [I('숙주', 150, 'g', { substitute: '콩나물' }), I('돼지고기', 100, 'g'), I('굴소스', 1, '큰술', { substitute: '간장' }), I('대파', 0.3, '대', { optional: true }), I('마늘', 0.5, '큰술', { optional: true })],
     steps: ['숙주를 씻어 물기를 빼요.', '팬에 마늘·대파를 볶다가 돼지고기를 넣어 익혀요.', '굴소스로 간해요.', '숙주를 넣고 센불에서 30초만 볶아 아삭하게 마무리해요.'],
   },
@@ -296,7 +296,7 @@ const DRAFTS: Draft[] = [
     steps: ['물 550ml에 스프와 콩나물을 넣고 끓여요.', '면을 넣고 2분 끓여요.', '계란을 깨 넣고 젓지 말고 1분.', '대파를 듬뿍 올리고 김치를 곁들여요. 국물은 반만 마시면 나트륨이 줄어요.'],
   },
   {
-    id: 'gambas', name: '감바스', emoji: '🍤', timeMinutes: 15, difficulty: '쉬움', tags: ['양식'],
+    id: 'gambas', name: '감바스', emoji: '🦐', timeMinutes: 15, difficulty: '쉬움', tags: ['양식'],
     ingredients: [I('새우', 100, 'g'), I('마늘', 1.5, '큰술'), I('식용유', 5, '큰술'), I('청양고추', 1, '개', { optional: true }), I('식빵', 2, '장', { optional: true }), I('버섯', 0.3, '봉', { optional: true })],
     steps: ['새우 물기를 닦고 소금·후추를 뿌려요.', '작은 팬에 기름(올리브유면 더 좋아요)과 편 썬 마늘을 넣고 약불에서 3분 익혀 향을 내요.', '새우·버섯·고추를 넣고 새우가 붉어질 때까지 3분 익혀요.', '구운 식빵을 기름에 찍어 함께 먹어요.'],
   },
@@ -317,7 +317,7 @@ const DRAFTS: Draft[] = [
     steps: ['그릇에 요거트를 담아요.', '바나나를 동그랗게 썰어 올려요.', '시리얼·블루베리·견과류를 뿌려요.', '바로 먹어야 시리얼이 바삭해요.'],
   },
   {
-    id: 'tofu-kimchi', name: '두부김치', emoji: '🥢', timeMinutes: 15, difficulty: '쉬움', tags: ['한식', '볶음'],
+    id: 'tofu-kimchi', name: '두부김치', emoji: '🍱', timeMinutes: 15, difficulty: '쉬움', tags: ['한식', '볶음'],
     ingredients: [I('두부', 0.5, '모'), I('김치', 120, 'g'), I('돼지고기', 60, 'g', { optional: true }), I('대파', 0.2, '대', { optional: true }), I('설탕', 0.3, '큰술', { optional: true })],
     steps: ['두부를 끓는 물에 3분 데쳐 도톰하게 썰어요(전자레인지 1분도 괜찮아요).', '팬에 돼지고기를 볶다가 김치를 넣어 4분 볶아요.', '신 김치면 설탕을 조금 넣어요.', '접시에 두부를 두르고 가운데 김치볶음을 올려 대파를 뿌려요.'],
   },
