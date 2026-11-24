@@ -8,7 +8,8 @@ import { TidyCard } from '@/components/tidy-card';
 import { FridgeArt } from '@/components/fridge-art';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
-import { findCatalog, keepInfo, sameIngredient } from '@/data/catalog';
+import { KeepInfo } from '@/components/keep-info';
+import { findCatalog, sameIngredient } from '@/data/catalog';
 import { convert } from '@/logic/units';
 import { actions, useAppState } from '@/data/store';
 import type { Ingredient, StorageType } from '@/data/types';
@@ -187,9 +188,7 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         </>
       )}
 
-      {i.kind !== 'leftover' && keepInfo(i.name) ? (
-        <T v="tiny" c={color.textSub}>📦 보관 참고: {keepInfo(i.name)} (대략치 · 제품 기한이 우선)</T>
-      ) : null}
+      {i.kind !== 'leftover' ? <KeepInfo name={i.name} current={i.storage} /> : null}
       {i.kind !== 'leftover' ? <MyUnit item={i} /> : null}
       {i.kind !== 'leftover' ? <StoreTools item={i} onMoved={() => setEditing(true)} /> : null}
 

@@ -102,6 +102,18 @@ export default function CookMode() {
           <Text style={tx({ fontSize: 28, lineHeight: 42, fontWeight: '700', color: color.text })}>{recipe.steps[i]}</Text>
         </Pressable>
 
+        {/* 첫 단계엔 '미리 할 일', 마지막 단계엔 익힘·안전 확인 */}
+        {i === 0 && recipe.prep ? (
+          <View style={{ backgroundColor: color.infoSoft, borderRadius: radius.md, padding: space.md, marginBottom: space.sm }}>
+            <T v="small">⏳ 미리: {recipe.prep}</T>
+          </View>
+        ) : null}
+        {last && recipe.safety?.length ? (
+          <View style={{ backgroundColor: color.warnSoft, borderRadius: radius.md, padding: space.md, marginBottom: space.sm, gap: 2 }}>
+            {recipe.safety.map((t) => <T key={t} v="small">🔥 {t}</T>)}
+          </View>
+        ) : null}
+
         {/* 이 단계 타이머 */}
         {(() => {
           const min = stepMinutes(recipe.steps[i]);

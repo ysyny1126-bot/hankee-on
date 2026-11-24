@@ -52,6 +52,14 @@ export interface Recipe {
   difficulty: '쉬움' | '보통' | '어려움';
   ingredients: RecipeIngredient[];
   steps: string[];
+  /** 요리 시간에 넣지 않은 '미리 할 일'(해감·불리기·얼리기 등) */
+  prep?: string;
+  /** 남은 음식 보관(냉장 며칠·냉동 가능 여부) */
+  leftover?: string;
+  /** 다시 데우는 법 */
+  reheat?: string;
+  /** 식품 안전 팁(고기 익힘·해감 등) */
+  safety?: string[];
   tags: string[]; // 국물, 볶음, 한식 ...
   /** 1인분 기준 참고 영양값(추정). */
   nutrition?: NutritionInfo;

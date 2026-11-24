@@ -33,12 +33,12 @@ const DRAFTS: Draft[] = [
   {
     id: 'kimchi-fried-rice', name: '김치볶음밥', emoji: '🍛', timeMinutes: 15, difficulty: '쉬움', tags: ['볶음', '한식'],
     ingredients: [I('밥', 1, '공기'), I('김치', 100, 'g'), I('햄', 50, 'g', { optional: true, substitute: '참치캔' }), I('계란', 1, '개'), I('대파', 0.3, '대', { optional: true })],
-    steps: ['김치와 햄을 잘게 썰어요.', '기름 두른 팬에 김치와 햄을 3분 볶아요.', '밥을 넣고 고루 볶아요.', '계란 프라이를 올려 완성해요.'],
+    steps: ['김치와 햄을 잘게 썰어요.', '기름 두른 팬에 송송 썬 대파를 1분 볶아 파기름을 낸 뒤 김치와 햄을 넣고 3분 볶아요.', '밥을 넣고 고루 볶아요.', '계란 프라이를 올려 완성해요.'],
   },
   {
     id: 'jeyuk', name: '제육볶음', emoji: '🥩', timeMinutes: 25, difficulty: '보통', tags: ['볶음', '한식'],
-    ingredients: [I('돼지고기', 150, 'g'), I('양파', 0.5, '개'), I('고추장', 1.5, '큰술'), I('고춧가루', 0.5, '큰술'), I('대파', 0.5, '대'), I('설탕', 0.5, '큰술')],
-    steps: ['고추장·고춧가루·설탕·간장 약간을 섞어 양념을 만들어요.', '돼지고기를 양념에 10분 재워요.', '팬에 고기를 볶다가 양파를 넣어요.', '대파를 넣고 1분 더 볶아요.'],
+    ingredients: [I('돼지고기', 150, 'g'), I('양파', 0.5, '개'), I('고추장', 1.5, '큰술'), I('고춧가루', 0.5, '큰술'), I('대파', 0.5, '대'), I('설탕', 0.5, '큰술'), I('간장', 1, '큰술')],
+    steps: ['고추장·고춧가루·설탕·간장을 섞어 양념을 만들어요.', '돼지고기를 양념에 10분 재워요.', '팬에 고기를 볶다가 양파를 넣어요.', '대파를 넣고 1분 더 볶아요.'],
   },
   {
     id: 'tofu-braise', name: '두부조림', emoji: '🧈', timeMinutes: 20, difficulty: '쉬움', tags: ['반찬', '한식'],
@@ -52,8 +52,8 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'tuna-mayo', name: '참치마요덮밥', emoji: '🍙', timeMinutes: 7, difficulty: '쉬움', tags: ['덮밥', '초간단'],
-    ingredients: [I('밥', 1, '공기'), I('참치캔', 1, '캔'), I('김', 1, '봉', { optional: true }), I('양파', 0.2, '개', { optional: true }), I('간장', 0.5, '큰술')],
-    steps: ['참치 기름을 빼요.', '참치에 마요네즈 1큰술과 간장을 섞어요.', '밥 위에 참치를 올려요.', '김을 부숴 올려 완성해요.'],
+    ingredients: [I('밥', 1, '공기'), I('참치캔', 1, '캔'), I('김', 1, '봉', { optional: true }), I('양파', 0.2, '개', { optional: true }), I('간장', 0.5, '큰술'), I('마요네즈', 1, '큰술')],
+    steps: ['참치 기름을 빼고, 양파는 잘게 다져 찬물에 헹궈 물기를 빼요.', '참치에 양파·마요네즈·간장을 섞어요.', '밥 위에 참치를 올려요.', '김을 부숴 올려 완성해요.'],
   },
   {
     id: 'tomato-pasta', name: '토마토 파스타', emoji: '🍝', timeMinutes: 20, difficulty: '쉬움', tags: ['양식', '면'],
@@ -63,11 +63,11 @@ const DRAFTS: Draft[] = [
   {
     id: 'chicken-salad', name: '닭가슴살 샐러드', emoji: '🥗', timeMinutes: 10, difficulty: '쉬움', tags: ['샐러드', '초간단'],
     ingredients: [I('닭가슴살', 100, 'g'), I('상추', 5, '장', { substitute: '양배추' }), I('토마토', 1, '개', { optional: true }), I('오이', 0.5, '개', { optional: true }), I('파프리카', 0.5, '개', { optional: true })],
-    steps: ['닭가슴살을 데우거나 구워 한입 크기로 썰어요.', '채소를 씻어 물기를 빼고 썰어요.', '그릇에 담고 좋아하는 드레싱을 곁들여요.'],
+    steps: ['닭가슴살을 데우거나 구워 한입 크기로 썰어요.', '상추와 다른 채소를 씻어 물기를 빼고 한입 크기로 썰어요.', '그릇에 담고 좋아하는 드레싱을 곁들여요.'],
   },
   {
     id: 'tteokbokki', name: '떡볶이', emoji: '🌶️', timeMinutes: 20, difficulty: '쉬움', tags: ['분식'],
-    ingredients: [I('떡', 200, 'g'), I('어묵', 2, '장'), I('고추장', 1.5, '큰술'), I('대파', 0.5, '대'), I('설탕', 1, '큰술'), I('계란', 1, '개', { optional: true })],
+    ingredients: [I('떡', 200, 'g'), I('어묵', 2, '장'), I('고추장', 1.5, '큰술'), I('대파', 0.5, '대'), I('설탕', 1, '큰술'), I('고춧가루', 0.5, '큰술', { optional: true }), I('계란', 1, '개', { optional: true })],
     steps: ['물 300ml에 고추장·설탕·고춧가루를 풀어요.', '끓으면 떡과 어묵을 넣어요.', '국물이 졸아들 때까지 7분 끓여요.', '대파와 삶은 계란을 넣어요.'],
   },
   {
@@ -77,7 +77,7 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'egg-toast', name: '계란토스트', emoji: '🍞', timeMinutes: 10, difficulty: '쉬움', tags: ['간편식', '아침'],
-    ingredients: [I('식빵', 2, '장'), I('계란', 1, '개'), I('양배추', 0.1, '통', { optional: true }), I('치즈', 1, '장', { optional: true }), I('햄', 1, '장', { optional: true })],
+    ingredients: [I('식빵', 2, '장'), I('계란', 1, '개'), I('양배추', 0.1, '통', { optional: true }), I('치즈', 1, '장', { optional: true }), I('햄', 1, '장', { optional: true }), I('케첩', 1, '큰술', { optional: true }), I('설탕', 0.3, '큰술', { optional: true })],
     steps: ['양배추를 채 썰어 계란과 섞어요.', '팬에 네모나게 부쳐요.', '구운 식빵에 계란·햄·치즈를 올려요.', '설탕이나 케첩을 살짝 곁들여요.'],
   },
   {
@@ -93,7 +93,7 @@ const DRAFTS: Draft[] = [
   {
     id: 'cabbage-stir', name: '양배추 계란볶음', emoji: '🥬', timeMinutes: 10, difficulty: '쉬움', tags: ['볶음', '채소듬뿍', '초간단'],
     ingredients: [I('양배추', 0.2, '통'), I('계란', 2, '개'), I('간장', 0.5, '큰술'), I('대파', 0.2, '대', { optional: true })],
-    steps: ['양배추를 한입 크기로 썰어요.', '계란을 먼저 스크램블해 덜어 둬요.', '양배추를 숨이 죽을 때까지 볶아요.', '계란과 간장을 넣어 섞어요.'],
+    steps: ['양배추를 한입 크기로 썰어요.', '계란을 먼저 스크램블해 덜어 둬요.', '양배추와 대파를 숨이 죽을 때까지 볶아요.', '계란과 간장을 넣어 섞어요.'],
   },
   {
     id: 'udon', name: '어묵우동', emoji: '🍜', timeMinutes: 12, difficulty: '쉬움', tags: ['국물', '면'],
@@ -103,7 +103,7 @@ const DRAFTS: Draft[] = [
   {
     id: 'mackerel', name: '고등어구이', emoji: '🐟', timeMinutes: 15, difficulty: '쉬움', tags: ['한식', '생선'],
     ingredients: [I('고등어', 1, '마리'), I('밥', 1, '공기', { optional: true })],
-    steps: ['고등어 물기를 키친타월로 닦아요.', '팬에 기름을 두르고 껍질 쪽부터 5분 구워요.', '뒤집어 4분 더 구워요.'],
+    steps: ['고등어 물기를 키친타월로 닦아요.', '팬에 기름을 두르고 껍질 쪽부터 5분 구워요.', '뒤집어 4분 더 구워 살이 하얗게 익으면 밥과 함께 차려요.'],
   },
   {
     id: 'shrimp-garlic', name: '새우 마늘볶음밥', emoji: '🦐', timeMinutes: 15, difficulty: '보통', tags: ['볶음'],
@@ -112,14 +112,14 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'mushroom-bulgogi', name: '버섯불고기', emoji: '🍄', timeMinutes: 25, difficulty: '보통', tags: ['한식'],
-    ingredients: [I('소고기', 120, 'g'), I('버섯', 0.5, '봉'), I('양파', 0.3, '개'), I('간장', 2, '큰술'), I('설탕', 0.5, '큰술'), I('대파', 0.3, '대', { optional: true })],
+    ingredients: [I('소고기', 120, 'g'), I('버섯', 0.5, '봉'), I('양파', 0.3, '개'), I('간장', 2, '큰술'), I('설탕', 0.5, '큰술'), I('마늘', 0.5, '큰술'), I('참기름', 0.5, '큰술'), I('대파', 0.3, '대', { optional: true })],
     steps: ['간장·설탕·다진 마늘·참기름으로 양념을 만들어요.', '소고기를 양념에 15분 재워요.', '팬에 고기·양파·버섯을 함께 볶아요.', '대파를 넣어 마무리해요.'],
   },
   // ── B1: 레시피 확장(1인분 · 10분 · 전자레인지 · 냉동식품 활용) ──
   {
     id: 'soft-tofu-stew', name: '순두부찌개', emoji: '🍲', timeMinutes: 15, difficulty: '쉬움', tags: ['국물', '한식'],
     ingredients: [I('순두부', 1, '봉'), I('계란', 1, '개'), I('대파', 0.3, '대'), I('고춧가루', 1, '큰술'), I('간장', 0.5, '큰술'), I('바지락', 50, 'g', { optional: true }), I('돼지고기', 40, 'g', { optional: true, substitute: '참치캔' })],
-    steps: ['냄비에 기름 1큰술과 고춧가루를 넣고 약불에서 30초 볶아 고추기름을 내요.', '물 250ml와 간장을 넣고 끓으면 바지락·고기를 넣어요.', '순두부를 숟가락으로 크게 떠 넣고 3분 끓여요.', '계란을 깨 넣고 대파를 올려 1분 더 끓여요. 싱거우면 소금으로 맞춰요.'],
+    steps: ['냄비에 기름 1큰술과 고춧가루를 넣고 약불에서 30초 볶아 매운 기름을 내요(타지 않게).', '물 250ml와 간장을 넣고 끓으면 바지락·돼지고기를 넣고 고기가 다 익을 때까지 끓여요.', '순두부를 숟가락으로 크게 떠 넣고 3분 끓여요.', '계란을 깨 넣고 대파를 올려 1분 더 끓여요. 싱거우면 소금으로 맞춰요.'],
   },
   {
     id: 'seaweed-soup', name: '미역국', emoji: '🥣', timeMinutes: 25, difficulty: '쉬움', tags: ['국물', '한식'],
@@ -133,7 +133,7 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'squid-stir', name: '오징어볶음', emoji: '🦑', timeMinutes: 20, difficulty: '보통', tags: ['볶음', '한식'],
-    ingredients: [I('오징어', 1, '마리'), I('양파', 0.5, '개'), I('고추장', 1, '큰술'), I('고춧가루', 0.5, '큰술'), I('대파', 0.3, '대'), I('설탕', 0.5, '큰술'), I('당근', 0.2, '개', { optional: true })],
+    ingredients: [I('오징어', 1, '마리'), I('양파', 0.5, '개'), I('고추장', 1, '큰술'), I('고춧가루', 0.5, '큰술'), I('대파', 0.3, '대'), I('설탕', 0.5, '큰술'), I('간장', 0.5, '큰술'), I('당근', 0.2, '개', { optional: true })],
     steps: ['오징어는 내장을 빼고 몸통에 칼집을 낸 뒤 한입 크기로 썰어요.', '고추장·고춧가루·설탕·간장 조금으로 양념을 만들어요.', '센불에 양파·당근을 1분 볶고 오징어와 양념을 넣어 2~3분만 볶아요(오래 볶으면 질겨져요).', '대파를 넣고 불을 꺼요.'],
   },
   {
@@ -144,12 +144,12 @@ const DRAFTS: Draft[] = [
   {
     id: 'kimchi-pancake', name: '김치전', emoji: '🥞', timeMinutes: 15, difficulty: '쉬움', tags: ['전', '한식'],
     ingredients: [I('김치', 100, 'g'), I('부침가루', 70, 'g'), I('양파', 0.2, '개', { optional: true }), I('청양고추', 1, '개', { optional: true })],
-    steps: ['김치를 잘게 썰어요.', '부침가루에 물 100ml와 김치 국물 1큰술을 넣고 섞어요.', '김치·양파를 넣고 반죽해요.', '기름을 넉넉히 두른 팬에 얇게 펴서 앞뒤로 3분씩 바삭하게 부쳐요.'],
+    steps: ['김치를 잘게 썰어요.', '부침가루에 물 100ml와 김치 국물 1큰술을 넣고 섞어요.', '김치·양파·송송 썬 고추를 넣고 반죽해요.', '기름을 넉넉히 두른 팬에 얇게 펴서 앞뒤로 3분씩 바삭하게 부쳐요.'],
   },
   {
     id: 'chive-pancake', name: '부추전', emoji: '🥞', timeMinutes: 15, difficulty: '쉬움', tags: ['전', '한식'],
     ingredients: [I('부추', 80, 'g', { substitute: '쪽파' }), I('부침가루', 70, 'g'), I('청양고추', 1, '개', { optional: true }), I('새우', 40, 'g', { optional: true })],
-    steps: ['부추를 5cm 길이로 썰어요.', '부침가루에 찬물 100ml를 넣어 묽게 섞어요.', '부추를 넣어 살짝만 버무려요.', '기름 두른 팬에 얇게 펴 앞뒤로 3분씩 부쳐요.'],
+    steps: ['부추를 5cm 길이로 썰어요.', '부침가루에 찬물 100ml를 넣어 묽게 섞어요.', '부추·새우·송송 썬 고추를 넣어 살짝만 버무려요.', '기름 두른 팬에 얇게 펴 앞뒤로 3분씩 부쳐요.'],
   },
   {
     id: 'janchi-noodle', name: '잔치국수', emoji: '🍜', timeMinutes: 20, difficulty: '쉬움', tags: ['국물', '면', '한식'],
@@ -158,7 +158,7 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'spicy-noodle', name: '비빔국수', emoji: '🍜', timeMinutes: 15, difficulty: '쉬움', tags: ['면', '한식'],
-    ingredients: [I('소면', 90, 'g'), I('고추장', 1.5, '큰술'), I('오이', 0.3, '개', { optional: true }), I('김치', 50, 'g', { optional: true }), I('식초', 1, '큰술', { optional: true }), I('설탕', 0.5, '큰술'), I('계란', 1, '개', { optional: true })],
+    ingredients: [I('소면', 90, 'g'), I('고추장', 1.5, '큰술'), I('오이', 0.3, '개', { optional: true }), I('김치', 50, 'g', { optional: true }), I('식초', 1, '큰술', { optional: true }), I('설탕', 0.5, '큰술'), I('참기름', 0.5, '큰술'), I('계란', 1, '개', { optional: true })],
     steps: ['고추장·식초·설탕·참기름으로 양념장을 만들어요.', '소면을 3분 삶아 찬물에 여러 번 헹궈 물기를 빼요.', '오이와 김치를 채 썰어요.', '면에 양념장과 채소를 넣고 비벼 삶은 계란을 올려요.'],
   },
   {
@@ -179,7 +179,7 @@ const DRAFTS: Draft[] = [
   {
     id: 'salmon-bowl', name: '연어덮밥', emoji: '🍣', timeMinutes: 10, difficulty: '쉬움', tags: ['덮밥', '초간단'],
     ingredients: [I('연어', 100, 'g'), I('밥', 1, '공기'), I('양파', 0.2, '개', { optional: true }), I('간장', 1, '큰술'), I('깻잎', 3, '장', { optional: true })],
-    steps: ['양파는 얇게 썰어 찬물에 5분 담가 매운맛을 빼요.', '연어를 도톰하게 썰어요.', '밥 위에 깻잎·양파·연어를 올려요.', '간장(와사비 조금)을 곁들여요.'],
+    steps: ['양파는 얇게 썰어 찬물에 5분 담가 매운맛을 빼요.', '연어를 도톰하게 썰어요.', '밥 위에 깻잎·양파·연어를 올려요.', '간장을 곁들여 바로 먹어요.'],
   },
   {
     id: 'cream-pasta', name: '베이컨 크림파스타', emoji: '🍝', timeMinutes: 20, difficulty: '보통', tags: ['양식', '면'],
@@ -213,7 +213,7 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'tuna-riceball', name: '참치마요 주먹밥', emoji: '🍙', timeMinutes: 10, difficulty: '쉬움', tags: ['간편식', '초간단', '도시락'],
-    ingredients: [I('밥', 1, '공기'), I('참치캔', 0.5, '캔'), I('마요네즈', 1, '큰술'), I('김', 0.3, '봉', { optional: true }), I('깻잎', 2, '장', { optional: true })],
+    ingredients: [I('밥', 1, '공기'), I('참치캔', 0.5, '캔'), I('마요네즈', 1, '큰술'), I('김', 0.3, '봉', { optional: true }), I('깻잎', 2, '장', { optional: true }), I('참기름', 0.3, '큰술')],
     steps: ['참치 기름을 빼고 마요네즈와 섞어요.', '밥에 참기름·소금 조금을 넣어 섞어요.', '밥을 손바닥에 펴고 참치마요를 넣어 동그랗게 뭉쳐요.', '부순 김에 굴리거나 깻잎으로 감싸요.'],
   },
   {
@@ -234,13 +234,13 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'fishcake-stir', name: '어묵볶음', emoji: '🍢', timeMinutes: 10, difficulty: '쉬움', tags: ['반찬', '볶음', '초간단'],
-    ingredients: [I('어묵', 3, '장'), I('양파', 0.3, '개'), I('간장', 1, '큰술'), I('올리고당', 0.5, '큰술', { substitute: '설탕' }), I('당근', 0.1, '개', { optional: true })],
+    ingredients: [I('어묵', 3, '장'), I('양파', 0.3, '개'), I('간장', 1, '큰술'), I('올리고당', 0.5, '큰술', { substitute: '설탕' }), I('당근', 0.1, '개', { optional: true }), I('참깨', 0.3, '큰술', { optional: true })],
     steps: ['어묵을 길게 썰어 뜨거운 물을 한 번 부어 기름을 빼요.', '팬에 양파·당근을 1분 볶아요.', '어묵을 넣고 간장·올리고당·물 2큰술을 넣어 2분 볶아요.', '참깨를 뿌려 마무리해요. 냉장 3일 반찬으로 좋아요.'],
   },
   {
     id: 'potato-braise', name: '감자조림', emoji: '🥔', timeMinutes: 20, difficulty: '쉬움', tags: ['반찬'],
     ingredients: [I('감자', 2, '개'), I('간장', 2, '큰술'), I('올리고당', 1, '큰술', { substitute: '설탕' }), I('양파', 0.3, '개', { optional: true })],
-    steps: ['감자를 깍둑 썰어 찬물에 5분 담가 전분을 빼요.', '냄비에 감자·물 150ml·간장을 넣고 중불에서 10분 끓여요.', '국물이 반쯤 줄면 올리고당을 넣어요.', '뒤적이며 윤기가 날 때까지 3분 더 졸여요.'],
+    steps: ['감자를 깍둑 썰어 찬물에 5분 담가 전분을 빼요.', '냄비에 감자·양파·물 150ml·간장을 넣고 중불에서 10분 끓여요.', '국물이 반쯤 줄면 올리고당을 넣어요.', '뒤적이며 윤기가 날 때까지 3분 더 졸여요.'],
   },
   {
     id: 'spinach-namul', name: '시금치나물', emoji: '🥬', timeMinutes: 10, difficulty: '쉬움', tags: ['반찬', '초간단'],
@@ -254,8 +254,9 @@ const DRAFTS: Draft[] = [
   },
   {
     id: 'rice-cake-soup', name: '떡국', emoji: '🥣', timeMinutes: 20, difficulty: '쉬움', tags: ['국물', '한식'],
-    ingredients: [I('떡', 150, 'g'), I('계란', 1, '개'), I('대파', 0.3, '대'), I('간장', 1, '큰술'), I('소고기', 50, 'g', { optional: true }), I('김', 0.2, '봉', { optional: true })],
-    steps: ['떡을 찬물에 10분 불려요(냉동 떡이면 20분).', '소고기를 참기름에 볶다가 물 450ml를 붓고 끓여요(고기가 없으면 물만).', '떡을 넣고 떠오를 때까지 4분 끓이고 간장으로 간해요.', '계란을 풀어 넣고 대파·김을 올려요.'],
+    ingredients: [I('떡', 150, 'g'), I('계란', 1, '개'), I('대파', 0.3, '대'), I('간장', 1, '큰술'), I('소고기', 50, 'g', { optional: true }), I('김', 0.2, '봉', { optional: true }), I('참기름', 0.5, '큰술', { optional: true })],
+    prep: '떡을 찬물에 10분 불려 두세요(냉동 떡은 20분).',
+    steps: ['소고기를 참기름에 볶다가 물 450ml를 붓고 끓여요(고기가 없으면 물만).', '떡을 넣고 떠오를 때까지 4분 끓이고 간장으로 간해요.', '계란을 풀어 넣고 대파·김을 올려요.'],
   },
   {
     id: 'pork-cutlet-bowl', name: '돈까스 덮밥', emoji: '🍱', timeMinutes: 20, difficulty: '보통', tags: ['덮밥', '냉동식품'],
@@ -275,12 +276,13 @@ const DRAFTS: Draft[] = [
   {
     id: 'spring-roll', name: '월남쌈', emoji: '🥗', timeMinutes: 20, difficulty: '쉬움', tags: ['샐러드', '채소'],
     ingredients: [I('라이스페이퍼', 6, '장'), I('파프리카', 0.5, '개'), I('오이', 0.5, '개'), I('맛살', 2, '개', { optional: true, substitute: '닭가슴살' }), I('깻잎', 4, '장', { optional: true }), I('칠리소스', 2, '큰술', { substitute: '간장' })],
-    steps: ['채소를 모두 가늘게 채 썰어요.', '맛살도 길게 찢어요.', '라이스페이퍼를 따뜻한 물에 2초 담갔다 꺼내요.', '재료를 올려 돌돌 말고 칠리소스에 찍어 먹어요.'],
+    steps: ['파프리카·오이와 깻잎을 가늘게 채 썰어요.', '맛살도 길게 찢어요.', '라이스페이퍼를 따뜻한 물에 2초 담갔다 꺼내요.', '재료를 올려 돌돌 말고 칠리소스에 찍어 먹어요.'],
   },
   {
     id: 'naengmyeon', name: '물냉면', emoji: '🍜', timeMinutes: 10, difficulty: '쉬움', tags: ['면', '초간단'],
     ingredients: [I('냉면', 1, '봉'), I('오이', 0.3, '개', { optional: true }), I('계란', 1, '개', { optional: true }), I('식초', 1, '큰술', { optional: true })],
-    steps: ['동봉된 육수를 냉동실에 30분 넣어 살얼음을 만들어요.', '면을 풀어 끓는 물에 40초 삶아 찬물에 여러 번 헹궈요.', '오이를 채 썰고 삶은 계란을 반 갈라요.', '그릇에 면·육수·고명을 담고 식초를 둘러요.'],
+    prep: '동봉된 육수를 30분쯤 냉동실에 넣어 두면 살얼음이 생겨 더 시원해요.',
+    steps: ['면을 풀어 끓는 물에 40초 삶아 찬물에 여러 번 헹궈요.', '오이를 채 썰고 삶은 계란을 반 갈라요.', '그릇에 면·육수·고명을 담고 식초를 둘러요.'],
   },
   {
     id: 'rabokki', name: '라볶이', emoji: '🌶️', timeMinutes: 15, difficulty: '쉬움', tags: ['분식'],
@@ -300,7 +302,8 @@ const DRAFTS: Draft[] = [
   {
     id: 'clam-kalguksu', name: '바지락 칼국수', emoji: '🍜', timeMinutes: 25, difficulty: '보통', tags: ['국물', '면'],
     ingredients: [I('칼국수면', 150, 'g'), I('바지락', 100, 'g'), I('애호박', 0.3, '개', { optional: true }), I('대파', 0.3, '대'), I('마늘', 0.5, '큰술', { optional: true }), I('간장', 0.5, '큰술')],
-    steps: ['바지락을 소금물에 담가 어두운 곳에서 30분 해감해요(손질된 것은 생략).', '물 600ml에 바지락을 넣고 입이 벌어질 때까지 끓여 건져요.', '면에 붙은 가루를 털고 국물에 넣어 5분 끓여요. 애호박도 함께.', '바지락을 다시 넣고 마늘·대파·간장으로 맞춰요.'],
+    prep: '바지락은 소금물에 담가 어두운 곳에서 30분 해감해 두세요(해감된 제품은 생략).',
+    steps: ['바지락을 흐르는 물에 비벼 씻어요.', '물 600ml에 바지락을 넣고 입이 벌어질 때까지 끓여 건져요.', '면에 붙은 가루를 털고 국물에 넣어 5분 끓여요. 애호박도 함께.', '바지락을 다시 넣고 마늘·대파·간장으로 맞춰요.'],
   },
   {
     id: 'french-toast', name: '프렌치토스트', emoji: '🍞', timeMinutes: 10, difficulty: '쉬움', tags: ['간편식', '아침', '초간단'],
@@ -315,12 +318,13 @@ const DRAFTS: Draft[] = [
   {
     id: 'tofu-kimchi', name: '두부김치', emoji: '🥢', timeMinutes: 15, difficulty: '쉬움', tags: ['한식', '볶음'],
     ingredients: [I('두부', 0.5, '모'), I('김치', 120, 'g'), I('돼지고기', 60, 'g', { optional: true }), I('대파', 0.2, '대', { optional: true }), I('설탕', 0.3, '큰술', { optional: true })],
-    steps: ['두부를 끓는 물에 3분 데쳐 도톰하게 썰어요(전자레인지 1분도 괜찮아요).', '팬에 돼지고기를 볶다가 김치를 넣어 4분 볶아요.', '신 김치면 설탕을 조금 넣어요.', '접시에 두부를 두르고 가운데 김치볶음을 올려요.'],
+    steps: ['두부를 끓는 물에 3분 데쳐 도톰하게 썰어요(전자레인지 1분도 괜찮아요).', '팬에 돼지고기를 볶다가 김치를 넣어 4분 볶아요.', '신 김치면 설탕을 조금 넣어요.', '접시에 두부를 두르고 가운데 김치볶음을 올려 대파를 뿌려요.'],
   },
   {
     id: 'quail-egg-braise', name: '메추리알 장조림', emoji: '🥚', timeMinutes: 20, difficulty: '쉬움', tags: ['반찬'],
     ingredients: [I('메추리알', 20, '개', { substitute: '계란' }), I('간장', 3, '큰술'), I('올리고당', 1, '큰술', { substitute: '설탕' }), I('마늘', 0.5, '큰술', { optional: true }), I('청양고추', 1, '개', { optional: true })],
-    steps: ['깐 메추리알을 찬물에 헹궈요(안 깐 것은 7분 삶아 찬물에 담가 까요).', '냄비에 간장·물 150ml·마늘·고추를 넣고 끓여요.', '메추리알을 넣고 중약불에서 12분 졸여요.', '올리고당을 넣고 2분 더 졸여요. 냉장 5일 반찬.'],
+    prep: '안 깐 메추리알은 7분 삶아 찬물에 담가 까 두세요.',
+    steps: ['깐 메추리알을 찬물에 헹궈요.', '냄비에 간장·물 150ml·마늘·고추를 넣고 끓여요.', '메추리알을 넣고 중약불에서 12분 졸여요.', '올리고당을 넣고 2분 더 졸여요. 냉장 5일 반찬.'],
   },
 ];
 
@@ -332,10 +336,73 @@ const NUTRITION_REF: Record<string, string> = {
   'chicken-teriyaki': '닭가슴살 덮밥', pho: '쌀국수', naengmyeon: '냉면', 'ramen-upgrade': '라면',
 };
 
+/**
+ * 남은 음식 보관·다시 데우기·안전 팁.
+ * 기준: 식약처 '조리 음식은 2시간 안에 냉장, 다시 데울 땐 속까지(75℃ 이상)', 고기·해산물 중심온도 75℃ 1분 이상.
+ * 레시피 종류(태그)와 들어가는 재료로 정하고, 특별한 경우만 아래 KEEP_OVERRIDE로 바꾼다.
+ */
+const KEEP_OVERRIDE: Record<string, Partial<Pick<Recipe, 'leftover' | 'reheat'>>> = {
+  'salmon-bowl': { leftover: '날생선이 들어가 남기지 말고 바로 먹어요', reheat: '' },
+  'quail-egg-braise': { leftover: '식혀서 밀폐 용기에 담아 냉장 4~5일', reheat: '그대로 먹거나 전자레인지 30초' },
+  'naengmyeon': { leftover: '면이 불어서 남기지 않는 게 좋아요. 육수만 냉장 2일', reheat: '' },
+  'yogurt-bowl': { leftover: '시리얼이 눅눅해져요. 먹을 만큼만 만들어요', reheat: '' },
+  'french-toast': { leftover: '식혀서 냉장 1일 · 냉동 2주', reheat: '팬이나 토스터에 앞뒤로 데워요' },
+  'tuna-mayo': { leftover: '마요네즈가 들어가 바로 먹는 게 좋아요. 남으면 냉장 1일', reheat: '' },
+  'tuna-riceball': { leftover: '실온에 두지 말고 냉장 1일 안에 먹어요(마요네즈)', reheat: '전자레인지 30초~1분' },
+};
+
+function keepOf(d: Draft): Pick<Recipe, 'leftover' | 'reheat' | 'safety'> {
+  const t = new Set(d.tags);
+  const has = (re: RegExp) => d.ingredients.some((i) => re.test(i.name));
+  let leftover: string;
+  let reheat: string;
+  if (t.has('면') && t.has('국물')) {
+    leftover = '면은 불어서 보관하기 어려워요. 국물만 따로 냉장 1~2일';
+    reheat = '국물을 팔팔 끓인 뒤 면을 새로 넣어요';
+  } else if (t.has('면')) {
+    leftover = '면이 불어서 바로 먹는 게 좋아요. 남으면 냉장 1일';
+    reheat = '물을 1~2큰술 뿌려 전자레인지나 팬에 데워요';
+  } else if (t.has('국물')) {
+    leftover = '식으면 바로 냉장 2일 · 한 번 먹을 양씩 냉동 2~3주';
+    reheat = '먹을 만큼 덜어 팔팔 끓어오를 때까지 데워요';
+  } else if (t.has('전')) {
+    leftover = '식혀서 냉장 2일 · 한 장씩 랩에 싸 냉동 2주';
+    reheat = '기름 없이 팬에 앞뒤로 데우면 다시 바삭해요';
+  } else if (t.has('반찬')) {
+    leftover = '식혀서 밀폐 용기에 냉장 3~4일 · 깨끗한 젓가락으로 덜어 먹어요';
+    reheat = '그대로 먹거나 전자레인지에 살짝 데워요';
+  } else if (t.has('샐러드')) {
+    leftover = '드레싱·소스를 넣기 전이면 냉장 1일, 넣은 뒤엔 바로 먹어요';
+    reheat = '';
+  } else if (t.has('간편식') || t.has('아침')) {
+    leftover = '만든 직후가 가장 맛있어요. 남으면 냉장 1일';
+    reheat = '토스터나 팬에 살짝 데워요';
+  } else {
+    leftover = '식혀서 밀폐 용기에 냉장 1~2일';
+    reheat = '전자레인지에 속까지 뜨겁게(1~2분, 중간에 한 번 섞기)';
+  }
+  const o = KEEP_OVERRIDE[d.id];
+  if (o?.leftover !== undefined) leftover = o.leftover;
+  if (o?.reheat !== undefined) reheat = o.reheat;
+  if (!/바로 먹|남기지/.test(leftover)) leftover += ' · 조리 후 2시간 안에 냉장해요';
+
+  const safety: string[] = [];
+  if (has(/돼지|베이컨|오리/)) safety.push('돼지고기는 속까지 분홍빛이 없게 완전히 익혀요');
+  if (has(/닭/)) safety.push('닭고기는 속살이 하얗고 육즙이 투명해질 때까지 익혀요(중심 75℃ 1분 이상)');
+  if (has(/소고기/)) safety.push('다진 소고기는 속까지 갈색이 되게 익혀요');
+  if (has(/새우|꽃게/)) safety.push('새우는 전체가 붉어지고 살이 하얗게 될 때까지 익혀요');
+  if (has(/바지락|굴/)) safety.push('조개는 익혀도 입이 안 벌어진 것은 먹지 말고 버려요');
+  if (has(/오징어|낙지/)) safety.push('오징어는 살이 하얗게 불투명해지면 다 익은 거예요');
+  if (has(/고등어|꽁치|갈치|삼치/)) safety.push('생선은 살이 하얗고 뼈에서 쉽게 떨어질 때까지 구워요');
+  if (has(/연어/)) safety.push('날로 먹는 연어는 생식용(회용) 표시가 있는 것만 써요');
+  return { leftover, reheat: reheat || undefined, safety: safety.length ? safety : undefined };
+}
+
 export const BUILTIN_RECIPES: Recipe[] = DRAFTS.map((d) => {
   const ref = findFoodReference(NUTRITION_REF[d.id] ?? d.name);
   return {
     ...d,
+    ...keepOf(d),
     servings: 1,
     origin: 'builtin',
     nutrition: ref?.nutrition,

@@ -7,7 +7,8 @@ import { pickPhoto } from '@/ai/photo';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T, Intro } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
-import { findCatalog, findCatalogExact, INGREDIENT_CATALOG, keepInfo } from '@/data/catalog';
+import { KeepInfo } from '@/components/keep-info';
+import { findCatalog, findCatalogExact, INGREDIENT_CATALOG } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { IngredientLocation, StorageType } from '@/data/types';
 import { addDays, isValidDateKey, toDateKey } from '@/logic/dates';
@@ -129,6 +130,7 @@ export default function IngredientEdit() {
         </Row>
       </Row>
 
+      <KeepInfo name={name} current={storage} />
       <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>보관 방법</T>
       <Segmented options={[{ key: 'fridge', label: '냉장' }, { key: 'freezer', label: '냉동' }, { key: 'pantry', label: '실온' }]} value={storage} onChange={(k) => { setStorage(k); setTouched((t) => ({ ...t, storage: true })); }} />
       <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>보관 위치</T>
@@ -137,7 +139,6 @@ export default function IngredientEdit() {
       <Card>
         <T v="bodyBold">소비기한</T>
         <T v="small" c={color.textSub}>포장지에 적힌 날짜나 직접 확인한 날짜만 저장해요. 한끼온이 날짜를 추측하지 않아요.</T>
-        {keepInfo(name) ? <T v="tiny" c={color.textSub}>📦 보관 참고: {keepInfo(name)} (일반적인 대략치 · 제품에 적힌 기한이 우선)</T> : null}
         <Field placeholder="YYYY-MM-DD" value={expiry} onChangeText={(t) => { setExpiry(t); setExpirySource('user'); }} />
         <Row wrap>
           {[0, 1, 3, 7].map((n) => (

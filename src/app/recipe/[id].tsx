@@ -12,6 +12,7 @@ import { actions, findRecipe, useAppState } from '@/data/store';
 import { handyMeasure } from '@/logic/units';
 import { formatAmount, matchRecipe, planDeduction, round, type IngredientMatch } from '@/logic/inventory';
 import { euro } from '@/logic/dates';
+import type { Recipe } from '@/data/types';
 import { checkRecipe, restrictionsOf, safeSubstitutes, type Restrictions } from '@/logic/safety';
 
 /** 레시피: 큰 그림 + 재료 체크 → [부족한 것 장보기] [요리 시작] */
@@ -92,6 +93,13 @@ export default function RecipeDetail() {
       </View>
 
       <RecipeNote recipeId={recipe.id} />
+
+      {recipe.prep ? (
+        <View style={{ backgroundColor: color.infoSoft, borderRadius: radius.md, padding: space.md, gap: 2 }}>
+          <T v="bodyBold">⏳ 미리 해 두세요</T>
+          <T v="small" c={color.textSub}>{recipe.prep} (요리 시간 {recipe.timeMinutes}분에는 빠져 있어요)</T>
+        </View>
+      ) : null}
 
       {check.allergy.length > 0 && (
         <View style={{ backgroundColor: color.dangerSoft, borderRadius: radius.md, padding: space.md, gap: 2 }}>
@@ -186,6 +194,8 @@ export default function RecipeDetail() {
         </>
       )}
 
+      <KeepCard recipe={recipe} />
+
       <Pressable onPress={() => WebBrowser.openBrowserAsync(youtubeSearchUrl(recipe.videoQuery || `${recipe.name} 레시피`))} style={{ alignSelf: 'center', padding: space.sm }}>
         <T v="small" c={color.textSub}>▶️ 조리 영상 찾아보기</T>
       </Pressable>
@@ -218,6 +228,30 @@ function IngredientRow({ x, rs }: { x: IngredientMatch; rs: Restrictions }) {
         {handyMeasure(x.need.amount, x.need.unit) ? <T v="tiny" c={color.textMuted}>{handyMeasure(x.need.amount, x.need.unit)}</T> : null}
       </View>
     </Row>
+  );
+}
+
+/** 남은 음식 보관 · 다시 데우기 · 안전 팁 (식약처 조리 음식 보관 기준) */
+function KeepCard({ recipe }: { recipe: Recipe }) {
+  if (!recipe.leftover && !recipe.safety?.length) return null;
+  const rows: { icon: string; label: string; text: string }[] = [];
+  recipe.safety?.forEach((t) => rows.push({ icon: '🔥', label: '안전', text: t }));
+  if (recipe.leftover) rows.push({ icon: '🧊', label: '남으면', text: recipe.leftover });
+  if (recipe.reheat) rows.push({ icon: '♨️', label: '데우기', text: recipe.reheat });
+  return (
+    <View style={{ ...clay, padding: space.md, gap: space.sm }}>
+      <T v="h3">보관 · 안전</T>
+      {rows.map((r, i) => (
+        <Row key={i} gap={space.sm} style={{ alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{r.icon}</Text>
+          <View style={{ flex: 1, gap: 1 }}>
+            <T v="tiny" c={color.textMuted} style={{ fontWeight: '800' }}>{r.label}</T>
+            <T v="small">{r.text}</T>
+          </View>
+        </Row>
+      ))}
+      <T v="tiny" c={color.textMuted}>식약처 조리 음식 보관 기준을 참고한 일반 안내예요.</T>
+    </View>
   );
 }
 
