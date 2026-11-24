@@ -5,6 +5,8 @@ import { Pressable, Text, View } from 'react-native';
 import { hasAIKey, recipeFromName } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Icon } from '@/components/icon';
+import { BrowseList, KindGrid } from '@/components/browse-panel';
+import type { KindKey } from '@/data/taxonomy';
 import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader, T } from '@/components/ui';
 import { clay, color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
@@ -26,6 +28,7 @@ export default function Cook() {
   const [filter, setFilter] = useState<'all' | 'expiring' | 'quick' | 'clear' | 'fav'>('all');
   const [picked, setPicked] = useState<string[]>([]); // 냉장고 털기: 고른 재료
   const [searchOpen, setSearchOpen] = useState(false);
+  const [kind, setKind] = useState<KindKey | null>(null);
   const [q, setQ] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const aiOn = hasAIKey() && s.consents.externalAI;
@@ -99,20 +102,23 @@ export default function Cook() {
         }
       />
 
-      {searchOpen ? (
+      {!searchOpen && <KindGrid ranked={ranked} value={kind} onChange={(k) => { setKind(k); if (k) setFilter('all'); }} />}
+      {!searchOpen && kind ? <BrowseList ranked={ranked} s={s} kind={kind} onClear={() => setKind(null)} /> : null}
+
+      {!searchOpen && kind ? null : searchOpen ? (
         <Field placeholder="요리·재료 이름" value={q} onChangeText={(t) => { setQ(t); setPage(0); }} autoFocus />
       ) : (
         <Row wrap>
           <Chip label="전체" selected={filter === 'all'} onPress={() => { setFilter('all'); setPage(0); }} />
           <Chip label="먼저 쓸 재료" selected={filter === 'expiring'} onPress={() => { setFilter('expiring'); setPage(0); }} />
-          <Chip label="15분 이내" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
+          <Chip label="⚡ 15분 컷" selected={filter === 'quick'} onPress={() => { setFilter('quick'); setPage(0); }} />
           <Chip label="🧺 냉장고 털기" selected={filter === 'clear'} onPress={() => { setFilter('clear'); setPage(0); }} />
           {s.favorites.length > 0 && <Chip label={`★ 즐겨찾기 ${s.favorites.length}`} selected={filter === 'fav'} onPress={() => { setFilter('fav'); setPage(0); }} />}
         </Row>
       )}
       {searchOpen && tokens.length > 1 ? <T v="tiny" c={color.textSub}>{iga(tokens.join(' + '))} 모두 들어간 메뉴</T> : null}
 
-      {!searchOpen && filter === 'clear' && (
+      {!kind && !searchOpen && filter === 'clear' && (
         <View style={{ gap: 6 }}>
           <T v="bodyBold">남은 재료 2~3개를 골라 보세요</T>
           <T v="tiny" c={color.textSub}>고른 재료가 모두 들어가는 메뉴를, 더 살 게 적은 순으로 보여 줘요.</T>
@@ -136,7 +142,7 @@ export default function Cook() {
         </View>
       )}
 
-      {three.length ? (
+      {kind && !searchOpen ? null : three.length ? (
         <Row gap={space.sm} style={{ alignItems: 'stretch' }}>
           {three.map((m) => <MenuCard key={m.recipe.id} m={m} />)}
           {three.length < 3 && Array.from({ length: 3 - three.length }).map((_, i) => <View key={i} style={{ flex: 1 }} />)}
@@ -156,7 +162,7 @@ export default function Cook() {
         </View>
       )}
 
-      {pool.length > 3 && <Button title="다른 추천 보기 ↻" kind="secondary" onPress={() => setPage(page + 1)} />}
+      {pool.length > 3 && !(kind && !searchOpen) && <Button title="다른 추천 보기 ↻" kind="secondary" onPress={() => setPage(page + 1)} />}
       {q.trim() && aiOn ? <Button title={`AI로 ‘${q.trim()}’ 만들기`} kind="ghost" small onPress={searchAI} loading={aiLoading} /> : null}
 
       <SectionHeader title="이번 주 식단" action="전체" href="/plan" />

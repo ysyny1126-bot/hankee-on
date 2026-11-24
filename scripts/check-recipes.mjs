@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = mkdtempSync(join(tmpdir(), 'hankee-check-'));
-for (const f of ['recipes', 'catalog', 'types', 'keep']) {
+for (const f of ['recipes', 'catalog', 'types', 'keep', 'taxonomy']) {
   let src;
   try {
     src = readFileSync(join(root, 'src/data', f + '.ts'), 'utf8');
@@ -80,7 +80,17 @@ for (const r of BUILTIN_RECIPES) {
   if (!r.leftover) warn(r.id, `남은 음식 보관(leftover) 정보가 없음`);
 }
 
-// 8) 재료 사전 보관 정보
+// 8) 메뉴 분류: 기본 레시피는 종류 표에 정확히 한 번, 상황 하나 이상
+const tax = await import(pathToFileURL(join(tmp, 'taxonomy.ts')).href);
+const listed = tax.listedKindIds();
+for (const r of BUILTIN_RECIPES) {
+  const n = listed.filter((id) => id === r.id).length;
+  if (n !== 1) warn(r.id, `종류 표에 ${n}번 들어 있음(정확히 1번이어야 함)`);
+  if (!tax.moodsOf(r).length) warn(r.id, '상황 분류가 하나도 없음');
+}
+for (const id of listed) if (!BUILTIN_RECIPES.some((r) => r.id === id)) warn(id, '종류 표에 있지만 레시피가 없음');
+
+// 9) 재료 사전 보관 정보
 const KEEP = cat.KEEP_DATA ?? {};
 for (const c of INGREDIENT_CATALOG) {
   const k = KEEP[c.name];
