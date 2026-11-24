@@ -249,6 +249,7 @@ export const actions = {
         );
         if (same) {
           same.quantity = round(same.quantity + it.quantity);
+          same.fullQuantity = Math.max(same.fullQuantity ?? 0, same.quantity);
           continue;
         }
         list.push({
@@ -256,6 +257,7 @@ export const actions = {
           emoji: it.emoji ?? cat?.emoji ?? '🥫',
           category: it.category ?? cat?.category ?? '기타',
           id: newId('ing_'),
+          fullQuantity: it.quantity,
           addedAt: new Date().toISOString(),
           lastUsedAt: null,
         });
@@ -264,7 +266,17 @@ export const actions = {
     });
   },
   updateIngredient(id: string, patch: Partial<Ingredient>) {
-    setState((s) => ({ ...s, ingredients: s.ingredients.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+    setState((s) => ({
+      ...s,
+      ingredients: s.ingredients.map((x) => {
+        if (x.id !== id) return x;
+        const next = { ...x, ...patch };
+        // 양을 늘렸으면(새로 샀거나 정확히 고침) '가득' 기준도 함께 올린다
+        if (patch.quantity != null && patch.quantity > (x.fullQuantity ?? x.quantity)) next.fullQuantity = patch.quantity;
+        if (patch.unit && patch.unit !== x.unit) next.fullQuantity = next.quantity;
+        return next;
+      }),
+    }));
   },
   /** 기한이 지났지만 '아직 괜찮아요' — 기한은 그대로 두고, 확인한 날만 남긴다(2일 뒤 다시 물어봄) */
   confirmStillGood(id: string) {

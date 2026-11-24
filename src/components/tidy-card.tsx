@@ -1,6 +1,7 @@
 import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { notify } from '@/components/dialog';
+import { shortAmount } from '@/logic/amount';
 import { Button, Row, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { actions } from '@/data/store';
@@ -27,7 +28,7 @@ export function TidyCard({ stock, max = 3, wrapStyle }: { stock: Ingredient[]; m
           <Row>
             <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
             <View style={{ flex: 1 }}>
-              <T v="bodyBold">{i.name} <T v="small" c={color.textSub}>{i.quantity}{i.unit}</T></T>
+              <T v="bodyBold">{i.name} <T v="small" c={color.textSub}>{shortAmount(i)}</T></T>
               <T v="tiny" c={kind === 'expired' ? color.danger : color.textSub}>
                 {kind === 'expired' ? `소비기한 ${dDayLabel(i.expiryDate!)} · 어떻게 됐나요?` : '아주 조금 남았어요 · 다 쓰셨나요?'}
               </T>

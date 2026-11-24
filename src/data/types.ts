@@ -33,6 +33,8 @@ export interface Ingredient {
   expiryCheckedOn?: string;
   /** 아주 적게 남았지만 사용자가 '남겨 두기'를 고름 → 정리 안내를 다시 하지 않음 */
   keepSmall?: boolean;
+  /** 처음 넣었을 때(가득 찼을 때)의 양. '반쯤·조금'처럼 눈대중으로 남은 양을 고를 때 기준 */
+  fullQuantity?: number;
 }
 
 export interface RecipeIngredient {

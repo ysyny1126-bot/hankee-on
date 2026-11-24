@@ -9,7 +9,9 @@ import { FridgeArt } from '@/components/fridge-art';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { KeepInfo } from '@/components/keep-info';
+import { shortAmount, fullOf, isRough, LEVELS, levelOf, lowerLevel, quantityFor } from '@/logic/amount';
 import { findCatalog, sameIngredient } from '@/data/catalog';
+import { formatAmount } from '@/logic/inventory';
 import { convert } from '@/logic/units';
 import { actions, useAppState } from '@/data/store';
 import type { Ingredient, StorageType } from '@/data/types';
@@ -98,23 +100,63 @@ function QuickList({ items, warn }: { items: Ingredient[]; warn: number }) {
         const d = i.expiryDate ? daysUntil(i.expiryDate) : null;
         const tone = d === null ? color.textMuted : d <= 0 ? color.danger : d <= warn ? color.warnDark : color.textSub;
         const st = stepOf(i);
+        const rough = isRough(i);
+        const low = rough ? lowerLevel(i) : null;
         return (
           <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: space.md, paddingVertical: 8, borderTopWidth: idx ? 1 : 0, borderTopColor: color.border }}>
             <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
             <View style={{ flex: 1, minWidth: 0 }}>
               <T v="bodyBold" numberOfLines={1}>{i.name}</T>
-              <T v="tiny" c={tone}>{i.quantity}{i.unit} · {d === null ? '기한 미입력' : dDayLabel(i.expiryDate!)}</T>
+              <T v="tiny" c={tone} numberOfLines={1}>{shortAmount(i)} · {d === null ? '기한 미입력' : dDayLabel(i.expiryDate!)}</T>
             </View>
-            <QuickBtn
-              label={`−${st}`}
-              a11y={`${i.name} ${st}${i.unit} 줄이기`}
-              onPress={() => (i.quantity - st > 0.001 ? actions.updateIngredient(i.id, { quantity: Math.round((i.quantity - st) * 100) / 100 }) : actions.useUpIngredient(i.id))}
-            />
+            {rough ? (
+              <QuickBtn
+                label={low ? `→${low.label}` : '−'}
+                a11y={low ? `${i.name} ${low.label} 남음으로 바꾸기` : `${i.name} 다 씀`}
+                onPress={() => (low ? actions.updateIngredient(i.id, { quantity: quantityFor(i, low) }) : actions.useUpIngredient(i.id))}
+              />
+            ) : (
+              <QuickBtn
+                label={`−${st}`}
+                a11y={`${i.name} ${st}${i.unit} 줄이기`}
+                onPress={() => (i.quantity - st > 0.001 ? actions.updateIngredient(i.id, { quantity: Math.round((i.quantity - st) * 100) / 100 }) : actions.useUpIngredient(i.id))}
+              />
+            )}
             <QuickBtn label="다 씀" a11y={`${i.name} 다 씀`} onPress={() => actions.useUpIngredient(i.id)} />
             <QuickBtn label="버림" danger a11y={`${i.name} 버림`} onPress={() => actions.discardIngredient(i.id, d !== null && d < 0 ? 'expired' : 'spoiled')} />
           </View>
         );
       })}
+    </View>
+  );
+}
+
+/** 눈대중 단계 고르기: 거의 그대로 · 반 넘게 · 반쯤 · 조금 · 아주 조금 */
+function LevelPicker({ item: i }: { item: Ingredient }) {
+  const cur = levelOf(i).key;
+  return (
+    <Row gap={6} wrap>
+      {LEVELS.map((l) => (
+        <Pressable
+          key={l.key}
+          onPress={() => actions.updateIngredient(i.id, { quantity: quantityFor(i, l) })}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: cur === l.key }}
+          accessibilityLabel={`${l.label} 남음`}
+          style={{ alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 6, minWidth: 60, flexGrow: 1, borderRadius: 14, borderWidth: cur === l.key ? 2 : 1, borderColor: cur === l.key ? color.brandDark : color.border, backgroundColor: cur === l.key ? color.brandSoft : color.surface }}>
+          <Gauge ratio={l.ratio} on={cur === l.key} />
+          <T v="tiny" c={cur === l.key ? color.brandDark : color.textSub} style={{ fontWeight: '700' }}>{l.label}</T>
+        </Pressable>
+      ))}
+    </Row>
+  );
+}
+
+/** 통에 담긴 정도를 보여 주는 작은 그림(아래부터 채워짐) */
+function Gauge({ ratio, on }: { ratio: number; on: boolean }) {
+  return (
+    <View style={{ width: 18, height: 26, borderRadius: 5, borderWidth: 2, borderColor: on ? color.brandDark : color.borderStrong, justifyContent: 'flex-end', overflow: 'hidden' }}>
+      <View style={{ height: `${Math.max(10, ratio * 100)}%`, backgroundColor: on ? color.brand : color.textMuted }} />
     </View>
   );
 }
@@ -143,6 +185,7 @@ function Tile({ item: i, warn, onPress }: { item: Ingredient; warn: number; onPr
 function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () => void }) {
   const s = useAppState();
   const [editing, setEditing] = useState(false);
+  const [exact, setExact] = useState(false);
   const [date, setDate] = useState(i.expiryDate ?? '');
   const d = i.expiryDate ? daysUntil(i.expiryDate) : null;
   const recipe = useMemo(() => rankForUser(s).find((m) => m.recipe.ingredients.some((x) => sameIngredient(x.name, i.name))), [s, i.name]);
@@ -164,13 +207,26 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
         {d !== null ? <Badge label={dDayLabel(i.expiryDate!)} tone={d <= 0 ? 'danger' : d <= s.notifications.expiryDaysBefore ? 'warn' : 'fresh'} /> : null}
       </Row>
 
-      <Row style={{ justifyContent: 'space-between' }}>
-        <T c={color.textSub}>수량</T>
-        <Row gap={4}>
-          <Stepper value={i.quantity} step={step} onChange={(n) => (n > 0 ? actions.updateIngredient(i.id, { quantity: n }) : undefined)} />
-          <T v="small">{i.unit}</T>
+      {isRough(i) && !exact ? (
+        <View style={{ gap: 6 }}>
+          <Row style={{ justifyContent: 'space-between' }}>
+            <T c={color.textSub}>얼마나 남았나요?</T>
+            <Pressable onPress={() => setExact(true)} hitSlop={8} accessibilityRole="button">
+              <T v="tiny" c={color.textMuted}>약 {formatAmount(i.quantity, i.unit)} · 숫자로 고치기</T>
+            </Pressable>
+          </Row>
+          <LevelPicker item={i} />
+          <T v="tiny" c={color.textMuted}>저울 없이 눈대중으로 골라도 돼요. 처음 넣은 양({formatAmount(fullOf(i), i.unit)})을 기준으로 계산해요.</T>
+        </View>
+      ) : (
+        <Row style={{ justifyContent: 'space-between' }}>
+          <T c={color.textSub}>수량</T>
+          <Row gap={4}>
+            <Stepper value={i.quantity} step={step} onChange={(n) => (n > 0 ? actions.updateIngredient(i.id, { quantity: n }) : undefined)} />
+            <T v="small">{i.unit}</T>
+          </Row>
         </Row>
-      </Row>
+      )}
 
       <Row style={{ justifyContent: 'space-between' }}>
         <T c={color.textSub}>소비기한</T>

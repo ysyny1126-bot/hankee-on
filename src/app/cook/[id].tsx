@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
+import { isRough } from '@/logic/amount';
 import { Badge, Button, Card, Chip, Empty, Field, OnOff, Row, Screen, Segmented, Stepper, T } from '@/components/ui';
 import { color, radius, space } from '@/constants/tokens';
 import { findFoodReference } from '@/data/catalog';
@@ -22,6 +23,18 @@ const RATINGS: { key: CookRating; emoji: string; label: string }[] = [
  * (1) 맛 평가 → 다음 추천에 기억  (2) 쓴 재료 차감
  * (3) 먹은 양 → 식사 기록  (4) 남은 양 → '남은 음식'으로 냉장고에
  */
+/** 저울 없이 고르는 '쓴 양': 레시피 양을 기준으로 덜·그대로·더·다 */
+function roughUses(base: number, have: number) {
+  const r = (n: number) => Math.min(have, Math.round(n * 100) / 100);
+  const opts = [
+    { label: '덜 씀', amount: r(base * 0.5) },
+    { label: '레시피만큼', amount: r(base) },
+    { label: '더 씀', amount: r(base * 1.5) },
+    { label: '다 씀', amount: have },
+  ];
+  return opts.filter((o, i) => o.amount > 0 && opts.findIndex((x) => x.amount === o.amount) === i);
+}
+
 export default function CookComplete() {
   const { id, scale: scaleParam } = useLocalSearchParams<{ id: string; scale?: string }>();
   const s = useAppState();
@@ -139,8 +152,9 @@ export default function CookComplete() {
               <T v="tiny" c={color.textSub}>레시피 {x.need.amount}{x.need.unit}{x.have != null ? ` · 보유 ${x.have}${x.need.unit}` : ''}</T>
             </Row>
             {x.status === 'unknown_amount' && <Badge label="단위가 달라 직접 입력" tone="info" />}
-            {plan.map(({ ingredient: b }) => (
-              <Row key={b.id} style={{ justifyContent: 'space-between', paddingLeft: space.md }}>
+            {plan.map(({ ingredient: b, amount: base }) => (
+              <View key={b.id} style={{ gap: 4 }}>
+              <Row style={{ justifyContent: 'space-between', paddingLeft: space.md }}>
                 <View style={{ flex: 1 }}>
                   <T v="small">{b.quantity}{b.unit} 묶음</T>
                   <T v="tiny" c={color.textSub}>{b.expiryDate ? `소비기한 ${b.expiryDate.slice(5).replace('-', '/')}` : '소비기한 미입력'}{plan.length > 1 && b.id === plan[0].ingredient.id ? ' · 먼저 쓰기' : ''}</T>
@@ -150,6 +164,14 @@ export default function CookComplete() {
                   <T v="small">{b.unit}</T>
                 </Row>
               </Row>
+              {isRough(b) && (
+                <Row gap={4} wrap style={{ paddingLeft: space.md }}>
+                  {roughUses(base, b.quantity).map((o) => (
+                    <Chip key={o.label} label={o.label} selected={Math.abs((amounts[b.id] ?? 0) - o.amount) < 0.01} onPress={() => setAmounts((a) => ({ ...a, [b.id]: o.amount }))} />
+                  ))}
+                </Row>
+              )}
+              </View>
             ))}
           </View>
         ))}

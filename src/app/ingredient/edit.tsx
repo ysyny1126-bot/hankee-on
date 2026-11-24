@@ -1,6 +1,7 @@
 import { Stack as RStack, useLocalSearchParams } from 'expo-router';
 import { goBack } from '@/logic/nav';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 import { readExpiryFromPackage, hasAIKey } from '@/ai/gemini';
 import { pickPhoto } from '@/ai/photo';
@@ -8,6 +9,7 @@ import { confirmAsync, notify } from '@/components/dialog';
 import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T, Intro } from '@/components/ui';
 import { color, space } from '@/constants/tokens';
 import { KeepInfo } from '@/components/keep-info';
+import { packSizes } from '@/logic/amount';
 import { findCatalog, findCatalogExact, INGREDIENT_CATALOG } from '@/data/catalog';
 import { actions, useAppState } from '@/data/store';
 import type { IngredientLocation, StorageType } from '@/data/types';
@@ -129,6 +131,17 @@ export default function IngredientEdit() {
           <Field value={unit} onChangeText={(u) => { setUnit(u); setTouched((t) => ({ ...t, unit: true })); }} style={{ width: 64 }} accessibilityLabel="단위" />
         </Row>
       </Row>
+
+      {packSizes(name, unit).length > 0 && (
+        <View style={{ gap: 4 }}>
+          <T v="tiny" c={color.textMuted}>저울이 없어도 괜찮아요. 포장지에 적힌 양이나 흔한 크기를 눌러요.</T>
+          <Row wrap gap={4}>
+            {packSizes(name, unit).map((n) => (
+              <Chip key={n} label={n >= 1000 ? `${n / 1000}${unit === 'ml' ? 'L' : 'kg'}` : `${n}${unit}`} selected={quantity === n} onPress={() => { setQuantity(n); setTouched((t) => ({ ...t, quantity: true })); }} />
+            ))}
+          </Row>
+        </View>
+      )}
 
       <KeepInfo name={name} current={storage} />
       <T v="small" c={color.textSub} style={{ fontWeight: '600' }}>보관 방법</T>
