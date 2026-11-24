@@ -208,7 +208,7 @@ export default function RecipeDetail() {
         </T>
       ) : null}
 
-      <Pressable onPress={() => WebBrowser.openBrowserAsync(youtubeSearchUrl(recipe.videoQuery || `${recipe.name} 레시피`))} style={{ alignSelf: 'center', padding: space.sm }}>
+      <Pressable hitSlop={6} accessibilityRole="link" onPress={() => WebBrowser.openBrowserAsync(youtubeSearchUrl(recipe.videoQuery || `${recipe.name} 레시피`))} style={{ alignSelf: 'center', padding: space.sm }}>
         <T v="small" c={color.textSub}>▶️ 조리 영상 찾아보기</T>
       </Pressable>
     </Screen>
@@ -280,7 +280,7 @@ function RecipeNote({ recipeId }: { recipeId: string }) {
         <T v="small">{saved}</T>
       </Pressable>
     ) : (
-      <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ alignSelf: 'flex-start' }}>
+      <Pressable onPress={() => setEditing(true)} hitSlop={12} accessibilityRole="button" style={{ alignSelf: 'flex-start' }}>
         <T v="small" c={color.textSub}>📝 이 레시피에 메모 남기기</T>
       </Pressable>
     );

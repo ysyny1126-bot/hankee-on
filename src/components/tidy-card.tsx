@@ -37,14 +37,15 @@ export function TidyCard({ stock, max = 3, wrapStyle, lastCheckAt }: { stock: In
             </View>
           </Row>
           <Row gap={6} wrap>
-            <Button small kind="secondary" title="다 썼어요" onPress={() => actions.useUpIngredient(i.id)} />
+            <Button small kind="secondary" title="다 썼어요" a11y={`${i.name} 다 썼어요`} onPress={() => actions.useUpIngredient(i.id)} />
             {kind === 'expired' ? (
               <>
-                <Button small kind="danger" title="버렸어요" onPress={() => actions.discardIngredient(i.id, 'expired')} />
+                <Button small kind="danger" title="버렸어요" a11y={`${i.name} 버렸어요`} onPress={() => actions.discardIngredient(i.id, 'expired')} />
                 <Button
                   small
                   kind="ghost"
                   title="아직 괜찮아요"
+                  a11y={`${i.name} 아직 괜찮아요`}
                   onPress={() => {
                     actions.confirmStillGood(i.id);
                     notify('알겠어요', `상태를 직접 확인하셨으니 ${RECHECK_DAYS}일 동안은 재료로 쓸게요. 냄새·색이 변하면 바로 정리해 주세요.`);
@@ -52,7 +53,7 @@ export function TidyCard({ stock, max = 3, wrapStyle, lastCheckAt }: { stock: In
                 />
               </>
             ) : (
-              <Button small kind="ghost" title="남겨 두기" onPress={() => actions.keepSmall(i.id)} />
+              <Button small kind="ghost" title="남겨 두기" a11y={`${i.name} 남겨 두기`} onPress={() => actions.keepSmall(i.id)} />
             )}
           </Row>
         </View>
@@ -103,18 +104,19 @@ function WeeklyCheck({ stock, wrapStyle }: { stock: Ingredient[]; wrapStyle?: St
               <T v="bodyBold" style={{ flex: 1 }}>{i.name} <T v="small" c={color.textSub}>{shortAmount(i)}</T></T>
             </Row>
             <Row gap={6} wrap>
-              <Button small kind="secondary" title="그대로" onPress={() => answer(i.id)} />
+              <Button small kind="secondary" title="그대로" a11y={`${i.name} 그대로`} onPress={() => answer(i.id)} />
               <Button
                 small
                 kind="secondary"
                 title="줄었어요"
+                a11y={`${i.name} 줄었어요`}
                 onPress={() => {
                   if (low) actions.updateIngredient(i.id, { quantity: quantityFor(i, low) });
                   else actions.useUpIngredient(i.id);
                   answer(i.id);
                 }}
               />
-              <Button small kind="ghost" title="다 썼어요" onPress={() => { actions.useUpIngredient(i.id); answer(i.id); }} />
+              <Button small kind="ghost" title="다 썼어요" a11y={`${i.name} 다 썼어요`} onPress={() => { actions.useUpIngredient(i.id); answer(i.id); }} />
             </Row>
           </View>
         );

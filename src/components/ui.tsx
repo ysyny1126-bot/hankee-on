@@ -61,9 +61,9 @@ export function tx(style: StyleProp<TextStyle>): TextStyle {
 }
 
 type TVariant = keyof typeof font;
-export function T({ v = 'body', c, style, children, numberOfLines }: { v?: TVariant; c?: string; style?: StyleProp<TextStyle>; children: ReactNode; numberOfLines?: number }) {
+export function T({ v = 'body', c, style, children, numberOfLines, fixed }: { v?: TVariant; c?: string; style?: StyleProp<TextStyle>; children: ReactNode; numberOfLines?: number; /** 그림 위 장식 글자처럼 자리가 정해진 곳은 글자 크기 설정을 따르지 않음 */ fixed?: boolean }) {
   return (
-    <Text numberOfLines={numberOfLines} style={tx([font[v], { color: c ?? color.text }, style])}>
+    <Text numberOfLines={numberOfLines} allowFontScaling={!fixed} maxFontSizeMultiplier={1.5} style={tx([font[v], { color: c ?? color.text }, style])}>
       {children}
     </Text>
   );
@@ -90,7 +90,7 @@ type BtnKind = 'primary' | 'secondary' | 'ghost' | 'danger' | 'fresh';
  * - 약한(ghost): 글자만 — 취소·나중에·건너뛰기
  * danger는 '보조' 모양에 빨간 글자(버리기·지우기), fresh는 예전 이름으로 주요와 같다.
  */
-export function Button({ title, onPress, kind = 'primary', small, disabled, loading, icon, style, href }: { title: string; onPress?: () => void; kind?: BtnKind; small?: boolean; disabled?: boolean; loading?: boolean; icon?: string; style?: StyleProp<ViewStyle>; href?: Href }) {
+export function Button({ title, onPress, kind = 'primary', small, disabled, loading, icon, style, href, a11y }: { title: string; onPress?: () => void; kind?: BtnKind; small?: boolean; disabled?: boolean; loading?: boolean; icon?: string; style?: StyleProp<ViewStyle>; href?: Href; /** 화면 읽기용 이름(같은 글자 버튼이 여러 개일 때 무엇의 버튼인지) */ a11y?: string }) {
   const shape = kind === 'fresh' ? 'primary' : kind;
   const palette = {
     primary: { bg: color.brandDark, fg: color.onBrand, bd: 'transparent' },
@@ -103,6 +103,8 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
       onPress={href ? () => router.push(href) : onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
+      accessibilityLabel={a11y}
+      hitSlop={small ? 6 : undefined}
       style={({ pressed }) => [
         styles.btn,
         small && styles.btnSmall,
@@ -129,6 +131,7 @@ export function Chip({ label, selected, onPress, tone }: { label: string; select
   return (
     <Pressable
       onPress={onPress}
+      hitSlop={4}
       disabled={!onPress}
       style={[styles.chip, selected && { backgroundColor: toneColor, borderColor: toneColor }]}>
       <Text style={tx([font.small, { color: selected ? color.onBrand : color.textSub, fontWeight: '600' }])}>{label}</Text>
@@ -171,7 +174,7 @@ export function SectionHeader({ title, action, href, onPress }: { title: string;
             <Row gap={2}><T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action}</T><Icon name="chevron" size={15} c={color.textMuted} /></Row>
           </Link>
         ) : (
-          <Pressable onPress={onPress}>
+          <Pressable onPress={onPress} hitSlop={12} accessibilityRole="button">
             <Row gap={2}><T v="small" c={color.textMuted} style={{ fontWeight: '600' }}>{action}</T><Icon name="chevron" size={15} c={color.textMuted} /></Row>
           </Pressable>
         )
@@ -321,7 +324,7 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, alignSelf: 'flex-start' },
   input: { ...font.body, color: color.text, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 13, minHeight: 50 },
   seg: { flexDirection: 'row', backgroundColor: color.surfaceAlt, borderRadius: radius.pill, padding: 3 },
-  segItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: radius.pill },
+  segItem: { flex: 1, paddingVertical: 9, minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: radius.pill },
   segActive: { backgroundColor: color.surface, ...shadow.soft },
   stepBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   track: { height: 8, borderRadius: 4, backgroundColor: color.surfaceAlt, overflow: 'hidden' },

@@ -56,7 +56,7 @@ export function FridgeArt({ width = 120, items = [], badge = 0, decorative = tru
         <View style={{ position: 'absolute', left: 30 * k, top: 72 * k, width: 74 * k, height: 84 * k, flexDirection: 'row', flexWrap: 'wrap', alignContent: 'center', justifyContent: 'center' }}>
           {mag.map((e, i) => (
             <View key={`${e}${i}`} style={{ width: '33%', alignItems: 'center', paddingVertical: 2 * k, transform: [{ rotate: `${[-8, 6, -4, 9, -6, 4][i]}deg` }] }}>
-              <Text style={{ fontSize: 17 * k }}>{e}</Text>
+              <Text allowFontScaling={false} style={{ fontSize: 17 * k }}>{e}</Text>
             </View>
           ))}
         </View>

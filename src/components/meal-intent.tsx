@@ -11,9 +11,9 @@ import { INTENTS, outsideAdvice, type Intent } from '@/logic/meal-intent';
 /** 끼니 전 '어떻게 먹을까요?' — 집밥 · 외식 · 간단히(편의점). 고르면 아래 카드의 추천 방향이 바뀐다 */
 export function IntentBar({ date, slot, value }: { date: string; slot: MealType; value: Intent }) {
   return (
-    <Row style={{ justifyContent: 'space-between' }}>
+    <Row wrap style={{ justifyContent: 'space-between', rowGap: 6 }}>
       <T v="small" c={color.textSub}>{MEAL_LABEL[slot]}은 어떻게 먹을까요?</T>
-      <Row gap={4}>
+      <Row gap={4} wrap>
         {INTENTS.map((o) => {
           const on = value === o.key;
           return (
@@ -23,7 +23,7 @@ export function IntentBar({ date, slot, value }: { date: string; slot: MealType;
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
               accessibilityLabel={`${MEAL_LABEL[slot]} ${o.label}`}
-              hitSlop={4}
+              hitSlop={6}
               style={{ minHeight: 34, paddingHorizontal: 10, borderRadius: 999, justifyContent: 'center', borderWidth: 1, borderColor: on ? color.brandDark : color.borderStrong, backgroundColor: on ? color.brandSoft : color.surface }}>
               <T v="tiny" c={on ? color.brandDark : color.textSub} style={{ fontWeight: '700' }}>{o.emoji} {o.label}</T>
             </Pressable>
@@ -58,6 +58,7 @@ export function OutsideCard({ s, slot, kind }: { s: AppState; slot: MealType; ki
           <Pressable
             onPress={() => actions.chooseMeal(a.tomorrow!.date, a.tomorrow!.slot, a.tomorrow!.recipe.id, `${a.tomorrow!.ingredient} 기한 전에 쓰기`)}
             accessibilityRole="button"
+            hitSlop={6}
             style={{ alignSelf: 'flex-start', minHeight: 36, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: color.borderStrong, backgroundColor: color.surface, justifyContent: 'center' }}>
             <T v="tiny" c={color.brandDark} style={{ fontWeight: '700' }}>내일 식단에 넣기</T>
           </Pressable>

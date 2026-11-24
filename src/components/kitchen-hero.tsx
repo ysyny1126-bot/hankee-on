@@ -100,7 +100,7 @@ export function KitchenHero({
         <T v="small" c={color.textSub} style={{ fontWeight: '700' }}>{dateLabel}</T>
         <T v="small" c={color.textSub} style={{ marginTop: space.sm }}>{empty ? '냉장고가 비어 있어요' : big.label}</T>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
-          <Text style={styles.bigNum} accessibilityLabel={empty ? '재료 0개' : `${big.label} ${big.n}개`}>{empty ? 0 : big.n}</Text>
+          <Text allowFontScaling={false} style={styles.bigNum} accessibilityLabel={empty ? '재료 0개' : `${big.label} ${big.n}개`}>{empty ? 0 : big.n}</Text>
           <T v="bodyBold" style={{ marginBottom: 10 }}>개</T>
         </View>
       </View>
@@ -145,7 +145,7 @@ export function KitchenHero({
         </View>
         <View style={{ height: 16 }}>
           {marks.map((mk) => (
-            <T key={mk} v="tiny" c={homeCount >= mk ? color.brandDark : color.textMuted} style={[styles.markLabel, { left: `${(mk / max) * 100}%` }]}>
+            <T key={mk} fixed v="tiny" c={homeCount >= mk ? color.brandDark : color.textMuted} style={[styles.markLabel, { left: `${(mk / max) * 100}%` }]}>
               {mk}회
             </T>
           ))}
@@ -158,10 +158,10 @@ export function KitchenHero({
         {cardOverride ? cardOverride : r ? (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-              <View style={styles.menuArt}><Text style={{ fontSize: 30 }}>{r.emoji}</Text></View>
+              <View style={styles.menuArt}><Text allowFontScaling={false} style={{ fontSize: 30 }}>{r.emoji}</Text></View>
               <View style={{ flex: 1 }}>
                 <T v="small" c={color.textSub}>{when}</T>
-                <Text style={styles.menuName} numberOfLines={1}>{r.name}{chosen ? '' : ' 어때요?'}</Text>
+                <Text allowFontScaling={false} style={styles.menuName} numberOfLines={1}>{r.name}{chosen ? '' : ' 어때요?'}</Text>
                 <T v="tiny" c={color.textSub}>
                   {r.timeMinutes}분 · {m!.missingRequired.length ? `${m!.missingRequired.length}개 더 필요` : '재료 다 있어요'}
                 </T>
@@ -173,7 +173,7 @@ export function KitchenHero({
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} accessibilityLabel={`활용할 재료: ${using.map((u) => u.name).join(', ')}`}>
                   {using.map((u) => (
                     <View key={u.id} style={[styles.useChip, u.first && styles.useChipFirst]}>
-                      <Text style={{ fontSize: 13 }}>{u.emoji}</Text>
+                      <Text allowFontScaling={false} style={{ fontSize: 13 }}>{u.emoji}</Text>
                       <T v="tiny" c={u.first ? color.warnDark : color.text} style={{ fontWeight: '700' }}>{u.name}{u.first ? ' · 먼저' : ''}</T>
                     </View>
                   ))}

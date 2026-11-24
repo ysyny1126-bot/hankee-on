@@ -20,7 +20,7 @@ export function Character({ id, size = 120, holding, mood = 'happy' }: { id?: st
     return (
       <View style={{ width: W, height: H, alignItems: 'center', justifyContent: 'flex-end' }}>
         <Image source={c.image} style={{ width: W, height: H }} contentFit="contain" />
-        {holding ? <Text style={{ position: 'absolute', bottom: s * 0.22, fontSize: s * 0.26 }}>{holding}</Text> : null}
+        {holding ? <Text allowFontScaling={false} style={{ position: 'absolute', bottom: s * 0.22, fontSize: s * 0.26 }}>{holding}</Text> : null}
       </View>
     );
   }
@@ -125,7 +125,7 @@ export function Character({ id, size = 120, holding, mood = 'happy' }: { id?: st
       {/* 들고 있는 그릇 */}
       {holding ? (
         <View style={{ position: 'absolute', bottom: s * 0.1, left: (W - s * 0.44) / 2, width: s * 0.44, height: s * 0.3, zIndex: 3, alignItems: 'center' }}>
-          <Text style={{ position: 'absolute', top: -s * 0.08, fontSize: s * 0.2 }}>{holding}</Text>
+          <Text allowFontScaling={false} style={{ position: 'absolute', top: -s * 0.08, fontSize: s * 0.2 }}>{holding}</Text>
           <View style={{ position: 'absolute', bottom: 0, width: s * 0.44, height: s * 0.2, borderBottomLeftRadius: s * 0.22, borderBottomRightRadius: s * 0.22, borderTopLeftRadius: s * 0.04, borderTopRightRadius: s * 0.04, backgroundColor: '#FFFFFF', borderBottomWidth: 3, borderBottomColor: '#EADFD3' }} />
         </View>
       ) : null}
