@@ -11,13 +11,13 @@ import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader
 import { clay, color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
-import { addDays, eul, iga, toDateKey } from '@/logic/dates';
+import { addDays, eul, euro, iga, toDateKey } from '@/logic/dates';
 import type { RecipeMatch } from '@/logic/inventory';
 import { generatePlan } from '@/logic/planner';
 import { aiRecipeToRecipe } from '@/logic/recipe-convert';
 import { rankForUser } from '@/logic/suggestions';
 import { isUsable } from '@/logic/tidy';
-import { sameIngredient } from '@/data/catalog';
+import { searchRecipes, suggestFor, uses } from '@/logic/search';
 
 const ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];
 
@@ -49,8 +49,9 @@ export default function Cook() {
   const ranked = useMemo(() => rankForUser(s), [s]);
   // C3: '두부 애호박', '두부+애호박'처럼 여러 단어를 쓰면 모두 들어간 메뉴만
   const tokens = q.split(/[\s,+·]+/).map((t) => t.trim()).filter(Boolean);
-  const uses = (m: RecipeMatch, word: string) =>
-    m.recipe.name.includes(word) || m.recipe.ingredients.some((i) => i.name.includes(word) || sameIngredient(i.name, word));
+  // R1~R4: 오타·띄어쓰기·초성·다른 이름에도 찾는 검색(src/logic/search.ts)
+  const found = useMemo(() => (tokens.length ? searchRecipes(ranked, q) : null), [ranked, q, tokens.length]);
+  const hint = useMemo(() => (found && !found.results.length ? suggestFor(ranked, q) : null), [found, ranked, q]);
   // E1 냉장고 털기에 쓸 재료 후보: 실제로 있는 재료(남은 음식·양념 제외), 기한 가까운 순
   const clearable = useMemo(() => {
     const seen = new Set<string>();
@@ -59,9 +60,9 @@ export default function Cook() {
       .sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999'))
       .filter((i) => (seen.has(i.name) ? false : (seen.add(i.name), true)));
   }, [s.ingredients]);
-  const pool = ranked
+  const pool = (found ? found.results : ranked)
     .filter((m) => {
-      if (tokens.length) return tokens.every((w) => uses(m, w));
+      if (found) return true;
       if (filter === 'clear') return picked.length > 0 && picked.every((w) => uses(m, w));
       if (filter === 'fav') return s.favorites.includes(m.recipe.id);
       if (filter === 'expiring') return m.usesExpiring.length > 0;
@@ -116,7 +117,15 @@ export default function Cook() {
           {s.favorites.length > 0 && <Chip label={`★ 즐겨찾기 ${s.favorites.length}`} selected={filter === 'fav'} onPress={() => { setFilter('fav'); setPage(0); }} />}
         </Row>
       )}
-      {searchOpen && tokens.length > 1 ? <T v="tiny" c={color.textSub}>{iga(tokens.join(' + '))} 모두 들어간 메뉴</T> : null}
+      {searchOpen && found?.ingredient ? (
+        <T v="tiny" c={color.textSub}>
+          {found.ingredient.word} 들어가는 메뉴 {found.ingredient.total}개{found.ingredient.ready ? ` · 지금 바로 ${found.ingredient.ready}개` : ''}
+        </T>
+      ) : searchOpen && found?.correctedTo ? (
+        <T v="tiny" c={color.textSub}>‘{found.correctedTo}’{euro(found.correctedTo).slice(found.correctedTo.length)} 찾았어요</T>
+      ) : searchOpen && found?.byWords && found.results.length ? (
+        <T v="tiny" c={color.textSub}>{iga(tokens.join(' + '))} 모두 들어간 메뉴</T>
+      ) : null}
 
       {!kind && !searchOpen && filter === 'clear' && (
         <View style={{ gap: 6 }}>
@@ -147,6 +156,14 @@ export default function Cook() {
           {three.map((m) => <MenuCard key={m.recipe.id} m={m} />)}
           {three.length < 3 && Array.from({ length: 3 - three.length }).map((_, i) => <View key={i} style={{ flex: 1 }} />)}
         </Row>
+      ) : hint ? (
+        <NoResult
+          q={q.trim()}
+          hint={hint}
+          aiOn={aiOn}
+          onPick={(name) => { setQ(name); setPage(0); }}
+          onClear={() => { setSearchOpen(false); setQ(''); setFilter('clear'); setPage(0); }}
+        />
       ) : (
         <View style={{ alignItems: 'center', paddingVertical: space.xl, gap: space.sm }}>
           <Text style={{ fontSize: 36 }}>🔍</Text>
@@ -185,6 +202,26 @@ export default function Cook() {
         <Button title="7일 식단 짜기 ✨" kind="secondary" onPress={() => { actions.setMealPlan(generatePlan(s, today, 7), Array.from({ length: 7 }, (_, i) => addDays(today, i))); }} />
       )}
     </Screen>
+  );
+}
+
+/** R3: 검색 결과가 없을 때 막다른 길 대신 '혹시 ○○?'·비슷한 메뉴·다음 행동 */
+function NoResult({ q, hint, aiOn, onPick, onClear }: { q: string; hint: ReturnType<typeof suggestFor>; aiOn: boolean; onPick: (name: string) => void; onClear: () => void }) {
+  return (
+    <View style={{ gap: space.sm }}>
+      <T c={color.textSub}>‘{q}’ 메뉴는 아직 없어요</T>
+      {hint.didYouMean ? <Button title={`혹시 ‘${hint.didYouMean}’?`} kind="secondary" small onPress={() => onPick(hint.didYouMean!)} /> : null}
+      {hint.similar.length ? (
+        <>
+          <T v="tiny" c={color.textSub}>비슷한 메뉴</T>
+          <Row gap={space.sm} style={{ alignItems: 'stretch' }}>
+            {hint.similar.map((m) => <MenuCard key={m.recipe.id} m={m} />)}
+            {hint.similar.length < 3 && Array.from({ length: 3 - hint.similar.length }).map((_, i) => <View key={i} style={{ flex: 1 }} />)}
+          </Row>
+        </>
+      ) : null}
+      {!aiOn ? <Button title="🧺 냉장고 재료로 찾기" kind="ghost" small onPress={onClear} /> : null}
+    </View>
   );
 }
 
