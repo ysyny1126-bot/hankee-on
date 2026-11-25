@@ -45,3 +45,6 @@ example
 # 비밀값(API 키)
 .env
 데이터/
+
+# 웹 배포 빌드 결과(gh-pages 브랜치로만 올림)
+dist-web/

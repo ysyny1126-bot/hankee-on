@@ -45,6 +45,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "check:data": "node scripts/check-recipes.mjs",
+    "deploy:web": "sh scripts/deploy-web.sh",
     "data:nutrition": "node scripts/build-nutrition.mjs",
     "data:fetch": "node scripts/fetch-public-data.mjs"
   },
