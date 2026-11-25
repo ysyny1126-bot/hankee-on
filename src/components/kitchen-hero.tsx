@@ -260,7 +260,8 @@ const styles = StyleSheet.create({
   charSpot: { position: 'absolute', right: 6, bottom: 14, alignItems: 'center', width: 168 },
   speech: { backgroundColor: color.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, maxWidth: 168, ...shadow.soft },
   speechTail: { position: 'absolute', bottom: -5, left: '50%', marginLeft: -5, width: 10, height: 10, backgroundColor: color.surface, transform: [{ rotate: '45deg' }] },
-  openBtn: { marginHorizontal: space.lg, minHeight: 52, borderRadius: 999, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center' },
+  // 살짝 비치는 초록(브랜드 진한 초록 85%) + 얇은 흰 테두리 — 뒤 민트 배경이 은은하게 보이게, 흰 글씨는 또렷하게
+  openBtn: { marginHorizontal: space.lg, minHeight: 52, borderRadius: 999, backgroundColor: 'rgba(17,128,90,0.85)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' },
   progress: { paddingHorizontal: space.lg, marginTop: space.md, gap: 8 },
   track: { height: 12, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.75)', justifyContent: 'center' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 6, backgroundColor: color.brand },
