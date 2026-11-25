@@ -13,6 +13,7 @@ import { handyMeasure } from '@/logic/units';
 import { formatAmount, matchRecipe, planDeduction, round, type IngredientMatch } from '@/logic/inventory';
 import { euro } from '@/logic/dates';
 import type { Recipe } from '@/data/types';
+import { auditRecipe } from '@/logic/recipe-check';
 import { checkRecipe, restrictionsOf, safeSubstitutes, type Restrictions } from '@/logic/safety';
 
 /** 레시피: 큰 그림 + 재료 체크 → [부족한 것 장보기] [요리 시작] */
@@ -31,6 +32,7 @@ export default function RecipeDetail() {
   const m = matchRecipe(recipe, s.ingredients, s.preferences.allergies, scale);
   const rs = restrictionsOf(s.preferences);
   const check = checkRecipe(recipe, rs);
+  const issues = recipe.origin === 'builtin' ? [] : auditRecipe(recipe);
   const need = m.matches.filter((x) => (x.status === 'missing' && !x.need.optional) || x.status === 'low');
 
   // 꺼낼 것: 재료마다 소비기한이 가까운 묶음부터(선입선출). 단위를 못 바꾼 묶음은 '양 확인'
@@ -122,6 +124,13 @@ export default function RecipeDetail() {
       {recipe.origin !== 'builtin' && (
         <T v="tiny" c={color.textMuted}>AI가 만든 레시피예요. 재료·분량·영양값은 추정이라 실제와 다를 수 있어요. 요리 완료 화면에서 쓴 양을 고칠 수 있어요.</T>
       )}
+      {recipe.origin !== 'builtin' && issues.length > 0 && (
+        <View style={{ backgroundColor: color.warnSoft, borderRadius: radius.md, padding: space.md, gap: 4 }}>
+          <T v="bodyBold">🔎 확인 필요 {issues.length}가지</T>
+          {issues.slice(0, 4).map((x) => <T key={x} v="small">· {x}</T>)}
+          <T v="tiny" c={color.textSub}>한끼온 기본 레시피와 같은 규칙으로 자동 점검했어요. 만들기 전에 한 번 더 봐 주세요.</T>
+        </View>
+      )}
 
       {/* 인분 */}
       <Row style={{ justifyContent: 'space-between' }}>
@@ -200,13 +209,8 @@ export default function RecipeDetail() {
 
       <KeepCard recipe={recipe} />
 
-      {recipe.nutrition ? (
-        <T v="tiny" c={color.textMuted} style={{ textAlign: 'center' }}>
-          {recipe.nutritionSource?.kind === 'mfds'
-            ? `영양 근거: 식약처 식품영양성분 DB '${recipe.nutritionSource.dbName.replace(/_/g, ' ')}' 1인분 ${recipe.nutritionSource.servingGram}g 기준 · 나트륨 ${Math.round(recipe.nutrition.sodium * scale)}mg`
-            : '영양값은 비슷한 음식으로 낸 추정값이에요'}
-        </T>
-      ) : null}
+      <SourceCard recipe={recipe} scale={scale} />
+      <ReportRow recipeId={recipe.id} reported={(s.recipeReports ?? []).filter((x) => x.recipeId === recipe.id).map((x) => x.kind)} />
 
       <Pressable hitSlop={6} accessibilityRole="link" onPress={() => WebBrowser.openBrowserAsync(youtubeSearchUrl(recipe.videoQuery || `${recipe.name} 레시피`))} style={{ alignSelf: 'center', padding: space.sm }}>
         <T v="small" c={color.textSub}>▶️ 조리 영상 찾아보기</T>
@@ -290,6 +294,56 @@ function RecipeNote({ recipeId }: { recipeId: string }) {
       <Row gap={space.sm}>
         <Button small title="저장" onPress={() => { actions.setRecipeNote(recipeId, text); setEditing(false); }} />
         <Button small kind="ghost" title="취소" onPress={() => setEditing(false)} />
+      </Row>
+    </View>
+  );
+}
+
+/** R6: 이 레시피를 믿어도 되는 근거 — 레시피·영양·보관 각각 어디서 왔는지 한 줄씩 */
+function SourceCard({ recipe, scale }: { recipe: Recipe; scale: number }) {
+  const issues = recipe.origin === 'builtin' ? [] : auditRecipe(recipe);
+  const lines = [
+    recipe.origin === 'builtin'
+      ? '레시피: 한끼온이 1인분으로 정리 · 자동 점검(재료↔순서·시간·양) 통과'
+      : `레시피: AI가 만든 추정 레시피 · 자동 점검 ${issues.length ? `확인 필요 ${issues.length}가지` : '통과'}`,
+    recipe.nutrition
+      ? recipe.nutritionSource?.kind === 'mfds'
+        ? `영양: 식약처 식품영양성분 DB '${recipe.nutritionSource.dbName.replace(/_/g, ' ')}' 1인분 ${recipe.nutritionSource.servingGram}g 기준 · 나트륨 ${Math.round(recipe.nutrition.sodium * scale)}mg`
+        : '영양: 비슷한 음식으로 낸 추정값'
+      : '영양: 근거 자료가 없어 표시하지 않아요',
+    '보관·안전: 식약처 조리 음식 보관 기준(2시간 안에 냉장, 속까지 75℃)',
+  ];
+  return (
+    <View style={{ gap: 2, paddingHorizontal: space.sm }}>
+      <T v="tiny" c={color.textSub} style={{ fontWeight: '700' }}>근거</T>
+      {lines.map((l) => <T key={l} v="tiny" c={color.textMuted}>{l}</T>)}
+    </View>
+  );
+}
+
+const REPORT_KINDS = ['양이 이상해요', '순서가 빠졌어요', '시간이 달라요', '재료가 달라요'];
+
+/** R8: 이상한 점 알려 주기 — 기기에만 기록하고, 다음에 이 레시피를 열면 보여 준다 */
+function ReportRow({ recipeId, reported }: { recipeId: string; reported: string[] }) {
+  const [open, setOpen] = useState(false);
+  if (!open)
+    return (
+      <Pressable hitSlop={6} accessibilityRole="button" onPress={() => setOpen(true)} style={{ alignSelf: 'center', padding: space.sm }}>
+        <T v="small" c={color.textSub}>{reported.length ? `🚩 알려 주신 점: ${reported.join(', ')}` : '🚩 이상한 점 알려 주기'}</T>
+      </Pressable>
+    );
+  return (
+    <View style={{ gap: space.sm, alignItems: 'center' }}>
+      <T v="small" c={color.textSub}>어떤 점이 이상했나요?</T>
+      <Row wrap style={{ justifyContent: 'center' }}>
+        {REPORT_KINDS.map((k) => (
+          <Chip
+            key={k}
+            label={k}
+            selected={reported.includes(k)}
+            onPress={() => { actions.reportRecipe(recipeId, k); setOpen(false); notify('알려 주셔서 고마워요', '이 기기에 기록했어요. 다음에 이 레시피를 열면 함께 보여 드려요.'); }}
+          />
+        ))}
       </Row>
     </View>
   );

@@ -311,4 +311,6 @@ export interface AppState {
   recentAdds?: { name: string; quantity: number; unit: string; storage: StorageType; date: string }[];
   /** 끼니 전 '어떻게 먹을지' 선택('YYYY-MM-DD|lunch' → 집밥·외식·간단히). 고르지 않으면 집밥 추천 */
   mealIntents?: Record<string, MealSourceType>;
+  /** R8: 레시피 '이상한 점 알려 주기' 기록(기기 안에만) */
+  recipeReports?: { recipeId: string; kind: string; at: string }[];
 }

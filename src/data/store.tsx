@@ -621,6 +621,13 @@ export const actions = {
   skipRecipe(recipeId: string) {
     setState((s) => ({ ...s, skips: [{ recipeId, date: toDateKey() }, ...(s.skips ?? [])].slice(0, 50) }));
   },
+  /** R8: 레시피에서 이상한 점 기록(같은 레시피·같은 내용은 한 번만, 최근 100개) */
+  reportRecipe(recipeId: string, kind: string) {
+    setState((s) => {
+      const list = (s.recipeReports ?? []).filter((x) => !(x.recipeId === recipeId && x.kind === kind));
+      return { ...s, recipeReports: [{ recipeId, kind, at: new Date().toISOString() }, ...list].slice(0, 100) };
+    });
+  },
   toggleFavorite(recipeId: string) {
     setState((s) => ({ ...s, favorites: s.favorites.includes(recipeId) ? s.favorites.filter((x) => x !== recipeId) : [recipeId, ...s.favorites] }));
   },
