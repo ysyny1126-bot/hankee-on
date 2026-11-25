@@ -24,6 +24,7 @@ import { addDays, newId, toDateKey } from '@/logic/dates';
 import { round } from '@/logic/inventory';
 import { setUserUnits } from '@/logic/units';
 import { BUDGET_BANDS, LIFESTYLES } from '@/constants/profile';
+import { color } from '@/constants/tokens';
 
 /**
  * 오잘먹 저장소.
@@ -713,7 +714,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   if (!ready)
     return (
       <View style={{ flex: 1, backgroundColor: '#F7F4EE', alignItems: 'center', justifyContent: 'center' }} accessibilityLabel="불러오는 중">
-        <ActivityIndicator color="#11805A" />
+        <ActivityIndicator color={color.brandDark} />
       </View>
     );
   return <Ctx.Provider value={snap}>{children}</Ctx.Provider>;

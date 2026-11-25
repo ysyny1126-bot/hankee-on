@@ -158,7 +158,7 @@ export function KitchenHero({
 
         {/* 주요 행동: 냉장고 그림을 누른 것과 같은 동작 */}
         <Pressable onPress={openFridge} accessibilityRole="button" style={({ pressed }) => [styles.openBtn, pressed && styles.pressed]}>
-          <T v="bodyBold" c={color.onBrand}>{empty ? '냉장고 채우기' : '냉장고 열기'}</T>
+          <T v="bodyBold" c={color.brandDark}>{empty ? '냉장고 채우기' : '냉장고 열기'}</T>
         </Pressable>
       </View>
 
@@ -260,8 +260,8 @@ const styles = StyleSheet.create({
   charSpot: { position: 'absolute', right: 6, bottom: 14, alignItems: 'center', width: 168 },
   speech: { backgroundColor: color.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, maxWidth: 168, ...shadow.soft },
   speechTail: { position: 'absolute', bottom: -5, left: '50%', marginLeft: -5, width: 10, height: 10, backgroundColor: color.surface, transform: [{ rotate: '45deg' }] },
-  // 살짝 비치는 초록(브랜드 진한 초록 85%) + 얇은 흰 테두리 — 뒤 민트 배경이 은은하게 보이게, 흰 글씨는 또렷하게
-  openBtn: { marginHorizontal: space.lg, minHeight: 52, borderRadius: 999, backgroundColor: 'rgba(17,128,90,0.85)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' },
+  // 보조 버튼: 반투명 흰 바탕 + 초록 글씨(진한 초록 채움은 아래 '요리하러 가기' 하나에만 — 화면당 주요 버튼 1개)
+  openBtn: { marginHorizontal: space.lg, minHeight: 52, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(59,122,99,0.25)', alignItems: 'center', justifyContent: 'center' },
   progress: { paddingHorizontal: space.lg, marginTop: space.md, gap: 8 },
   track: { height: 12, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.75)', justifyContent: 'center' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 6, backgroundColor: color.brand },

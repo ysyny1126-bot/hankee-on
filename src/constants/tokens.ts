@@ -7,17 +7,19 @@
  */
 export const color = {
   // 포인트 색은 초록 하나(신선한 식재료). 버튼·선택·활성 탭에만 쓴다.
-  brand: '#1FA971',
-  brandSoft: '#E4F4EC',
-  brandDark: '#11805A', // 흰 글자·흰 바탕 위 글자로 써도 대비가 충분한 진한 초록
-  brandShade: '#0E6E4D',
-  navy: '#11805A', // (예전 이름) 주요 버튼 = 진한 초록
+  // 2026-11-25 '오래 봐도 물리지 않게': 채도 높은 초록(#11805A, 채도 0.77)을 차분한 세이지 그린(채도 0.35)으로.
+  // 진하게 채운 초록은 화면마다 가장 중요한 행동 하나에만, 나머지는 brandSoft 바탕 + brandDark 글씨(보조).
+  brand: '#5FA585', // 진행 막대·체크 등 작은 장식(글자로는 쓰지 않음)
+  brandSoft: '#E8F2EC',
+  brandDark: '#3B7A63', // 주요 버튼 바탕·초록 글자. 흰 글자 대비 5.06, 크림 바탕 위 4.61(기준 4.5 이상)
+  brandShade: '#2F6652',
+  navy: '#3B7A63', // (예전 이름) 주요 버튼 = 진한 초록
   navyDeep: '#22201C',
   navyMid: '#3A3631',
-  fresh: '#1FA971',
-  freshSoft: '#E4F4EC',
-  freshDark: '#11805A',
-  freshShade: '#0E6E4D',
+  fresh: '#5FA585',
+  freshSoft: '#E8F2EC',
+  freshDark: '#3B7A63',
+  freshShade: '#2F6652',
   warn: '#E0A12B', // 먼저 활용하면 좋은 재료(경고가 아니라 안내)
   warnSoft: '#FFF4DC',
   warnDark: '#7A5200',
