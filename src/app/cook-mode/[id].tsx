@@ -99,7 +99,7 @@ export default function CookMode() {
 
         {/* 단계: 레시피 카드 한 장(누르면 다음 단계) */}
         <View style={{ flex: 1, marginVertical: space.md }}>
-          <StepCard recipe={recipe} index={i} onPress={last ? undefined : () => setI(i + 1)} onNext={last ? undefined : () => setI(i + 1)} onPrev={i === 0 ? undefined : () => setI(i - 1)} />
+          <StepCard recipe={recipe} index={i} characterId={s.preferences.characterId} onPress={last ? undefined : () => setI(i + 1)} onNext={last ? undefined : () => setI(i + 1)} onPrev={i === 0 ? undefined : () => setI(i - 1)} />
         </View>
 
         {/* 첫 단계엔 '미리 할 일', 마지막 단계엔 익힘·안전 확인 */}
