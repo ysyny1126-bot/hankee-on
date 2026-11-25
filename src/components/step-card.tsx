@@ -8,12 +8,14 @@ import { T, tx } from '@/components/ui';
 import { art, color, holo, pastel, space } from '@/constants/tokens';
 import { findCatalog } from '@/data/catalog';
 import type { Recipe } from '@/data/types';
+import { formatAmount } from '@/logic/inventory';
+import { handyMeasure } from '@/logic/units';
 
 /**
  * 요리 모드의 단계 한 장을 '레시피 카드'로(docs/디자인_레시피카드.md).
- * 무지갯빛 테두리 → 그림 창(음식 그림 + STEP 스티커 + 이 단계 재료 배지) → 큰 문장 → 이름표.
+ * 무지갯빛 테두리 → 그림 창(음식 그림 + STEP 스티커 + 캐릭터) → 큰 문장 + 넣을 재료·양 → 이름표.
  * 그림 창은 '음식이 주인공, 캐릭터는 조수': 음식은 크게 왼쪽, 고른 캐릭터가 오른쪽 아래에서 냄비 쪽으로 몸을 기울이고
- * 단계 소리(보글보글·쓱싹쓱싹 …)를 말풍선으로 말한다. 마지막 단계에서는 웃는 얼굴.
+ * '어떤 재료를 + 조리 소리'(두부 넣고 보글보글 …)를 말풍선으로 말한다. 마지막 단계에서는 웃는 얼굴.
  */
 
 /** 이 단계 문장에 나오는 재료(이름·별칭으로 찾기, 최대 3개) */
@@ -25,7 +27,45 @@ function stepIngredients(r: Recipe, step: string) {
       return keys.some((k) => step.includes(k));
     })
     .slice(0, 3)
-    .map((ing) => ({ name: ing.name, emoji: findCatalog(ing.name)?.emoji ?? '🥄' }));
+    .map((ing) => ({ name: ing.name, emoji: findCatalog(ing.name)?.emoji ?? '🥄', amount: ing.amount, unit: ing.unit }));
+}
+
+/** 세는 단위(개·봉·모 …)는 0.3개 대신 1/3개처럼 — 요리할 때 감이 오게 */
+const COUNT_UNITS = ['개', '봉', '모', '대', '쪽', '장', '줌', '통', '마리', '알', '컵', '공기'];
+const FRACTIONS: [number, string][] = [[0.25, '1/4'], [0.33, '1/3'], [0.5, '1/2'], [0.67, '2/3'], [0.75, '3/4']];
+function amountLabel(amount: number, unit: string) {
+  if (!COUNT_UNITS.includes(unit)) return formatAmount(amount, unit);
+  const whole = Math.floor(amount + 0.02);
+  const rest = amount - whole;
+  if (rest < 0.08) return `${whole}${unit}`;
+  const f = FRACTIONS.find(([v]) => Math.abs(v - rest) < 0.05);
+  if (!f) return formatAmount(amount, unit);
+  return whole ? `${whole}과 ${f[1]}${unit}` : `${f[1]}${unit}`;
+}
+
+/** 받침(을/를)·(이/가) 고르기 */
+const hasBatchim = (w: string) => {
+  const c = w.charCodeAt(w.length - 1) - 0xac00;
+  return c >= 0 && c <= 11171 && c % 28 !== 0;
+};
+
+/**
+ * 캐릭터 멘트: '어떤 재료를' + 조리 소리. 예) 애호박·양파·버섯을 쓱싹쓱싹 / 두부 넣고 보글보글 / 청양고추 넣으면 완성!
+ * 양은 아래 '넣을 재료' 줄이 크게 보여 주므로 멘트에는 이름만(짧게).
+ */
+function stepSpeech(step: string, names: string[], last: boolean) {
+  const hit = SOUNDS.find(([re]) => re.test(step))?.[1];
+  if (!names.length) return last ? '거의 다 됐어요!' : hit ?? '좋아요!';
+  const n = names.join('·');
+  const eul = hasBatchim(n) ? '을' : '를';
+  // [문장에서 찾을 말, ~고, ~면, ~요]
+  const v = ([[/넣/, '넣고', '넣으면', '넣어요!'], [/풀/, '풀고', '풀면', '풀어요'], [/올려|올리/, '올리고', '올리면', '올려요'], [/뿌려|뿌리/, '뿌리고', '뿌리면', '뿌려요']] as const).find(([re]) => re.test(step));
+  const verb = v?.[1];
+  if (last) return v ? `${n} ${v[2]} 완성!` : `${n}${eul} 마무리!`;
+  if (!hit) return v ? `${n} ${v[3]}` : `${n} 준비!`;
+  if (hit === '쓱싹쓱싹' || hit === '쓱쓱') return `${n}${eul} ${hit}`;
+  if (hit === '퐁당!' && verb === '넣고') return `${n} 퐁당!`;
+  return verb ? `${n} ${verb} ${hit}` : `${n}${eul} ${hit}`;
 }
 
 /** 단계 문장에서 조리 소리 하나 고르기(앞에 있는 규칙이 먼저) */
@@ -41,21 +81,16 @@ const SOUNDS: [RegExp, string][] = [
   [/담|올리|올려|뿌리|뿌려|곁들/, '짠!'],
   [/넣/, '퐁당!'],
 ];
-function stepSound(step: string, last: boolean) {
-  const hit = SOUNDS.find(([re]) => re.test(step));
-  if (last) return '거의 다 됐어요!';
-  return hit ? hit[1] : '좋아요!';
-}
 
 /** 이만큼(px) 넘게 밀면 다음·이전 단계로 */
 const SWIPE = 70;
 
-export function StepCard({ recipe, index, characterId, onPress, onNext, onPrev }: { recipe: Recipe; index: number; characterId?: string; onPress?: () => void; onNext?: () => void; onPrev?: () => void }) {
+export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNext, onPrev }: { recipe: Recipe; index: number; scale?: number; characterId?: string; onPress?: () => void; onNext?: () => void; onPrev?: () => void }) {
   const step = recipe.steps[index];
   const total = recipe.steps.length;
   const used = stepIngredients(recipe, step);
   const last = index === total - 1;
-  const sound = stepSound(step, last);
+  const speech = stepSpeech(step, used.map((u) => u.name), last);
   const [winH, setWinH] = useState(0);
 
   // 단계가 바뀌면 살짝 아래에서 올라오며 나타남
@@ -155,7 +190,7 @@ export function StepCard({ recipe, index, characterId, onPress, onNext, onPrev }
             {/* 캐릭터(조수): 냄비 쪽으로 몸을 기울이고 단계 소리를 말한다 */}
             <View style={styles.helper} accessible={false}>
               <View style={styles.bubble}>
-                <Text allowFontScaling={false} style={styles.bubbleText} numberOfLines={1}>{sound}</Text>
+                <Text allowFontScaling={false} style={styles.bubbleText} numberOfLines={2} lineBreakStrategyIOS="hangul-word">{speech}</Text>
                 <View style={styles.bubbleTail} />
               </View>
               <View style={{ transform: [{ rotate: '-10deg' }] }}>
@@ -169,22 +204,28 @@ export function StepCard({ recipe, index, characterId, onPress, onNext, onPrev }
               <Text allowFontScaling={false} style={styles.stickerNum}>{index + 1}</Text>
             </View>
 
-            {/* 이 단계 재료 */}
-            {used.length > 0 && (
-              <View style={styles.badge} accessible={false}>
-                {used.map((u) => (
-                  <View key={u.name} style={{ alignItems: 'center', minWidth: 40 }}>
-                    <IngPic name={u.name} emoji={u.emoji} size={28} />
-                    <Text allowFontScaling={false} style={styles.badgeName} numberOfLines={1}>{u.name}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
           </View>
 
           {/* 문장 */}
-          <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: space.lg, paddingVertical: space.md }}>
+          <View style={{ flex: 1, justifyContent: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md }}>
             <Text style={styles.step} lineBreakStrategyIOS="hangul-word">{step}</Text>
+            {/* 이 단계에 넣을 재료와 양(요리 시작 전 고른 인분 기준) */}
+            {used.length > 0 && (
+              <View style={styles.useRow} accessibilityLabel={`넣을 재료: ${used.map((u) => `${u.name} ${amountLabel(u.amount * scale, u.unit)}`).join(', ')}`}>
+                {used.map((u) => {
+                  const handy = handyMeasure(u.amount * scale, u.unit);
+                  return (
+                    <View key={u.name} style={styles.useChip}>
+                      <IngPic name={u.name} emoji={u.emoji} size={30} />
+                      <View>
+                        <Text allowFontScaling={false} style={styles.useName}>{u.name} <Text style={styles.useAmt}>{amountLabel(u.amount * scale, u.unit)}</Text></Text>
+                        {handy ? <Text allowFontScaling={false} style={styles.useHandy}>{handy}</Text> : null}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
           {/* 이름표 */}
@@ -210,13 +251,18 @@ const styles = StyleSheet.create({
   dish: { position: 'absolute', left: 0, right: 70, top: 22, bottom: -22, alignItems: 'center', justifyContent: 'center' },
   // 냄비 바닥(가운데 + 22 내림 + 약 70px)에 맞춘 식탁 그림자
   tableShadow: { position: 'absolute', top: '50%', marginTop: 80, left: 40, right: 22, height: 20, borderRadius: 999, backgroundColor: 'rgba(154,91,54,0.09)' },
-  // 캐릭터 발이 냄비 바닥과 같은 높이에 오게(말풍선 약 36 + 캐릭터 약 101)
-  helper: { position: 'absolute', right: 12, top: '50%', marginTop: -40, alignItems: 'flex-end' },
-  bubble: { marginRight: 40, marginBottom: 2, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
+  // 캐릭터 발이 냄비 바닥과 같은 높이에 오게(캐릭터 약 101)
+  // 너비를 넉넉히(말풍선이 이 안에서 한 줄로 펼쳐지게), 캐릭터는 오른쪽 끝에
+  helper: { position: 'absolute', right: 12, top: '50%', marginTop: -4, width: 230, alignItems: 'flex-end' },
+  // 말풍선은 캐릭터 머리 위에 떠 있다(길어지면 위로 자라고, 캐릭터 발 높이는 그대로)
+  bubble: { position: 'absolute', bottom: '100%', right: 8, marginBottom: 18, maxWidth: 150, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
   bubbleText: { ...tx({ fontSize: 13, lineHeight: 17, fontWeight: '800', color: art.ink }) },
-  bubbleTail: { position: 'absolute', bottom: -6, right: 18, width: 10, height: 10, backgroundColor: '#fff', borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: art.ink, transform: [{ rotate: '45deg' }] },
-  badge: { position: 'absolute', right: 10, top: 10, flexDirection: 'row', gap: 2, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.92)', borderWidth: 1, borderColor: 'rgba(58,46,38,0.1)' },
-  badgeName: { ...tx({ fontSize: 10, lineHeight: 13, fontWeight: '700', color: color.textSub }) },
+  bubbleTail: { position: 'absolute', bottom: -6, right: 30, width: 10, height: 10, backgroundColor: '#fff', borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: art.ink, transform: [{ rotate: '45deg' }] },
+  useRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  useChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: color.surfaceAlt },
+  useName: { ...tx({ fontSize: 15, lineHeight: 20, fontWeight: '700', color: color.text }) },
+  useAmt: { color: color.brandDark, fontWeight: '800' },
+  useHandy: { ...tx({ fontSize: 11, lineHeight: 14, color: color.textSub }) },
   step: { ...tx({ fontSize: 26, lineHeight: 38, fontWeight: '700', color: color.text }) },
   plate: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, paddingTop: 4 },
   namePill: { maxWidth: '70%', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, backgroundColor: color.surfaceAlt },
