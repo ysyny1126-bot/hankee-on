@@ -4,6 +4,7 @@ import { Platform, Pressable, Text, Vibration, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
 
+import { StepCard } from '@/components/step-card';
 import { Button, Empty, Row, Screen, T, tx } from '@/components/ui';
 import { clay, color, MAX_WIDTH, radius, space } from '@/constants/tokens';
 import { findRecipe, useAppState } from '@/data/store';
@@ -82,7 +83,6 @@ export default function CookMode() {
             <View key={k} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: k <= i ? color.brand : color.surfaceAlt }} />
           ))}
         </Row>
-        <T v="small" c={color.textMuted} style={{ marginTop: space.sm }}>{i + 1} / {total}</T>
 
         {/* 돌고 있는 타이머(다른 단계 포함) */}
         {tm.timers.length > 0 && (
@@ -97,10 +97,10 @@ export default function CookMode() {
           </Row>
         )}
 
-        {/* 단계 */}
-        <Pressable onPress={() => !last && setI(i + 1)} style={{ flex: 1, justifyContent: 'center' }}>
-          <Text style={tx({ fontSize: 28, lineHeight: 42, fontWeight: '700', color: color.text })}>{recipe.steps[i]}</Text>
-        </Pressable>
+        {/* 단계: 레시피 카드 한 장(누르면 다음 단계) */}
+        <View style={{ flex: 1, marginVertical: space.md }}>
+          <StepCard recipe={recipe} index={i} onPress={last ? undefined : () => setI(i + 1)} />
+        </View>
 
         {/* 첫 단계엔 '미리 할 일', 마지막 단계엔 익힘·안전 확인 */}
         {i === 0 && recipe.prep ? (

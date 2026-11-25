@@ -54,6 +54,9 @@ export const art = {
   sky: '#7FB5E6',
 } as const;
 
+/** 요리 모드 레시피 카드 테두리 전용 무지갯빛(다른 곳에는 쓰지 않는다) */
+export const holo = ['#BFE8D3', '#CFE0F5', '#E2D6F3', '#F8D9B8'] as const;
+
 /** 보조 바탕색(강한 색을 여러 개 쓰지 않도록 옅은 색만) */
 export const pastel = {
   lav: '#EFEAF8',
