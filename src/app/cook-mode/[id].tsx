@@ -4,7 +4,7 @@ import { Platform, Pressable, Text, Vibration, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
 
-import { StepCard } from '@/components/step-card';
+import { scaleStepText, StepCard } from '@/components/step-card';
 import { Button, Empty, Row, Screen, T, tx } from '@/components/ui';
 import { clay, color, MAX_WIDTH, radius, space } from '@/constants/tokens';
 import { findRecipe, useAppState } from '@/data/store';
@@ -131,7 +131,7 @@ export default function CookMode() {
         })()}
 
         {/* 다음 단계 미리 보기 */}
-        {!last ? <T v="small" c={color.textMuted} numberOfLines={2} style={{ marginBottom: space.sm }}>다음: {recipe.steps[i + 1]}</T> : null}
+        {!last ? <T v="small" c={color.textMuted} numberOfLines={2} style={{ marginBottom: space.sm }}>다음: {scaleStepText(recipe.steps[i + 1], Number(scale) || 1)}</T> : null}
 
         <Row gap={space.sm}>
           <Button title="‹ 이전" kind="secondary" style={{ flex: 1 }} onPress={() => setI(Math.max(0, i - 1))} disabled={i === 0} />

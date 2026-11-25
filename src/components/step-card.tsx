@@ -43,6 +43,32 @@ function amountLabel(amount: number, unit: string) {
   return whole ? `${whole}과 ${f[1]}${unit}` : `${f[1]}${unit}`;
 }
 
+/**
+ * 단계 문장 속 '양' 숫자를 인분에 맞게 바꾼다(물 300ml → 2인분이면 600ml).
+ * 시간(분·초)·길이(cm)·불 세기 같은 숫자는 그대로. 구멍·등분처럼 개수가 양이 아닌 말도 그대로.
+ * scaled 조각은 화면에서 초록 굵은 글씨로 보여 '바뀐 숫자'임을 알린다.
+ */
+const AMOUNT_RE = /(\d+(?:\.\d+)?)(?:\s*~\s*(\d+(?:\.\d+)?))?\s*(ml|kg|g|L|큰술|작은술|컵|개|장|모|봉|쪽|알|줌)/g;
+const NOT_AMOUNT = /구멍|등분|조각|덩이|토막|번/;
+export function scaleStepParts(step: string, scale: number): { t: string; scaled?: boolean }[] {
+  if (scale === 1) return [{ t: step }];
+  const out: { t: string; scaled?: boolean }[] = [];
+  let at = 0;
+  for (const m of step.matchAll(AMOUNT_RE)) {
+    const i = m.index ?? 0;
+    const near = step.slice(Math.max(0, i - 6), i + m[0].length + 6);
+    if (NOT_AMOUNT.test(near)) continue;
+    const unit = m[3];
+    const lo = amountLabel(Number(m[1]) * scale, unit);
+    const text = m[2] ? `${lo.replace(unit, '')}~${amountLabel(Number(m[2]) * scale, unit)}` : lo;
+    out.push({ t: step.slice(at, i) }, { t: text, scaled: true });
+    at = i + m[0].length;
+  }
+  out.push({ t: step.slice(at) });
+  return out.filter((x) => x.t);
+}
+export const scaleStepText = (step: string, scale: number) => scaleStepParts(step, scale).map((x) => x.t).join('');
+
 /** 받침(을/를)·(이/가) 고르기 */
 const hasBatchim = (w: string) => {
   const c = w.charCodeAt(w.length - 1) - 0xac00;
@@ -150,7 +176,7 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${index + 1}단계. ${step}${onPress ? ' 눌러서 다음 단계' : ''}`}
+        accessibilityLabel={`${index + 1}단계. ${scaleStepText(step, scale)}${onPress ? ' 눌러서 다음 단계' : ''}`}
         accessibilityHint="옆으로 밀어서 이전·다음 단계로 넘길 수 있어요"
         style={({ pressed }) => [styles.frame, pressed && { transform: [{ scale: 0.99 }] }]}>
         {/* 무지갯빛 테두리 */}
@@ -208,7 +234,9 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
 
           {/* 문장 */}
           <View style={{ flex: 1, justifyContent: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md }}>
-            <Text style={styles.step} lineBreakStrategyIOS="hangul-word">{step}</Text>
+            <Text style={styles.step} lineBreakStrategyIOS="hangul-word">
+              {scaleStepParts(step, scale).map((p, k) => (p.scaled ? <Text key={k} style={styles.stepScaled}>{p.t}</Text> : p.t))}
+            </Text>
             {/* 이 단계에 넣을 재료와 양(요리 시작 전 고른 인분 기준) */}
             {used.length > 0 && (
               <View style={styles.useRow} accessibilityLabel={`넣을 재료: ${used.map((u) => `${u.name} ${amountLabel(u.amount * scale, u.unit)}`).join(', ')}`}>
@@ -258,6 +286,7 @@ const styles = StyleSheet.create({
   bubble: { position: 'absolute', bottom: '100%', right: 8, marginBottom: 18, maxWidth: 150, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
   bubbleText: { ...tx({ fontSize: 13, lineHeight: 17, fontWeight: '800', color: art.ink }) },
   bubbleTail: { position: 'absolute', bottom: -6, right: 30, width: 10, height: 10, backgroundColor: '#fff', borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: art.ink, transform: [{ rotate: '45deg' }] },
+  stepScaled: { color: color.brandDark, fontWeight: '800' },
   useRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   useChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: color.surfaceAlt },
   useName: { ...tx({ fontSize: 15, lineHeight: 20, fontWeight: '700', color: color.text }) },
