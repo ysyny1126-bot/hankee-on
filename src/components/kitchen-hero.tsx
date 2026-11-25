@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Character } from '@/components/character';
 import { FridgeArt } from '@/components/fridge-art';
 import { Icon } from '@/components/icon';
+import { FoodPic, IngPic } from '@/components/pics';
 import { T, tx } from '@/components/ui';
 import { color, shadow, space } from '@/constants/tokens';
 import type { Ingredient } from '@/data/types';
@@ -158,7 +159,7 @@ export function KitchenHero({
         {cardOverride ? cardOverride : r ? (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-              <View style={styles.menuArt}><Text allowFontScaling={false} style={{ fontSize: 30 }}>{r.emoji}</Text></View>
+              <View style={styles.menuArt}><FoodPic id={r.id} name={r.name} emoji={r.emoji} size={58} /></View>
               <View style={{ flex: 1 }}>
                 <T v="small" c={color.textSub}>{when}</T>
                 <Text allowFontScaling={false} style={styles.menuName} numberOfLines={1}>{r.name}{chosen ? '' : ' 어때요?'}</Text>
@@ -173,7 +174,7 @@ export function KitchenHero({
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} accessibilityLabel={`활용할 재료: ${using.map((u) => u.name).join(', ')}`}>
                   {using.map((u) => (
                     <View key={u.id} style={[styles.useChip, u.first && styles.useChipFirst]}>
-                      <Text allowFontScaling={false} style={{ fontSize: 13 }}>{u.emoji}</Text>
+                      <IngPic name={u.name} emoji={u.emoji} size={18} />
                       <T v="tiny" c={u.first ? color.warnDark : color.text} style={{ fontWeight: '700' }}>{u.name}{u.first ? ' · 먼저' : ''}</T>
                     </View>
                   ))}

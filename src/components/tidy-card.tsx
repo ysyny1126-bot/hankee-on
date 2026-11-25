@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { notify } from '@/components/dialog';
 import { lowerLevel, quantityFor, shortAmount } from '@/logic/amount';
 import { Button, Row, T } from '@/components/ui';
+import { ItemPic } from '@/components/pics';
 import { color, radius, space } from '@/constants/tokens';
 import { actions } from '@/data/store';
 import type { Ingredient } from '@/data/types';
@@ -28,7 +29,7 @@ export function TidyCard({ stock, max = 3, wrapStyle, lastCheckAt }: { stock: In
       {rows.map(({ i, kind }) => (
         <View key={i.id} style={{ backgroundColor: color.surface, borderRadius: radius.md, padding: space.sm, gap: 8 }}>
           <Row>
-            <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
+            <ItemPic item={i} size={30} />
             <View style={{ flex: 1 }}>
               <T v="bodyBold">{i.name} <T v="small" c={color.textSub}>{shortAmount(i)}</T></T>
               <T v="tiny" c={kind === 'expired' ? color.danger : color.textSub}>
@@ -100,7 +101,7 @@ function WeeklyCheck({ stock, wrapStyle }: { stock: Ingredient[]; wrapStyle?: St
         return (
           <View key={i.id} style={{ backgroundColor: color.surface, borderRadius: radius.md, padding: space.sm, gap: 8 }}>
             <Row>
-              <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
+              <ItemPic item={i} size={30} />
               <T v="bodyBold" style={{ flex: 1 }}>{i.name} <T v="small" c={color.textSub}>{shortAmount(i)}</T></T>
             </Row>
             <Row gap={6} wrap>

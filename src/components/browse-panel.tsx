@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button, Chip, Row, T } from '@/components/ui';
+import { FoodPic } from '@/components/pics';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { KINDS, MOODS, type KindKey, type MoodKey } from '@/data/taxonomy';
 import type { AppState } from '@/data/types';
@@ -110,7 +111,7 @@ function BrowseCard({ m, s, mood }: { m: RecipeMatch; s: AppState; mood: MoodKey
       accessibilityLabel={`${m.recipe.name}, ${m.recipe.timeMinutes}분, ${m.recipe.difficulty}. ${why}`}
       style={({ pressed }) => ({ ...clay, flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, opacity: pressed ? 0.7 : 1 })}>
       <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: color.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 30 }}>{m.recipe.emoji}</Text>
+        <FoodPic id={m.recipe.id} name={m.recipe.name} emoji={m.recipe.emoji} size={46} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <T v="bodyBold" numberOfLines={1}>{m.recipe.name} <T v="tiny" c={color.textMuted}>{m.recipe.timeMinutes}분 · {m.recipe.difficulty}</T></T>
