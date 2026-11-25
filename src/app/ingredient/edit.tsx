@@ -69,7 +69,7 @@ export default function IngredientEdit() {
       if (r.date && isValidDateKey(r.date)) {
         setExpiry(r.date);
         setExpirySource('package');
-      } else notify('날짜를 또렷하게 읽지 못했어요', '직접 입력해 주세요. 한끼온은 소비기한을 추측하지 않아요.');
+      } else notify('날짜를 또렷하게 읽지 못했어요', '직접 입력해 주세요. 오잘먹은 소비기한을 추측하지 않아요.');
       if (!name && r.productName) applyCatalog(r.productName);
     } catch (e) {
       notify('포장지 읽기 실패', (e as Error).message);
@@ -177,7 +177,7 @@ export default function IngredientEdit() {
 
       <Card>
         <T v="bodyBold">소비기한</T>
-        <T v="small" c={color.textSub}>포장지에 적힌 날짜나 직접 확인한 날짜만 저장해요. 한끼온이 날짜를 추측하지 않아요.</T>
+        <T v="small" c={color.textSub}>포장지에 적힌 날짜나 직접 확인한 날짜만 저장해요. 오잘먹이 날짜를 추측하지 않아요.</T>
         <Field placeholder="YYYY-MM-DD" value={expiry} onChangeText={(t) => { setExpiry(t); setExpirySource('user'); }} />
         <Row wrap>
           {[0, 1, 3, 7].map((n) => (

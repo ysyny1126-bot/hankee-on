@@ -26,7 +26,7 @@ import { setUserUnits } from '@/logic/units';
 import { BUDGET_BANDS, LIFESTYLES } from '@/constants/profile';
 
 /**
- * 한끼온 저장소.
+ * 오잘먹 저장소.
  * 지금은 휴대폰(웹은 브라우저) 안에만 저장한다 → 로그인 없이 바로 쓸 수 있다.
  * 로그인을 붙이면 같은 구조를 서버(예: Supabase)로 옮기면 된다.
  */

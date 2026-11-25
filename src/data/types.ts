@@ -1,5 +1,5 @@
 /**
- * 한끼온 공용 데이터 구조.
+ * 오잘먹 공용 데이터 구조.
  * 모든 화면(냉장고·요리·식단·식사기록·리포트)이 이 한 가지 구조를 함께 읽고 쓴다.
  * 기획서 7장의 테이블(Meal Records, Meal Items, Dietary Goals, Food Preferences, Dietary Reports)과 이름을 맞췄다.
  */

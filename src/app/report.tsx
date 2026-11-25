@@ -80,7 +80,7 @@ export default function Report() {
           <Stat label="요리에 쓴 재료" value={`${flow.usedKinds}가지`} />
           <Stat label="버린 재료" value={`${flow.wasted}개`} />
         </Row>
-        <T v="tiny" c={color.textMuted}>한끼온 레시피로 요리 {flow.cookCount}회{flow.leftovers ? ` · 냉장고에 남은 음식 ${flow.leftovers}개` : ''}</T>
+        <T v="tiny" c={color.textMuted}>오잘먹 레시피로 요리 {flow.cookCount}회{flow.leftovers ? ` · 냉장고에 남은 음식 ${flow.leftovers}개` : ''}</T>
         <LedgerTable rows={ingredientLedger(s, range.start, range.end)} />
         {oftenWasted(s).slice(0, 2).map((w) => (
           <T key={w.name} v="small" c={color.warnDark}>· {eul(w.name)} 최근 두 달 {w.count}번 버렸어요. 다음엔 조금씩 사거나, 사 오자마자 소분해 냉동해 보세요.</T>
@@ -207,7 +207,7 @@ export default function Report() {
       {period === 'monthly' && (
         <Card>
           <T v="h3">식재료 낭비</T>
-          <T v="small" c={color.textSub}>버린 재료 {ws.wasteCount}개 · 약 {ws.wasteValue.toLocaleString()}원 · 한끼온 레시피 요리 {ws.cookCount}회</T>
+          <T v="small" c={color.textSub}>버린 재료 {ws.wasteCount}개 · 약 {ws.wasteValue.toLocaleString()}원 · 오잘먹 레시피 요리 {ws.cookCount}회</T>
         </Card>
       )}
 
@@ -228,7 +228,7 @@ export default function Report() {
           ))}
         </Card>
       )}
-      <T v="tiny" c={color.textMuted} style={{ textAlign: 'center', marginTop: space.sm }}>한끼온의 분석은 건강한 습관을 위한 참고 정보이며 의료적 진단을 대신하지 않아요.</T>
+      <T v="tiny" c={color.textMuted} style={{ textAlign: 'center', marginTop: space.sm }}>오잘먹의 분석은 건강한 습관을 위한 참고 정보이며 의료적 진단을 대신하지 않아요.</T>
     </Screen>
   );
 }

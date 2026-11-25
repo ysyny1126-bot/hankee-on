@@ -73,7 +73,7 @@ export async function syncExpiryNotifications(s: AppState) {
     for (const [i, name] of chunks.entries()) {
       const extra = i === chunks.length - 1 && names.length > chunks.length ? ` 외 ${names.length - chunks.length}개` : '';
       await N.scheduleNotificationAsync({
-        content: { title: '⏰ 소비기한이 다가와요', body: `${name}${extra} — 한끼온에서 활용 레시피를 확인해 보세요.` },
+        content: { title: '⏰ 소비기한이 다가와요', body: `${name}${extra} — 오잘먹에서 활용 레시피를 확인해 보세요.` },
         trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: new Date(at.getTime() + i * 60_000) },
       });
     }

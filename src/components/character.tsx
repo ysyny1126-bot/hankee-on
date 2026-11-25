@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 import { getCharacter } from '@/constants/characters';
 
 /**
- * 한끼온 캐릭터(임시 도형 버전, 말랑 클레이 느낌).
+ * 오잘먹 캐릭터(임시 도형 버전, 말랑 클레이 느낌).
  * 몸 위에 그림자·하이라이트를 겹쳐 입체감을 낸다.
  * - holding: 오늘 먹은 음식 이모지를 그릇에 담아 들고 있다(없으면 빈손).
  * - 완성 에셋(image)이 연결되면 그 이미지를 쓴다.

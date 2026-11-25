@@ -29,7 +29,7 @@ export function parseBackup(text: string): AppState {
   const r = raw as { app?: string; state?: AppState };
   const st = r?.app === MAGIC ? r.state : (raw as AppState);
   if (!st || typeof st !== 'object' || !Array.isArray(st.ingredients) || !Array.isArray(st.meals) || !st.preferences)
-    throw new Error('한끼온 백업 형식이 아니에요.');
+    throw new Error('오잘먹 백업 형식이 아니에요.');
   return st;
 }
 

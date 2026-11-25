@@ -13,7 +13,7 @@ export function WeekRecap({ start, end }: { start: string; end: string }) {
   if (!r.hasData) return null;
   const title = `${s.preferences.nickname || '나'}의 한 주 (${start.slice(5).replace('-', '/')}~${end.slice(5).replace('-', '/')})`;
   const share = async () => {
-    const text = `${title}\n${r.lines.join('\n')}\n— 한끼온`;
+    const text = `${title}\n${r.lines.join('\n')}\n— 오잘먹`;
     try {
       if (Platform.OS !== 'web') await Share.share({ message: text });
       else if (navigator.share) await navigator.share({ text });

@@ -23,7 +23,7 @@ import { Icon } from '@/components/icon';
 import { clay, color, familyFor, font, MAX_WIDTH, radius, shadow, space } from '@/constants/tokens';
 
 /**
- * 한끼온 공용 UI 부품. 모든 화면이 이 부품만 쓰므로 디자인을 바꿀 때 여기와 tokens.ts만 고치면 된다.
+ * 오잘먹 공용 UI 부품. 모든 화면이 이 부품만 쓰므로 디자인을 바꿀 때 여기와 tokens.ts만 고치면 된다.
  */
 
 export function Screen({ children, scroll = true, edges = ['top'] as ('top' | 'bottom')[], footer }: { children: ReactNode; scroll?: boolean; edges?: ('top' | 'bottom')[]; footer?: ReactNode }) {

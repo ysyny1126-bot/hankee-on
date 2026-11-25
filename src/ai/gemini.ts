@@ -1,7 +1,7 @@
 import type { NutritionInfo, StorageType } from '@/data/types';
 
 /**
- * HANKEE AI — Google Gemini(무료 등급) 연결.
+ * 오잘먹 AI — Google Gemini(무료 등급) 연결.
  * 키는 .env 파일의 EXPO_PUBLIC_GEMINI_API_KEY에 둔다(코드·깃에 넣지 않음).
  *
  * ⚠️ 시연용 구조: 지금은 앱에서 Gemini로 바로 요청한다. 이 방식은 앱 안에 키가 들어가므로

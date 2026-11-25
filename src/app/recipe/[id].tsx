@@ -132,7 +132,7 @@ export default function RecipeDetail() {
         <View style={{ backgroundColor: color.warnSoft, borderRadius: radius.md, padding: space.md, gap: 4 }}>
           <T v="bodyBold">🔎 확인 필요 {issues.length}가지</T>
           {issues.slice(0, 4).map((x) => <T key={x} v="small">· {x}</T>)}
-          <T v="tiny" c={color.textSub}>한끼온 기본 레시피와 같은 규칙으로 자동 점검했어요. 만들기 전에 한 번 더 봐 주세요.</T>
+          <T v="tiny" c={color.textSub}>오잘먹 기본 레시피와 같은 규칙으로 자동 점검했어요. 만들기 전에 한 번 더 봐 주세요.</T>
         </View>
       )}
 
@@ -320,7 +320,7 @@ function SourceCard({ recipe, scale }: { recipe: Recipe; scale: number }) {
   const issues = recipe.origin === 'builtin' ? [] : auditRecipe(recipe);
   const lines = [
     recipe.origin === 'builtin'
-      ? '레시피: 한끼온이 1인분으로 정리 · 자동 점검(재료↔순서·시간·양) 통과'
+      ? '레시피: 오잘먹이 1인분으로 정리 · 자동 점검(재료↔순서·시간·양) 통과'
       : `레시피: AI가 만든 추정 레시피 · 자동 점검 ${issues.length ? `확인 필요 ${issues.length}가지` : '통과'}`,
     recipe.nutrition
       ? recipe.nutritionSource?.kind === 'mfds'

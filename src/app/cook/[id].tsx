@@ -67,7 +67,7 @@ export default function CookComplete() {
         mealType,
         mealTime: nowTime(),
         imageUri: recipe.imageUri ?? null,
-        description: '한끼온 레시피로 직접 요리',
+        description: '오잘먹 레시피로 직접 요리',
         sourceType: 'home',
         recipeId: recipe.id,
         items: [
