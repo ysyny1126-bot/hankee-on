@@ -7,20 +7,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Character } from '@/components/character';
 import { FridgeArt } from '@/components/fridge-art';
 import { Icon } from '@/components/icon';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { FoodPic, IngPic } from '@/components/pics';
-import { T, tx } from '@/components/ui';
-import { color, shadow, space } from '@/constants/tokens';
+import { IconButton, T, tx } from '@/components/ui';
+import { color, pastel, shadow, space } from '@/constants/tokens';
 import type { Ingredient } from '@/data/types';
 import type { RecipeMatch } from '@/logic/inventory';
 import { topReasons } from '@/logic/recommend';
 
 /**
- * 홈 히어로(후보 A) — "부엌 장면 + 큰 숫자"
- * 1 왼쪽 위: 오늘 먼저 쓸 재료 수를 크게(걸음 수처럼 한눈에)
- * 2 가운데: 냉장고(누르면 메뉴 카드 화면)와 캐릭터가 부엌에 서 있다
- * 3 아래: 이번 주 집밥 진행(1·3·5회 이정표)
- * 4 오늘의 한 끼 제안 한 줄 + 버튼 2개
- * 숫자는 모두 실제 저장 데이터에서만 나온다.
+ * 홈 히어로 — 장면 연결형(홈화면_후보A 참고)
+ * 1 헤더: 날짜 · 설정
+ * 2 제목 + 개수 칩: '오늘 먼저 쓸 재료 n개'(재료 수는 이 한 곳에만, 냉장고 위 배지는 없음)
+ * 3 장면 카드: 냉장고(누르면 열기)와 캐릭터가 같은 바닥에, 아래에 '냉장고 열기' 버튼(냉장고를 누른 것과 같은 동작)
+ * 4 이번 주 집밥 진행 · 5 오늘의 한 끼 제안
+ * 숫자·말풍선은 모두 실제 저장 데이터에서만 나온다.
  */
 export function KitchenHero({
   characterId,
@@ -93,43 +94,72 @@ export function KitchenHero({
   const ratio = Math.min(1, homeCount / max);
 
   const openFridge = () => router.push(empty ? '/scan/fridge' : '/menu-deck');
+  const [stageW, setStageW] = useState(0);
+  const stageK = stageW ? Math.min(1, stageW / 340) : 1;
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + space.sm }]}>
-      {/* 1. 큰 숫자 */}
-      <View style={styles.head}>
-        <T v="small" c={color.textSub} style={{ fontWeight: '700' }}>{dateLabel}</T>
-        <T v="small" c={color.textSub} style={{ marginTop: space.sm }}>{empty ? '냉장고가 비어 있어요' : big.label}</T>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
-          <Text allowFontScaling={false} style={styles.bigNum} accessibilityLabel={empty ? '재료 0개' : `${big.label} ${big.n}개`}>{empty ? 0 : big.n}</Text>
-          <T v="bodyBold" style={{ marginBottom: 10 }}>개</T>
-        </View>
+      {/* 1. 헤더: 날짜(왼쪽) · 설정(오른쪽, 가장자리 안전 여백) */}
+      <View style={styles.header}>
+        <T v="small" c={color.textSub} style={{ fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{dateLabel}</T>
+        <IconButton label="설정" onPress={() => router.push('/settings')}>
+          <Icon name="settings" size={20} c={color.textSub} />
+        </IconButton>
       </View>
 
-      {/* 2. 부엌: 냉장고 + 캐릭터 */}
-      <View style={styles.kitchen}>
-        <View style={styles.wall} />
-        <View style={styles.counter} />
-        <View style={styles.floor} />
-
-        <Animated.View style={[styles.fridgeSpot, { transform: [{ rotate }] }]}>
-          <Pressable
-            onPress={openFridge}
-            accessibilityRole="button"
-            accessibilityLabel={empty ? '냉장고가 비어 있어요. 재료 넣기' : `냉장고 열기. 재료 ${ingredients.length}개, 만들 수 있는 메뉴 보기`}
-            style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
-            <FridgeArt width={112} items={empty ? [] : peek.map((i) => i.emoji)} badge={firstUse.length} />
-          </Pressable>
-          <View style={styles.tapHint}><T v="tiny" c={color.textSub} style={{ fontWeight: '700' }}>{empty ? '눌러서 채우기' : '눌러서 열기'}</T></View>
-        </Animated.View>
-
-        <View style={styles.charSpot}>
-          <View style={styles.speech}>
-            <T v="small" style={{ fontWeight: '700' }} numberOfLines={2}>{bubble}</T>
-            <View style={styles.speechTail} />
+      {/* 2. 제목 + 개수(재료 수는 화면에서 여기 한 곳에만) */}
+      <View style={styles.titleRow} accessible accessibilityLabel={empty ? '냉장고가 비어 있어요' : `${big.label} ${big.n}개`}>
+        <Text allowFontScaling={false} style={styles.title} numberOfLines={1}>{empty ? '냉장고가 비어 있어요' : big.label}</Text>
+        {!empty && (
+          <View style={styles.countChip}>
+            <Text allowFontScaling={false} style={styles.countNum}>{big.n}</Text>
+            <Text allowFontScaling={false} style={styles.countUnit}>개</Text>
           </View>
-          <Character id={characterId} size={118} mood={r ? 'happy' : 'idle'} holding={r ? r.emoji : null} />
+        )}
+      </View>
+
+      {/* 3. 장면 카드: 냉장고(왼쪽) + 캐릭터(오른쪽)를 같은 바닥에, 아래에 '냉장고 열기' */}
+      <View style={styles.sceneCard}>
+        <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <Defs>
+            <LinearGradient id="scene" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#FFF8EE" />
+              <Stop offset="1" stopColor={pastel.mint} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100" height="100" fill="url(#scene)" />
+        </Svg>
+
+        {/* 무대: 340×232 장면 하나를 카드 폭에 맞춰 통째로 줄인다(좁은 화면에서 말풍선·냉장고·캐릭터가 겹치지 않게) */}
+        <View style={[styles.stageBox, { height: 232 * stageK }]} onLayout={(e) => setStageW(e.nativeEvent.layout.width)}>
+        <View style={[styles.stage, { transform: [{ scale: stageK }] }]}>
+          {/* 같은 바닥: 냉장고와 캐릭터 발밑을 그림자 하나로 */}
+          <View style={styles.floorShadow} />
+          <Animated.View style={[styles.fridgeSpot, { transform: [{ rotate }] }]}>
+            <Pressable
+              onPress={openFridge}
+              accessibilityRole="button"
+              accessibilityLabel={empty ? '냉장고가 비어 있어요. 재료 넣기' : `냉장고 열기. 재료 ${ingredients.length}개, 만들 수 있는 메뉴 보기`}
+              style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
+              <FridgeArt width={116} items={empty ? [] : peek.map((i) => i.emoji)} />
+            </Pressable>
+          </Animated.View>
+
+          <View style={styles.charSpot}>
+            {/* 말풍선: 캐릭터 머리 위, 꼬리가 캐릭터를 가리킨다 */}
+            <View style={styles.speech}>
+              <T v="small" style={{ fontWeight: '700' }} numberOfLines={2}>{bubble}</T>
+              <View style={styles.speechTail} />
+            </View>
+            <Character id={characterId} size={112} mood={r ? 'happy' : 'idle'} holding={r ? r.emoji : null} />
+          </View>
         </View>
+        </View>
+
+        {/* 주요 행동: 냉장고 그림을 누른 것과 같은 동작 */}
+        <Pressable onPress={openFridge} accessibilityRole="button" style={({ pressed }) => [styles.openBtn, pressed && styles.pressed]}>
+          <T v="bodyBold" c={color.onBrand}>{empty ? '냉장고 채우기' : '냉장고 열기'}</T>
+        </Pressable>
       </View>
 
       {/* 3. 이번 주 집밥 진행 */}
@@ -211,21 +241,26 @@ export function KitchenHero({
 }
 
 const SCENE = '#FCEBD3';
-const WALL = '#F8DDBB';
 
 const styles = StyleSheet.create({
   wrap: { backgroundColor: SCENE, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingBottom: space.lg, marginHorizontal: -space.lg, marginTop: -space.md, overflow: 'hidden' },
-  head: { paddingHorizontal: space.lg },
-  bigNum: { ...tx({ fontSize: 64, lineHeight: 72, fontWeight: '800', letterSpacing: -2, color: color.text }) },
-  kitchen: { height: 230, marginTop: -8 },
-  wall: { position: 'absolute', left: 0, right: 0, top: 0, height: 170, backgroundColor: SCENE },
-  counter: { position: 'absolute', left: 0, right: 0, top: 168, height: 8, backgroundColor: '#E9CFA9' },
-  floor: { position: 'absolute', left: 0, right: 0, top: 176, bottom: 0, backgroundColor: WALL },
-  fridgeSpot: { position: 'absolute', left: '10%', bottom: 18, alignItems: 'center' },
-  tapHint: { marginTop: 6, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  charSpot: { position: 'absolute', right: '6%', bottom: 14, alignItems: 'center', width: 170 },
-  speech: { backgroundColor: color.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 4, maxWidth: 170, ...shadow.soft },
-  speechTail: { position: 'absolute', bottom: -5, left: '45%', width: 10, height: 10, backgroundColor: color.surface, transform: [{ rotate: '45deg' }] },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingHorizontal: space.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg, marginTop: space.xs },
+  title: { ...tx({ fontSize: 24, lineHeight: 32, fontWeight: '800', letterSpacing: -0.6, color: color.text }), flexShrink: 1 },
+  countChip: { flexDirection: 'row', alignItems: 'baseline', gap: 2, paddingHorizontal: 12, paddingVertical: 2, borderRadius: 999, backgroundColor: '#F8D9A0' },
+  countNum: { ...tx({ fontSize: 24, lineHeight: 32, fontWeight: '800', color: color.text }) },
+  countUnit: { ...tx({ fontSize: 14, lineHeight: 20, fontWeight: '700', color: color.text }) },
+  // 장면 카드: 크림 → 민트, 둥근 모서리. 안에 냉장고·캐릭터 무대와 '냉장고 열기' 버튼
+  sceneCard: { marginHorizontal: space.lg, marginTop: space.md, borderRadius: 28, overflow: 'hidden', paddingBottom: space.md, ...shadow.soft },
+  stageBox: { marginHorizontal: space.sm, alignItems: 'center', justifyContent: 'flex-start', overflow: 'visible' },
+  stage: { width: 340, height: 232, transformOrigin: 'top center' },
+  floorShadow: { position: 'absolute', left: 14, right: 14, bottom: 10, height: 16, borderRadius: 999, backgroundColor: 'rgba(95,140,110,0.16)' },
+  // 냉장고(왼쪽)와 캐릭터(오른쪽)는 같은 바닥선(bottom 18)에 선다
+  fridgeSpot: { position: 'absolute', left: 26, bottom: 18 },
+  charSpot: { position: 'absolute', right: 6, bottom: 14, alignItems: 'center', width: 168 },
+  speech: { backgroundColor: color.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, maxWidth: 168, ...shadow.soft },
+  speechTail: { position: 'absolute', bottom: -5, left: '50%', marginLeft: -5, width: 10, height: 10, backgroundColor: color.surface, transform: [{ rotate: '45deg' }] },
+  openBtn: { marginHorizontal: space.lg, minHeight: 52, borderRadius: 999, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center' },
   progress: { paddingHorizontal: space.lg, marginTop: space.md, gap: 8 },
   track: { height: 12, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.75)', justifyContent: 'center' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 6, backgroundColor: color.brand },
