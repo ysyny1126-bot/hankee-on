@@ -6,7 +6,7 @@ import { Character } from '@/components/character';
 import { FoodPic, IngPic } from '@/components/pics';
 import { T, tx } from '@/components/ui';
 import { art, color, holo, pastel, space } from '@/constants/tokens';
-import { findCatalog } from '@/data/catalog';
+import { findCatalog, INGREDIENT_CATALOG } from '@/data/catalog';
 import type { Recipe } from '@/data/types';
 import { formatAmount } from '@/logic/inventory';
 import { handyMeasure } from '@/logic/units';
@@ -18,16 +18,51 @@ import { handyMeasure } from '@/logic/units';
  * '어떤 재료를 + 조리 소리'(두부 넣고 보글보글 …)를 말풍선으로 말한다. 마지막 단계에서는 웃는 얼굴.
  */
 
-/** 이 단계 문장에 나오는 재료(이름·별칭으로 찾기, 최대 3개) */
+/** 한글 음절인지 */
+const isHangul = (ch: string | undefined) => !!ch && ch >= '가' && ch <= '힣';
+/** 한 글자 재료(파·깨·김·무 …) 뒤에 와도 되는 말(조사·구분점). 이 밖의 한글이 붙으면 다른 낱말(깨끗이·무쳐 …)로 본다 */
+const PARTICLE = /^(을|를|이|가|은|는|과|와|도|만|에|의|로|으로|랑|·|,|\s|\)|$)/;
+
+let NAMES: { n: string; c: string }[] | null = null;
+/** 재료 사전의 이름·별칭(긴 것부터) — '양파'를 먼저 지워야 그 안의 '파'를 대파로 잘못 읽지 않는다 */
+function catalogNames() {
+  if (!NAMES) {
+    NAMES = [];
+    for (const c of INGREDIENT_CATALOG) for (const n of [c.name, ...(c.aliases ?? [])]) for (const v of new Set([n, n.replace(/캔$/, '')])) if (v) NAMES.push({ n: v, c: c.name });
+    NAMES.sort((a, b) => b.n.length - a.n.length);
+  }
+  return NAMES;
+}
+
+/** 문장에 실제로 나온 재료(사전 이름 기준)와 그 첫 위치 */
+export function mentionedIngredients(step: string): Map<string, number> {
+  const found = new Map<string, number>();
+  let rest = step;
+  for (const { n, c } of catalogNames()) {
+    let from = 0;
+    for (;;) {
+      const i = rest.indexOf(n, from);
+      if (i < 0) break;
+      from = i + 1;
+      // 한 글자 이름은 앞이 한글이 아니고 뒤가 조사·구분점일 때만(깨끗이의 '깨', 무쳐의 '무'는 빼기)
+      if (n.length === 1 && (isHangul(rest[i - 1]) || !PARTICLE.test(rest.slice(i + 1)))) continue;
+      if (!found.has(c)) found.set(c, i);
+      rest = rest.slice(0, i) + ' '.repeat(n.length) + rest.slice(i + n.length);
+    }
+  }
+  return found;
+}
+
+/** 이 단계 문장에 나오는 재료(레시피 재료 목록 순서, 최대 3개) */
 function stepIngredients(r: Recipe, step: string) {
+  const found = mentionedIngredients(step);
   return r.ingredients
     .filter((ing) => {
       const c = findCatalog(ing.name);
-      const keys = [ing.name, c?.name, ...(c?.aliases ?? [])].filter((k): k is string => !!k && k.length >= 1).map((k) => k.replace(/캔$/, ''));
-      return keys.some((k) => step.includes(k));
+      return c ? found.has(c.name) : step.includes(ing.name);
     })
     .slice(0, 3)
-    .map((ing) => ({ name: ing.name, emoji: findCatalog(ing.name)?.emoji ?? '🥄', amount: ing.amount, unit: ing.unit }));
+    .map((ing) => ({ name: ing.name, emoji: findCatalog(ing.name)?.emoji ?? '🥄', amount: ing.amount, unit: ing.unit, at: found.get(findCatalog(ing.name)?.name ?? '') ?? step.indexOf(ing.name) }));
 }
 
 /** 세는 단위(개·봉·모 …)는 0.3개 대신 1/3개처럼 — 요리할 때 감이 오게 */
@@ -49,14 +84,14 @@ function amountLabel(amount: number, unit: string) {
  * scaled 조각은 화면에서 초록 굵은 글씨로 보여 '바뀐 숫자'임을 알린다.
  */
 const AMOUNT_RE = /(\d+(?:\.\d+)?)(?:\s*~\s*(\d+(?:\.\d+)?))?\s*(ml|kg|g|L|큰술|작은술|컵|개|장|모|봉|쪽|알|줌)/g;
-const NOT_AMOUNT = /구멍|등분|조각|덩이|토막|번/;
+const NOT_AMOUNT = /구멍|등분|조각|덩이|토막|번|분량/;
 export function scaleStepParts(step: string, scale: number): { t: string; scaled?: boolean }[] {
   if (scale === 1) return [{ t: step }];
   const out: { t: string; scaled?: boolean }[] = [];
   let at = 0;
   for (const m of step.matchAll(AMOUNT_RE)) {
     const i = m.index ?? 0;
-    const near = step.slice(Math.max(0, i - 6), i + m[0].length + 6);
+    const near = step.slice(Math.max(0, i - 6), i + m[0].length + 14);
     if (NOT_AMOUNT.test(near)) continue;
     const unit = m[3];
     const lo = amountLabel(Number(m[1]) * scale, unit);
@@ -75,38 +110,69 @@ const hasBatchim = (w: string) => {
   return c >= 0 && c <= 11171 && c % 28 !== 0;
 };
 
+/** (으)로 고르기: 받침이 있으면 '으로'(ㄹ 받침은 '로') */
+const euro = (w: string) => {
+  const c = w.charCodeAt(w.length - 1) - 0xac00;
+  return c >= 0 && c <= 11171 && c % 28 !== 0 && c % 28 !== 8 ? '으로' : '로';
+};
+
+/** 단계 문장에서 조리 소리 하나 고르기(앞에 있는 규칙이 먼저). 'add'는 재료를 더하는 동작(넣기·올리기·뿌리기 …) */
+const SOUNDS: { re: RegExp; sound: string; add?: boolean }[] = [
+  { re: /끓/, sound: '보글보글' },
+  { re: /볶/, sound: '달달달' },
+  { re: /굽|구워|구운|부치|부쳐|튀기|튀겨/, sound: '지글지글' },
+  { re: /삶|데치|데쳐/, sound: '퐁당!' },
+  { re: /썰|다지|다져|자르|잘라|찢/, sound: '쓱싹쓱싹' },
+  { re: /섞|비비|비벼|버무|무치|무쳐|풀어/, sound: '쓱쓱' },
+  { re: /전자레인지|돌려/, sound: '띵!' },
+  { re: /재워/, sound: '재우는 중' },
+  { re: /불려|불린/, sound: '불리는 중' },
+  { re: /식혀|두어/, sound: '잠깐 기다려요' },
+  { re: /뿌려|뿌리고|뿌리면/, sound: '솔솔', add: true },
+  { re: /담아|담고|올려|올리고(?!당)|곁들/, sound: '짠!', add: true },
+  { re: /넣/, sound: '넣어요!', add: true },
+];
+// 재료를 더하는 동사: [찾을 말, ~고, ~면]
+const VERBS: [RegExp, string, string][] = [
+  [/넣/, '넣고', '넣으면'],
+  [/풀어|풀고/, '풀고', '풀면'],
+  [/올려|올리고(?!당)/, '올리고', '올리면'],
+  [/뿌려|뿌리고|뿌리면/, '뿌리고', '뿌리면'],
+];
+
 /**
  * 캐릭터 멘트: '어떤 재료를' + 조리 소리. 예) 애호박·양파·버섯을 쓱싹쓱싹 / 두부 넣고 보글보글 / 청양고추 넣으면 완성!
+ * 동사(넣고·뿌리고 …)는 바로 앞에 그 재료가 있을 때만 붙인다 — '새우 물기를 닦고 소금을 뿌려요'에서 뿌리는 건 새우가 아니다.
  * 양은 아래 '넣을 재료' 줄이 크게 보여 주므로 멘트에는 이름만(짧게).
  */
-function stepSpeech(step: string, names: string[], last: boolean) {
-  const hit = SOUNDS.find(([re]) => re.test(step))?.[1];
-  if (!names.length) return last ? '거의 다 됐어요!' : hit ?? '좋아요!';
-  const n = names.join('·');
+function stepSpeech(step: string, used: { name: string; at: number }[], last: boolean) {
+  const hit = SOUNDS.find((x) => x.re.test(step));
+  if (!used.length) return last ? '거의 다 됐어요!' : hit?.add ? '좋아요!' : hit?.sound ?? '좋아요!';
+  const n = used.map((u) => u.name).join('·');
   const eul = hasBatchim(n) ? '을' : '를';
-  // [문장에서 찾을 말, ~고, ~면, ~요]
-  const v = ([[/넣/, '넣고', '넣으면', '넣어요!'], [/풀/, '풀고', '풀면', '풀어요'], [/올려|올리/, '올리고', '올리면', '올려요'], [/뿌려|뿌리/, '뿌리고', '뿌리면', '뿌려요']] as const).find(([re]) => re.test(step));
-  const verb = v?.[1];
-  if (last) return v ? `${n} ${v[2]} 완성!` : `${n}${eul} 마무리!`;
-  if (!hit) return v ? `${n} ${v[3]}` : `${n} 준비!`;
-  if (hit === '쓱싹쓱싹' || hit === '쓱쓱') return `${n}${eul} ${hit}`;
-  if (hit === '퐁당!' && verb === '넣고') return `${n} 퐁당!`;
-  return verb ? `${n} ${verb} ${hit}` : `${n}${eul} ${hit}`;
+  // 동사 앞 10글자 안에 재료가 있고, 그 사이에 소금·후추 같은 다른 대상이 없을 때만 동사를 붙인다
+  // (재료 이름 '뒤'부터 동사까지만 본다 — '콩나물을' 속 '물을'을 다른 대상으로 오해하지 않게)
+  const attachedTo = (x: (typeof VERBS)[number]) => {
+    const i = step.search(x[0]);
+    return i >= 0 && used.some((u) => u.at >= 0 && u.at < i && i - u.at <= 14 && !/소금|후추|물에|물을/.test(step.slice(u.at + u.name.length, i)));
+  };
+  const verb = VERBS.find(attachedTo) ?? null;
+  if (last) return verb ? `${n} ${verb[2]} 완성!` : `${n}${euro(n)} 마무리!`;
+  if (!hit) return `${n} 준비!`;
+  if (hit.add) {
+    if (!verb) return `${n} 준비!`;
+    if (hit.sound === '넣어요!') return /끓는|국물|물에/.test(step) ? `${n} 퐁당!` : `${n} 넣어요!`;
+    return `${n} ${verb[1]} ${hit.sound}`;
+  }
+  if (hit.sound === '재우는 중' || hit.sound === '불리는 중') return `${n} ${hit.sound}!`;
+  if (hit.sound === '잠깐 기다려요') return `${n}, 잠깐 기다려요`;
+  if (hit.sound === '띵!') return `${n} 띵!`;
+  if (hit.sound === '쓱싹쓱싹' || hit.sound === '쓱쓱') return `${n}${eul} ${hit.sound}`;
+  return verb ? `${n} ${verb[1]} ${hit.sound}` : `${n}${eul} ${hit.sound}`;
 }
 
-/** 단계 문장에서 조리 소리 하나 고르기(앞에 있는 규칙이 먼저) */
-const SOUNDS: [RegExp, string][] = [
-  [/끓/, '보글보글'],
-  [/볶/, '달달달'],
-  [/굽|구워|구운|부치|부쳐|튀기|튀겨/, '지글지글'],
-  [/삶|데치|데쳐/, '퐁당!'],
-  [/썰|다지|다져|자르|잘라|찢/, '쓱싹쓱싹'],
-  [/섞|비비|비벼|버무|무치|무쳐|풀어/, '쓱쓱'],
-  [/전자레인지|돌려/, '띵!'],
-  [/식혀|두어|재워|불려/, '잠깐 기다려요'],
-  [/담|올리|올려|뿌리|뿌려|곁들/, '짠!'],
-  [/넣/, '퐁당!'],
-];
+/** 문장이 길면 글씨를 조금 줄인다(카드 한 장에 다 들어가게) */
+const stepSize = (t: string) => (t.length > 60 ? { fontSize: 20, lineHeight: 30 } : t.length > 38 ? { fontSize: 22, lineHeight: 33 } : null);
 
 /** 이만큼(px) 넘게 밀면 다음·이전 단계로 */
 const SWIPE = 70;
@@ -116,7 +182,9 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
   const total = recipe.steps.length;
   const used = stepIngredients(recipe, step);
   const last = index === total - 1;
-  const speech = stepSpeech(step, used.map((u) => u.name), last);
+  const speech = stepSpeech(step, used, last);
+  // 같은 재료가 앞 단계에도 나왔으면(썰기 → 넣기) 양은 처음 단계에만 — 두 번 넣는 것으로 오해하지 않게
+  const again = (name: string) => recipe.steps.slice(0, index).some((st) => stepIngredients(recipe, st).some((u) => u.name === name));
   const [winH, setWinH] = useState(0);
 
   // 단계가 바뀌면 살짝 아래에서 올라오며 나타남
@@ -233,20 +301,21 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
           </View>
 
           {/* 문장 */}
-          <View style={{ flex: 1, justifyContent: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md }}>
-            <Text style={styles.step} lineBreakStrategyIOS="hangul-word">
+          <View style={{ flexGrow: 1, flexShrink: 0, justifyContent: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md }}>
+            <Text style={[styles.step, stepSize(step)]} lineBreakStrategyIOS="hangul-word">
               {scaleStepParts(step, scale).map((p, k) => (p.scaled ? <Text key={k} style={styles.stepScaled}>{p.t}</Text> : p.t))}
             </Text>
             {/* 이 단계에 넣을 재료와 양(요리 시작 전 고른 인분 기준) */}
             {used.length > 0 && (
-              <View style={styles.useRow} accessibilityLabel={`넣을 재료: ${used.map((u) => `${u.name} ${amountLabel(u.amount * scale, u.unit)}`).join(', ')}`}>
+              <View style={styles.useRow} accessibilityLabel={`넣을 재료: ${used.map((u) => `${u.name} ${again(u.name) ? '앞에서 준비한 것' : amountLabel(u.amount * scale, u.unit)}`).join(', ')}`}>
                 {used.map((u) => {
-                  const handy = handyMeasure(u.amount * scale, u.unit);
+                  const prev = again(u.name);
+                  const handy = prev ? null : handyMeasure(u.amount * scale, u.unit);
                   return (
                     <View key={u.name} style={styles.useChip}>
                       <IngPic name={u.name} emoji={u.emoji} size={30} />
                       <View>
-                        <Text allowFontScaling={false} style={styles.useName}>{u.name} <Text style={styles.useAmt}>{amountLabel(u.amount * scale, u.unit)}</Text></Text>
+                        <Text allowFontScaling={false} style={styles.useName}>{u.name} {prev ? <Text style={styles.usePrev}>준비한 것</Text> : <Text style={styles.useAmt}>{amountLabel(u.amount * scale, u.unit)}</Text>}</Text>
                         {handy ? <Text allowFontScaling={false} style={styles.useHandy}>{handy}</Text> : null}
                       </View>
                     </View>
@@ -272,7 +341,8 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
 const styles = StyleSheet.create({
   frame: { flex: 1, borderRadius: 28, overflow: 'hidden', padding: 6, shadowColor: '#3A2E26', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   inner: { flex: 1, borderRadius: 22, overflow: 'hidden', backgroundColor: art.paper },
-  window: { backgroundColor: pastel.mint, height: '50%', minHeight: 180, alignItems: 'center', justifyContent: 'center', margin: 10, marginBottom: 0, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(58,46,38,0.08)' },
+  // 그림 창: 기본은 카드의 절반, 문장·재료가 길면 먼저 줄어든다(최소 140)
+  window: { backgroundColor: pastel.mint, flexBasis: '50%', flexShrink: 1, minHeight: 140, alignItems: 'center', justifyContent: 'center', margin: 10, marginBottom: 0, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(58,46,38,0.08)' },
   sticker: { position: 'absolute', top: 10, left: 10, width: 54, height: 54, borderRadius: 27, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#fff', transform: [{ rotate: '-8deg' }] },
   stickerSmall: { ...tx({ fontSize: 9, lineHeight: 11, fontWeight: '800', color: '#fff', letterSpacing: 1 }) },
   stickerNum: { ...tx({ fontSize: 20, lineHeight: 22, fontWeight: '800', color: '#fff' }) },
@@ -291,6 +361,7 @@ const styles = StyleSheet.create({
   useChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: color.surfaceAlt },
   useName: { ...tx({ fontSize: 15, lineHeight: 20, fontWeight: '700', color: color.text }) },
   useAmt: { color: color.brandDark, fontWeight: '800' },
+  usePrev: { color: color.textSub, fontWeight: '600', fontSize: 13 },
   useHandy: { ...tx({ fontSize: 11, lineHeight: 14, color: color.textSub }) },
   step: { ...tx({ fontSize: 26, lineHeight: 38, fontWeight: '700', color: color.text }) },
   plate: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, paddingTop: 4 },
