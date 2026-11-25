@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { notify } from '@/components/dialog';
 import { Badge, Button, Card, Chip, Emoji, Empty, ListItem, Row, Screen, Segmented, T } from '@/components/ui';
+import { FoodPic } from '@/components/pics';
 import { PlanCatchUp } from '@/components/plan-catch-up';
 import { color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
@@ -93,7 +94,7 @@ export default function Meal() {
                   <View key={p.id} style={{ opacity: done ? 0.6 : 1 }}>
                     <ListItem
                       href={lo ? '/fridge' : `/recipe/${r!.id}`}
-                      left={<Emoji size={22}>{lo ? '🥡' : r!.emoji}</Emoji>}
+                      left={<Emoji size={22}>{lo ? <FoodPic name={lo.name} emoji="🥡" size={34} /> : <FoodPic id={r!.id} name={r!.name} emoji={r!.emoji} size={34} />}</Emoji>}
                       title={`${MEAL_LABEL[p.mealType]} · ${name}`}
                       sub={done ? '먹고 기록했어요' : p.reason}
                       right={

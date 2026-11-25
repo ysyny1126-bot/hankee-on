@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Character } from '@/components/character';
 import { KitchenHero } from '@/components/kitchen-hero';
@@ -14,6 +14,7 @@ import { missedPlans, PlanCatchUp } from '@/components/plan-catch-up';
 import { notify } from '@/components/dialog';
 import { Icon, type IconName } from '@/components/icon';
 import { Button, Screen, T } from '@/components/ui';
+import { FoodPic } from '@/components/pics';
 import { color, radius, space } from '@/constants/tokens';
 import { actions, useAppState } from '@/data/store';
 import type { Ingredient, MealType } from '@/data/types';
@@ -137,7 +138,7 @@ export default function Home() {
         <>
       {leftovers.slice(0, 1).map((lo) => (
         <View key={lo.id} style={[styles.recordBar, { marginTop: space.sm }]}>
-          <Text style={{ fontSize: 22 }}>{lo.emoji}</Text>
+          <FoodPic name={lo.name} emoji={lo.emoji} size={32} />
           <View style={{ flex: 1 }}>
             <T v="bodyBold">남은 {lo.name} {lo.quantity}인분</T>
             <T v="tiny" c={color.textSub}>{lo.expiryDate ? `${whenLabel(lo)} · ` : ''}다시 요리하지 않아도 돼요</T>

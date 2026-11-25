@@ -1,12 +1,13 @@
 import { router, Stack as RStack } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { confirmAsync, notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { TidyCard } from '@/components/tidy-card';
 import { FridgeArt } from '@/components/fridge-art';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
+import { ItemPic } from '@/components/pics';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { KeepInfo } from '@/components/keep-info';
 import { shortAmount, fullOf, isRough, LEVELS, levelOf, lowerLevel, quantityFor } from '@/logic/amount';
@@ -104,7 +105,7 @@ function QuickList({ items, warn }: { items: Ingredient[]; warn: number }) {
         const low = rough ? lowerLevel(i) : null;
         return (
           <View key={i.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: space.md, paddingVertical: 8, borderTopWidth: idx ? 1 : 0, borderTopColor: color.border }}>
-            <Text style={{ fontSize: 22 }}>{i.emoji}</Text>
+            <ItemPic item={i} size={30} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <T v="bodyBold" numberOfLines={1}>{i.name}</T>
               <T v="tiny" c={tone} numberOfLines={1}>{shortAmount(i)} · {d === null ? '기한 미입력' : dDayLabel(i.expiryDate!)}</T>
@@ -175,7 +176,7 @@ function Tile({ item: i, warn, onPress }: { item: Ingredient; warn: number; onPr
   const tone = d === null ? color.textMuted : d < 0 || d === 0 ? color.danger : d <= warn ? color.warnDark : color.textSub;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ width: '25%', alignItems: 'center', paddingVertical: space.sm, gap: 2, opacity: pressed ? 0.6 : 1 })} accessibilityLabel={`${i.name} ${d === null ? '기한 없음' : dDayLabel(i.expiryDate!)}`}>
-      <Text style={{ fontSize: 30 }}>{i.emoji}</Text>
+      <ItemPic item={i} size={46} />
       <T v="tiny" numberOfLines={1} style={{ fontWeight: '600' }}>{i.name}</T>
       <T v="tiny" c={tone}>{d === null ? '—' : dDayLabel(i.expiryDate!)}</T>
     </Pressable>
@@ -201,7 +202,7 @@ function IngredientSheet({ item: i, onClose }: { item: Ingredient; onClose: () =
     <>
       <Row style={{ justifyContent: 'space-between' }}>
         <Row>
-          <Text style={{ fontSize: 34 }}>{i.emoji}</Text>
+          <ItemPic item={i} size={52} />
           <T v="h2">{i.name}</T>
         </Row>
         {d !== null ? <Badge label={dDayLabel(i.expiryDate!)} tone={d <= 0 ? 'danger' : d <= s.notifications.expiryDaysBefore ? 'warn' : 'fresh'} /> : null}

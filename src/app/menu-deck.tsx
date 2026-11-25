@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FridgeArt } from '@/components/fridge-art';
 import { Icon } from '@/components/icon';
 import { T, tx } from '@/components/ui';
+import { FoodPic, ItemPic, foodImage } from '@/components/pics';
 import { color, MAX_WIDTH, shadow, space } from '@/constants/tokens';
 import { actions, useAppState } from '@/data/store';
 import type { MealType } from '@/data/types';
@@ -143,7 +144,7 @@ function MenuCard({ m, width, art, tint, onPress }: { m: RecipeMatch; width: num
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${r.name}, ${r.timeMinutes}분, ${missing.length ? `${missing.length}개 더 필요` : '재료 다 있어요'}. 눌러서 레시피 보기`} style={({ pressed }) => [styles.card, { width }, pressed && { opacity: 0.9 }]}>
       <View style={[styles.art, { backgroundColor: tint, height: art }]}>
-        <View style={styles.plate}><Text style={{ fontSize: 64, lineHeight: 76 }}>{r.emoji}</Text></View>
+        {foodImage(r.id, r.name) ? <FoodPic id={r.id} name={r.name} emoji={r.emoji} size={168} /> : <View style={styles.plate}><Text style={{ fontSize: 64, lineHeight: 76 }}>{r.emoji}</Text></View>}
         <View style={styles.time}><T v="tiny" style={{ fontWeight: '800' }}>{r.timeMinutes}분 · {r.difficulty}</T></View>
       </View>
       <View style={{ padding: space.lg, gap: 10 }}>
@@ -152,7 +153,7 @@ function MenuCard({ m, width, art, tint, onPress }: { m: RecipeMatch; width: num
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             {first.map((i) => (
               <View key={i.id} style={styles.chip}>
-                <Text style={{ fontSize: 13 }}>{i.emoji}</Text>
+                <ItemPic item={i} size={18} />
                 <T v="tiny" c={color.warnDark} style={{ fontWeight: '800' }}>{i.name} {dDayLabel(i.expiryDate!)}</T>
               </View>
             ))}

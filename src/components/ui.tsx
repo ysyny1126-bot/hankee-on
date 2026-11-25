@@ -303,10 +303,10 @@ export function ListItem({ left, title, sub, right, onPress, href }: { left?: Re
   return body;
 }
 
-export function Emoji({ children, size = 28, bg = color.surfaceAlt }: { children: string; size?: number; bg?: string }) {
+export function Emoji({ children, size = 28, bg = color.surfaceAlt }: { children: ReactNode; size?: number; bg?: string }) {
   return (
     <View style={{ width: size + 16, height: size + 16, borderRadius: radius.md, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: size * 0.8 }}>{children}</Text>
+      {typeof children === 'string' ? <Text style={{ fontSize: size * 0.8 }}>{children}</Text> : children}
     </View>
   );
 }

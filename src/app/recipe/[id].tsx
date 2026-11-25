@@ -7,6 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { youtubeSearchUrl } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, T } from '@/components/ui';
+import { FoodPic, ItemPic } from '@/components/pics';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAllRecipes, useAppState } from '@/data/store';
 import { handyMeasure } from '@/logic/units';
@@ -77,7 +78,7 @@ export default function RecipeDetail() {
         {recipe.imageUri ? (
           <Image source={{ uri: recipe.imageUri }} style={{ width: 140, height: 140, borderRadius: 70 }} contentFit="cover" />
         ) : (
-          <Text style={{ fontSize: 84, lineHeight: 100 }}>{recipe.emoji}</Text>
+          <FoodPic id={recipe.id} name={recipe.name} emoji={recipe.emoji} size={150} />
         )}
         <Row gap={6}>
           <T v="h1">{recipe.name}</T>
@@ -164,7 +165,7 @@ export default function RecipeDetail() {
                         <View style={{ width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: on ? color.brandDark : color.borderStrong, backgroundColor: on ? color.brandDark : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                           {on ? <T v="small" c="#fff" style={{ fontWeight: '900' }}>✓</T> : null}
                         </View>
-                        <Text style={{ fontSize: 22 }}>{b.emoji}</Text>
+                        <ItemPic item={b} size={30} />
                         <View style={{ flex: 1 }}>
                           <T v="bodyBold" c={on ? color.textMuted : color.text} style={on ? { textDecorationLine: 'line-through' } : undefined}>{b.name}</T>
                           <T v="tiny" c={first ? color.warnDark : color.textSub}>
@@ -373,7 +374,7 @@ function NextMeals({ list }: { list: { recipe: Recipe; shared: string[] }[] }) {
       <T v="bodyBold">🛒 같은 재료로 두 끼 더</T>
       {list.map(({ recipe: r, shared }) => (
         <Pressable key={r.id} accessibilityRole="link" onPress={() => router.push(`/recipe/${r.id}`)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, opacity: pressed ? 0.6 : 1 })}>
-          <Text style={{ fontSize: 24 }}>{r.emoji}</Text>
+          <FoodPic id={r.id} name={r.name} emoji={r.emoji} size={36} />
           <View style={{ flex: 1 }}>
             <T v="bodyBold">{r.name}</T>
             <T v="tiny" c={color.textSub}>{shared.join('·')} 이어서 써요</T>

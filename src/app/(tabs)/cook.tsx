@@ -8,6 +8,7 @@ import { Icon } from '@/components/icon';
 import { BrowseList, KindGrid } from '@/components/browse-panel';
 import type { KindKey } from '@/data/taxonomy';
 import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader, T } from '@/components/ui';
+import { FoodPic } from '@/components/pics';
 import { clay, color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
@@ -190,7 +191,7 @@ export default function Cook() {
             if (!r) return null;
             return (
               <Pressable key={p.id} onPress={() => router.push(`/recipe/${r.id}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.sm }}>
-                <Text style={{ fontSize: 24 }}>{r.emoji}</Text>
+                <FoodPic id={r.id} name={r.name} emoji={r.emoji} size={36} />
                 <T v="small" c={color.textMuted} style={{ width: 64 }}>{p.date === today ? '오늘' : '내일'} {MEAL_LABEL[p.mealType]}</T>
                 <T v="bodyBold" style={{ flex: 1 }} c={p.status === 'done' ? color.textMuted : color.text}>{p.leftoverId ? `남은 ${r.name}` : r.name}</T>
                 {p.status === 'done' ? <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>먹음 ✓</T> : <T c={color.textMuted}>›</T>}
@@ -231,7 +232,7 @@ function MenuCard({ m }: { m: RecipeMatch }) {
   return (
     <Pressable onPress={() => router.push(`/recipe/${m.recipe.id}`)} style={({ pressed }) => ({ flex: 1, ...clay, paddingVertical: space.lg, paddingHorizontal: 6, alignItems: 'center', gap: 4, opacity: pressed ? 0.7 : 1 })}>
       {m.usesExpiring.length > 0 && <View style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: color.warn }} />}
-      <Text style={{ fontSize: 40 }}>{m.recipe.emoji}</Text>
+      <FoodPic id={m.recipe.id} name={m.recipe.name} emoji={m.recipe.emoji} size={64} />
       <T v="bodyBold" numberOfLines={1} style={{ textAlign: 'center' }}>{m.recipe.name}</T>
       <T v="tiny" c={color.textSub}>⏱ {m.recipe.timeMinutes}분</T>
       <T v="tiny" c={ok ? color.fresh : color.textMuted} style={{ fontWeight: '700' }}>{ok ? '✓ 재료 있음' : `${m.missingRequired.length}개 부족`}</T>
