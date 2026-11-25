@@ -8,6 +8,7 @@ import { youtubeSearchUrl } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, T } from '@/components/ui';
 import { FoodPic, ItemPic } from '@/components/pics';
+import { scaleStepParts } from '@/components/step-card';
 import { clay, color, radius, space } from '@/constants/tokens';
 import { actions, findRecipe, useAllRecipes, useAppState } from '@/data/store';
 import { handyMeasure } from '@/logic/units';
@@ -212,6 +213,8 @@ export default function RecipeDetail() {
         </>
       )}
 
+      <StepsPreview recipe={recipe} scale={scale} />
+
       <KeepCard recipe={recipe} />
 
       {TWICE[recipe.id] ? (
@@ -317,6 +320,41 @@ function RecipeNote({ recipeId }: { recipeId: string }) {
 }
 
 /** R6: 이 레시피를 믿어도 되는 근거 — 레시피·영양·보관 각각 어디서 왔는지 한 줄씩 */
+/** 만드는 법 미리 보기: 처음엔 접어 두고, 펼치면 고른 인분에 맞춘 단계 문장(바뀐 양은 초록 굵게) */
+function StepsPreview({ recipe, scale }: { recipe: Recipe; scale: number }) {
+  const [open, setOpen] = useState(false);
+  if (!recipe.steps.length) return null;
+  return (
+    <View style={{ ...clay, padding: space.md, gap: space.sm }}>
+      <Pressable
+        onPress={() => setOpen(!open)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`만드는 법 미리 보기, ${recipe.steps.length}단계, ${open ? '눌러서 접기' : '눌러서 펼치기'}`}
+        hitSlop={6}
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 32 }}>
+        <T v="bodyBold">📖 만드는 법 미리 보기 · {recipe.steps.length}단계</T>
+        <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>{open ? '접기 ▴' : '펼치기 ▾'}</T>
+      </Pressable>
+      {open && (
+        <View style={{ gap: space.sm }}>
+          {scale !== 1 && <T v="tiny" c={color.textSub}>{scale}인분 기준이에요. 바뀐 양은 초록색으로 표시했어요.</T>}
+          {recipe.steps.map((st, k) => (
+            <View key={k} style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' }}>
+              <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: color.brandSoft, alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                <T v="tiny" c={color.brandDark} style={{ fontWeight: '800' }}>{k + 1}</T>
+              </View>
+              <T v="small" style={{ flex: 1 }}>
+                {scaleStepParts(st, scale).map((p, j) => (p.scaled ? <Text key={j} style={{ color: color.brandDark, fontWeight: '800' }}>{p.t}</Text> : p.t))}
+              </T>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 function SourceCard({ recipe, scale }: { recipe: Recipe; scale: number }) {
   const issues = recipe.origin === 'builtin' ? [] : auditRecipe(recipe);
   const lines = [
