@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { notify } from '@/components/dialog';
 import { Sheet } from '@/components/sheet';
 import { Button, Card, Chip, Empty, Field, Row, Screen, Segmented, Stepper, T, Intro } from '@/components/ui';
+import { IngPic } from '@/components/pics';
 import { color, radius, space } from '@/constants/tokens';
 import { buyAdvice } from '@/logic/buy-advice';
 import { findCatalog, sameIngredient } from '@/data/catalog';
@@ -129,7 +130,7 @@ export default function Shopping() {
           {form?.map((x) => (
             <View key={x.id} style={{ gap: space.sm, paddingBottom: space.sm, borderBottomWidth: 1, borderBottomColor: color.border }}>
               <Row style={{ justifyContent: 'space-between' }}>
-                <T v="bodyBold">{findCatalog(x.name)?.emoji ?? '🛍️'} {x.name}</T>
+                <Row gap={6}><IngPic name={x.name} emoji={findCatalog(x.name)?.emoji ?? '🛍️'} size={28} /><T v="bodyBold">{x.name}</T></Row>
                 <Row gap={4}>
                   <Stepper value={x.quantity} onChange={(n) => patch(x.id, { quantity: n })} step={x.unit === 'g' || x.unit === 'ml' ? 50 : 1} />
                   <Field value={x.unit} onChangeText={(t) => patch(x.id, { unit: t })} style={{ width: 52 }} accessibilityLabel={`${x.name} 단위`} />
@@ -181,8 +182,9 @@ function ItemRow({ id, name, sub, done, advice }: { id: string; name: string; su
       <Pressable onPress={() => actions.toggleShopping(id)} hitSlop={8} style={{ width: 26, height: 26, borderRadius: radius.sm, borderWidth: 2, borderColor: done ? color.fresh : color.border, backgroundColor: done ? color.fresh : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
         {done ? <T v="small" c="#fff">✓</T> : null}
       </Pressable>
+      <View style={{ opacity: done ? 0.45 : 1 }}><IngPic name={name} emoji={findCatalog(name)?.emoji ?? '🛍️'} size={34} /></View>
       <View style={{ flex: 1, gap: 2 }}>
-        <T v="bodyBold" c={done ? color.textMuted : color.text} style={done ? { textDecorationLine: 'line-through' } : undefined}>{findCatalog(name)?.emoji ?? '🛍️'} {name}</T>
+        <T v="bodyBold" c={done ? color.textMuted : color.text} style={done ? { textDecorationLine: 'line-through' } : undefined}>{name}</T>
         <T v="tiny" c={color.textMuted}>{sub}</T>
         {advice ? <T v="tiny" c={color.brandDark}>🛒 {advice}</T> : null}
       </View>

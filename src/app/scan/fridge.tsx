@@ -8,6 +8,7 @@ import { analyzeFridgePhoto, hasAIKey, type FridgeScanResult } from '@/ai/gemini
 import { photoKB, pickPhoto, storableUri, takePendingPhoto, type PickedPhoto } from '@/ai/photo';
 import { notify } from '@/components/dialog';
 import { Badge, Button, Card, Chip, Field, Row, Screen, Segmented, Stepper, T , OnOff } from '@/components/ui';
+import { IngPic } from '@/components/pics';
 import { color, radius, space } from '@/constants/tokens';
 import { findCatalog, INGREDIENT_CATALOG } from '@/data/catalog';
 import { actions, useAppState, type NewIngredient } from '@/data/store';
@@ -171,7 +172,7 @@ export default function ScanFridge() {
             <Card key={c.key} style={{ opacity: c.checked ? 1 : 0.55 }}>
               <Row style={{ justifyContent: 'space-between' }}>
                 <Row style={{ flex: 1 }}>
-                  <T v="h3">{findCatalog(c.name)?.emoji ?? '🥫'}</T>
+                  <IngPic name={c.name} emoji={findCatalog(c.name)?.emoji ?? '🥫'} size={36} />
                   <Field value={c.name} onChangeText={(t) => update(c.key, { name: t })} />
                 </Row>
                 <OnOff value={c.checked} onValueChange={(v) => update(c.key, { checked: v })} />
@@ -194,7 +195,7 @@ export default function ScanFridge() {
       <T v="h3">{aiOn ? '직접 추가' : '재료를 눌러 바로 넣기'}</T>
       <Row wrap>
         {INGREDIENT_CATALOG.filter((c) => c.category !== '양념').slice(0, 30).map((c) => (
-          <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => addManual(c.name)} />
+          <Chip key={c.name} left={<IngPic name={c.name} emoji={c.emoji} size={22} />} label={c.name} onPress={() => addManual(c.name)} />
         ))}
       </Row>
       <Pressable onPress={() => router.replace('/ingredient/edit')}>

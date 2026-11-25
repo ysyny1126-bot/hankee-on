@@ -125,7 +125,7 @@ export function Button({ title, onPress, kind = 'primary', small, disabled, load
   return body;
 }
 
-export function Chip({ label, selected, onPress, tone }: { label: string; selected?: boolean; onPress?: () => void; tone?: 'warn' | 'danger' | 'fresh' }) {
+export function Chip({ label, selected, onPress, tone, left }: { label: string; selected?: boolean; onPress?: () => void; tone?: 'warn' | 'danger' | 'fresh'; left?: ReactNode }) {
   // 선택된 칩: 네이비(알레르기는 코랄, 기피는 노랑, 완료는 민트)
   const toneColor = tone ? { warn: color.warnDark, danger: color.dangerDark, fresh: color.freshDark }[tone] : color.brandDark;
   return (
@@ -133,7 +133,8 @@ export function Chip({ label, selected, onPress, tone }: { label: string; select
       onPress={onPress}
       hitSlop={4}
       disabled={!onPress}
-      style={[styles.chip, selected && { backgroundColor: toneColor, borderColor: toneColor }]}>
+      style={[styles.chip, left ? { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 9 } : null, selected && { backgroundColor: toneColor, borderColor: toneColor }]}>
+      {left}
       <Text style={tx([font.small, { color: selected ? color.onBrand : color.textSub, fontWeight: '600' }])}>{label}</Text>
     </Pressable>
   );

@@ -7,6 +7,7 @@ import { readExpiryFromPackage, hasAIKey } from '@/ai/gemini';
 import { pickPhoto } from '@/ai/photo';
 import { confirmAsync, notify } from '@/components/dialog';
 import { Button, Card, Chip, Field, Row, Screen, Segmented, Stack, Stepper, T, Intro } from '@/components/ui';
+import { IngPic } from '@/components/pics';
 import { color, space } from '@/constants/tokens';
 import { KeepInfo } from '@/components/keep-info';
 import { packSizes } from '@/logic/amount';
@@ -128,7 +129,8 @@ export default function IngredientEdit() {
             {frequent.map((f) => (
               <Chip
                 key={f.name}
-                label={`${f.emoji} ${f.name}`}
+                left={<IngPic name={f.name} emoji={f.emoji} size={22} />}
+                label={f.name}
                 selected={name === f.name}
                 onPress={() => {
                   setName(f.name);
@@ -147,7 +149,7 @@ export default function IngredientEdit() {
 
       <Field label="재료 이름" placeholder="예: 두부" value={name} onChangeText={onName} onBlur={() => applyCatalog(name.trim())} />
       {suggestions.length > 0 && (
-        <Row wrap>{suggestions.map((c) => <Chip key={c.name} label={`${c.emoji} ${c.name}`} onPress={() => applyCatalog(c.name)} />)}</Row>
+        <Row wrap>{suggestions.map((c) => <Chip key={c.name} left={<IngPic name={c.name} emoji={c.emoji} size={22} />} label={c.name} onPress={() => applyCatalog(c.name)} />)}</Row>
       )}
 
       <Row style={{ justifyContent: 'space-between' }}>

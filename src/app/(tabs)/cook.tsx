@@ -8,7 +8,7 @@ import { Icon } from '@/components/icon';
 import { BrowseList, KindGrid } from '@/components/browse-panel';
 import type { KindKey } from '@/data/taxonomy';
 import { Button, Chip, Field, IconButton, PageHeader, Row, Screen, SectionHeader, T } from '@/components/ui';
-import { FoodPic } from '@/components/pics';
+import { FoodPic, IngPic } from '@/components/pics';
 import { clay, color, space } from '@/constants/tokens';
 import { actions, findRecipe, useAppState } from '@/data/store';
 import { MEAL_LABEL } from '@/logic/analysis';
@@ -139,7 +139,8 @@ export default function Cook() {
                 return (
                   <Chip
                     key={i.id}
-                    label={`${i.emoji} ${i.name}`}
+                    left={<IngPic name={i.name} emoji={i.emoji} size={22} />}
+                    label={i.name}
                     selected={on}
                     onPress={() => { setPicked(on ? picked.filter((x) => x !== i.name) : [...picked, i.name].slice(-4)); setPage(0); }}
                   />
