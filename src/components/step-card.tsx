@@ -1,9 +1,11 @@
+import { Image } from 'expo-image';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Pattern, Rect, Stop } from 'react-native-svg';
 
 import { Character } from '@/components/character';
 import { FoodPic, IngPic } from '@/components/pics';
+import { STEP_ILLUSTRATIONS } from '@/data/images';
 import { T, tx } from '@/components/ui';
 import { art, color, holo, pastel, space } from '@/constants/tokens';
 import { findCatalog, INGREDIENT_CATALOG } from '@/data/catalog';
@@ -183,9 +185,14 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
   const used = stepIngredients(recipe, step);
   const last = index === total - 1;
   const speech = stepSpeech(step, used, last);
+  const scene = STEP_ILLUSTRATIONS[recipe.id]?.[index];
   // 같은 재료가 앞 단계에도 나왔으면(썰기 → 넣기) 양은 처음 단계에만 — 두 번 넣는 것으로 오해하지 않게
   const again = (name: string) => recipe.steps.slice(0, index).some((st) => stepIngredients(recipe, st).some((u) => u.name === name));
   const [winH, setWinH] = useState(0);
+  const [winW, setWinW] = useState(0);
+  const comboScale = winH && winW ? Math.min(1.15, (winW - 12) / 300, (winH - 8) / 250) : 1;
+  // 카드의 실제 크기(픽셀)로 무지갯빛 테두리를 그린다(웹·아이폰 모두 크기가 바뀌어도 끊기지 않게)
+  const [frame, setFrame] = useState({ w: 0, h: 0 });
 
   // 단계가 바뀌면 살짝 아래에서 올라오며 나타남
   const [appear] = useState(() => new Animated.Value(0));
@@ -246,9 +253,10 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
         accessibilityRole="button"
         accessibilityLabel={`${index + 1}단계. ${scaleStepText(step, scale)}${onPress ? ' 눌러서 다음 단계' : ''}`}
         accessibilityHint="옆으로 밀어서 이전·다음 단계로 넘길 수 있어요"
+        onLayout={(e) => setFrame({ w: Math.round(e.nativeEvent.layout.width), h: Math.round(e.nativeEvent.layout.height) })}
         style={({ pressed }) => [styles.frame, pressed && { transform: [{ scale: 0.99 }] }]}>
         {/* 무지갯빛 테두리 */}
-        <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 100 100">
+        <Svg style={StyleSheet.absoluteFill} width={frame.w || "100%"} height={frame.h || "100%"} preserveAspectRatio="none" viewBox="0 0 100 100">
           <Defs>
             <LinearGradient id="holo" x1="0" y1="0" x2="1" y2="1">
               {holo.map((c, k) => <Stop key={c} offset={k / (holo.length - 1)} stopColor={c} />)}
@@ -259,49 +267,61 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
 
         <View style={styles.inner}>
           {/* 그림 창 */}
-          <View style={styles.window} onLayout={(e) => setWinH(Math.round(e.nativeEvent.layout.height))}>
-            {/* 창 높이가 바뀌면(타이머가 생기고 사라질 때) 배경을 새로 그린다 */}
-            <Svg key={winH} style={StyleSheet.absoluteFill} width="100%" height="100%">
+          <View style={styles.window} onLayout={(e) => { setWinH(Math.round(e.nativeEvent.layout.height)); setWinW(Math.round(e.nativeEvent.layout.width)); }}>
+            {/* 창의 실제 크기로 배경을 그린다(타이머가 생기고 사라져 창 크기가 바뀌어도 꽉 차게) */}
+            <Svg style={StyleSheet.absoluteFill} width={winW || "100%"} height={winH || "100%"}>
               <Defs>
                 <LinearGradient id="win" x1="0" y1="0" x2="0" y2="1">
                   <Stop offset="0" stopColor={pastel.peach} />
                   <Stop offset="1" stopColor={pastel.mint} />
                 </LinearGradient>
                 <Pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse">
-                  <Circle cx="7" cy="7" r="1.3" fill={art.ink} opacity={0.08} />
+                  <Circle cx="7" cy="7" r="1.2" fill={art.ink} opacity={0.04} />
                 </Pattern>
               </Defs>
               <Rect width="100%" height="100%" fill="url(#win)" />
               <Rect width="100%" height="100%" fill="url(#dots)" />
             </Svg>
-            {/* 음식(주인공): 왼쪽으로 조금 비켜 캐릭터 자리를 만들고, 식탁 그림자 위에 */}
-            {/* 같은 식탁: 냄비와 캐릭터 발밑을 그림자 하나로 묶는다 */}
-            <View style={styles.tableShadow} />
-            <View style={styles.dish} accessible={false}>
-              <FoodPic id={recipe.id} name={recipe.name} emoji={recipe.emoji} size={176} />
-            </View>
-
-            {/* 캐릭터(조수): 냄비 쪽으로 몸을 기울이고 단계 소리를 말한다 */}
-            <View style={styles.helper} accessible={false}>
-              <View style={styles.bubble}>
-                <Text allowFontScaling={false} style={styles.bubbleText} numberOfLines={2} lineBreakStrategyIOS="hangul-word">{speech}</Text>
-                <View style={styles.bubbleTail} />
+            {scene ? (
+              /* 단계 삽화: 캐릭터가 음식과 함께 있는 한 장(비율 그대로, 잘리지 않게 창 안에 맞춤). 말풍선은 캐릭터 머리 왼쪽 빈자리에 */
+              <View style={[styles.scene, { aspectRatio: scene.ratio }]} accessible={false}>
+                <Image source={scene.src} style={StyleSheet.absoluteFill} contentFit="contain" />
+                <View style={styles.sceneBubble}>
+                  <Text allowFontScaling={false} style={styles.bubbleText} numberOfLines={2} lineBreakStrategyIOS="hangul-word">{speech}</Text>
+                  <View style={styles.sceneTail} />
+                </View>
               </View>
-              <View style={{ transform: [{ rotate: '-10deg' }] }}>
-                <Character id={characterId} size={86} mood={last ? 'happy' : 'idle'} />
-              </View>
-            </View>
+            ) : (
+              /* 300×250 장면 하나로 묶어 창 크기에 맞춰 통째로 줄인다(작은 화면에서도 캐릭터·음식이 잘리지 않게) */
+              <View style={[styles.combo, { transform: [{ scale: comboScale }] }]}>
+                {/* 같은 식탁: 냄비와 캐릭터 발밑을 그림자 하나로 묶는다 */}
+                <View style={styles.tableShadow} />
+                <View style={styles.dish} accessible={false}>
+                  <FoodPic id={recipe.id} name={recipe.name} emoji={recipe.emoji} size={176} />
+                </View>
 
-            {/* 단계 스티커 */}
-            <View style={styles.sticker} accessible={false}>
-              <Text allowFontScaling={false} style={styles.stickerSmall}>STEP</Text>
-              <Text allowFontScaling={false} style={styles.stickerNum}>{index + 1}</Text>
+                {/* 캐릭터(조수): 냄비 쪽으로 몸을 기울이고 단계 소리를 말한다 */}
+                <View style={styles.helper} accessible={false}>
+                  <View style={styles.bubble}>
+                    <Text allowFontScaling={false} style={styles.bubbleText} numberOfLines={2} lineBreakStrategyIOS="hangul-word">{speech}</Text>
+                    <View style={styles.bubbleTail} />
+                  </View>
+                  <View style={{ transform: [{ rotate: '-10deg' }] }}>
+                    <Character id={characterId} size={86} mood={last ? 'happy' : 'idle'} />
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* 단계 표시: 보조 정보라 작고 옅게(말풍선·그림보다 앞서지 않게) */}
+            <View style={styles.stepTag} accessible={false}>
+              <Text allowFontScaling={false} style={styles.stepTagText}>STEP {index + 1}</Text>
             </View>
 
           </View>
 
           {/* 문장 */}
-          <View style={{ flexGrow: 1, flexShrink: 0, justifyContent: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md }}>
+          <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} bounces={false}>
             <Text style={[styles.step, stepSize(step)]} lineBreakStrategyIOS="hangul-word">
               {scaleStepParts(step, scale).map((p, k) => (p.scaled ? <Text key={k} style={styles.stepScaled}>{p.t}</Text> : p.t))}
             </Text>
@@ -314,7 +334,7 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
                   return (
                     <View key={u.name} style={styles.useChip}>
                       <IngPic name={u.name} emoji={u.emoji} size={30} />
-                      <View>
+                      <View style={{ flexShrink: 1 }}>
                         <Text allowFontScaling={false} style={styles.useName}>{u.name} {prev ? <Text style={styles.usePrev}>준비한 것</Text> : <Text style={styles.useAmt}>{amountLabel(u.amount * scale, u.unit)}</Text>}</Text>
                         {handy ? <Text allowFontScaling={false} style={styles.useHandy}>{handy}</Text> : null}
                       </View>
@@ -323,7 +343,7 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
                 })}
               </View>
             )}
-          </View>
+          </ScrollView>
 
           {/* 이름표 */}
           <View style={styles.plate}>
@@ -341,29 +361,38 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
 const styles = StyleSheet.create({
   frame: { flex: 1, borderRadius: 28, overflow: 'hidden', padding: 6, shadowColor: '#3A2E26', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   inner: { flex: 1, borderRadius: 22, overflow: 'hidden', backgroundColor: art.paper },
-  // 그림 창: 기본은 카드의 절반, 문장·재료가 길면 먼저 줄어든다(최소 140)
-  window: { backgroundColor: pastel.mint, flexBasis: '50%', flexShrink: 1, minHeight: 140, alignItems: 'center', justifyContent: 'center', margin: 10, marginBottom: 0, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(58,46,38,0.08)' },
-  sticker: { position: 'absolute', top: 10, left: 10, width: 54, height: 54, borderRadius: 27, backgroundColor: color.brandDark, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#fff', transform: [{ rotate: '-8deg' }] },
-  stickerSmall: { ...tx({ fontSize: 9, lineHeight: 11, fontWeight: '800', color: '#fff', letterSpacing: 1 }) },
-  stickerNum: { ...tx({ fontSize: 20, lineHeight: 22, fontWeight: '800', color: '#fff' }) },
-  dish: { position: 'absolute', left: 0, right: 70, top: 22, bottom: -22, alignItems: 'center', justifyContent: 'center' },
-  // 냄비 바닥(가운데 + 22 내림 + 약 70px)에 맞춘 식탁 그림자
-  tableShadow: { position: 'absolute', top: '50%', marginTop: 80, left: 40, right: 22, height: 20, borderRadius: 999, backgroundColor: 'rgba(154,91,54,0.09)' },
-  // 캐릭터 발이 냄비 바닥과 같은 높이에 오게(캐릭터 약 101)
+  // 그림 창: 남는 높이를 차지하되(설명 아래 큰 공백 없이) 너무 커지지 않게, 문장·재료가 길면 먼저 줄어든다
+  window: { backgroundColor: pastel.mint, flexGrow: 1, flexShrink: 1, flexBasis: 220, minHeight: 120, maxHeight: 390, alignItems: 'center', justifyContent: 'center', margin: 10, marginBottom: 0, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(58,46,38,0.08)' },
+  stepTag: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.85)' },
+  stepTagText: { ...tx({ fontSize: 11, lineHeight: 14, fontWeight: '800', color: color.brandDark, letterSpacing: 0.5 }) },
+  // 단계 삽화 자리: 창 높이의 92%, 비율은 그림 그대로(가로가 모자라면 가로에 맞춤)
+  scene: { height: '92%', maxWidth: '96%' },
+  // 말풍선: 삽화 속 캐릭터 머리(오른쪽 위) 왼쪽 빈자리에, 꼬리는 머리 쪽(오른쪽)으로
+  sceneBubble: { position: 'absolute', top: '13%', right: '57%', maxWidth: '44%', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
+  sceneTail: { position: 'absolute', right: -6, top: '50%', marginTop: -5, width: 10, height: 10, backgroundColor: '#fff', borderRightWidth: 1.5, borderTopWidth: 1.5, borderColor: art.ink, transform: [{ rotate: '45deg' }] },
+  // 설명: 그림 창 바로 아래 간격 토큰 하나로 이어지고, 제목(문장) → 양(재료 칩) 순
+  // 문장·재료가 카드보다 길면(작은 화면) 이 부분만 위아래로 밀어 본다
+  bodyScroll: { flexGrow: 0, flexShrink: 1 },
+  body: { gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm },
+  combo: { width: 300, height: 250 },
+  dish: { position: 'absolute', left: 8, top: 34 },
+  // (300×250 장면 안의 위치) 냄비 바닥 높이(약 200)에 맞춘 식탁 그림자
+  tableShadow: { position: 'absolute', top: 196, left: 22, right: 6, height: 18, borderRadius: 999, backgroundColor: 'rgba(154,91,54,0.09)' },
+  // 캐릭터 발(위 104 + 키 약 101)이 냄비 바닥·그림자와 같은 높이에 오게
   // 너비를 넉넉히(말풍선이 이 안에서 한 줄로 펼쳐지게), 캐릭터는 오른쪽 끝에
-  helper: { position: 'absolute', right: 12, top: '50%', marginTop: -4, width: 230, alignItems: 'flex-end' },
+  helper: { position: 'absolute', right: 0, top: 104, width: 230, alignItems: 'flex-end' },
   // 말풍선은 캐릭터 머리 위에 떠 있다(길어지면 위로 자라고, 캐릭터 발 높이는 그대로)
   bubble: { position: 'absolute', bottom: '100%', right: 8, marginBottom: 18, maxWidth: 150, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
   bubbleText: { ...tx({ fontSize: 13, lineHeight: 17, fontWeight: '800', color: art.ink }) },
   bubbleTail: { position: 'absolute', bottom: -6, right: 30, width: 10, height: 10, backgroundColor: '#fff', borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: art.ink, transform: [{ rotate: '45deg' }] },
   stepScaled: { color: color.brandDark, fontWeight: '800' },
-  useRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  useChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: color.surfaceAlt },
+  useRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  useChip: { maxWidth: '100%', flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: color.surfaceAlt },
   useName: { ...tx({ fontSize: 15, lineHeight: 20, fontWeight: '700', color: color.text }) },
   useAmt: { color: color.brandDark, fontWeight: '800' },
   usePrev: { color: color.textSub, fontWeight: '600', fontSize: 13 },
   useHandy: { ...tx({ fontSize: 11, lineHeight: 14, color: color.textSub }) },
   step: { ...tx({ fontSize: 26, lineHeight: 38, fontWeight: '700', color: color.text }) },
-  plate: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, paddingTop: 4 },
+  plate: { marginTop: 'auto', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingHorizontal: space.lg, paddingBottom: space.md, paddingTop: 4 },
   namePill: { maxWidth: '70%', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, backgroundColor: color.surfaceAlt },
 });

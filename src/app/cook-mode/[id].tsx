@@ -121,7 +121,8 @@ export default function CookMode() {
           const t = tm.timers.find((x) => x.step === i);
           return (
             <Row style={{ ...clay, padding: space.md, justifyContent: 'space-between', marginBottom: space.sm }}>
-              <View>
+              {/* 좁은 화면에서도 버튼이 밖으로 밀려나지 않게 글 쪽이 줄어들고 줄바꿈된다 */}
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <T v="tiny" c={color.textMuted}>이 단계 타이머 · 다음 단계로 넘어가도 계속 돌아요</T>
                 <Text style={tx({ fontSize: 30, fontWeight: '800', color: t?.done ? color.fresh : color.text })} accessibilityLiveRegion="polite">{t ? (t.done ? '끝!' : fmt(tm.left(t))) : fmt(min * 60)}</Text>
               </View>
