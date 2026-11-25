@@ -4,6 +4,8 @@
 > 재료 → 오늘 한 끼 → 요리 → 재고 차감 → 기록을 **1인분 기준 한 흐름**으로 잇는다.
 >
 > 교수님 제출용 요약: [제출_안내.md](제출_안내.md)
+>
+> **바로 실행(웹): https://ysyny1126-bot.github.io/hankee-on/**
 
 - 기술: React Native + Expo (SDK 58), Expo Router, TypeScript
 - 저장: 기기 안(AsyncStorage). 무료 · 광고 없음 · 로그인·서버는 다음 단계
