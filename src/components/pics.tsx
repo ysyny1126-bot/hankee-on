@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { Text } from 'react-native';
 
 import { findCatalog } from '@/data/catalog';
@@ -27,16 +28,19 @@ function Fallback({ emoji, size }: { emoji: string; size: number }) {
   return <Text style={{ fontSize: size * 0.78, lineHeight: size * 1.05, width: size * 1.1, textAlign: 'center' }}>{emoji}</Text>;
 }
 
+/** 그림 한 장: 파일이 없거나 불러오기에 실패하면 이모지로(깨진 그림·빈 상자 대신) */
+function Pic({ src, emoji, size }: { src: number | undefined; emoji: string; size: number }) {
+  const [failed, setFailed] = useState<number | null>(null);
+  if (!src || failed === src) return <Fallback emoji={emoji} size={size} />;
+  return <Image source={src} style={{ width: size, height: size }} contentFit="contain" accessible={false} onError={() => setFailed(src)} />;
+}
+
 export function FoodPic({ id, name, emoji, size }: { id?: string; name?: string; emoji: string; size: number }) {
-  const src = foodImage(id, name);
-  if (!src) return <Fallback emoji={emoji} size={size} />;
-  return <Image source={src} style={{ width: size, height: size }} contentFit="contain" accessible={false} />;
+  return <Pic src={foodImage(id, name)} emoji={emoji} size={size} />;
 }
 
 export function IngPic({ name, emoji, size }: { name: string; emoji: string; size: number }) {
-  const src = ingredientImage(name);
-  if (!src) return <Fallback emoji={emoji} size={size} />;
-  return <Image source={src} style={{ width: size, height: size }} contentFit="contain" accessible={false} />;
+  return <Pic src={ingredientImage(name)} emoji={emoji} size={size} />;
 }
 
 /** 냉장고 칸의 한 칸: 남은 음식은 음식 그림, 나머지는 재료 그림 */

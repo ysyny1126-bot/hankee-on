@@ -16,7 +16,7 @@ import { handyMeasure } from '@/logic/units';
 /**
  * 요리 모드의 단계 한 장을 '레시피 카드'로(docs/디자인_레시피카드.md).
  * 무지갯빛 테두리 → 그림 창(음식 그림 + STEP 스티커 + 캐릭터) → 큰 문장 + 넣을 재료·양 → 이름표.
- * 그림 창은 '음식이 주인공, 캐릭터는 조수': 음식은 크게 왼쪽, 고른 캐릭터가 오른쪽 아래에서 냄비 쪽으로 몸을 기울이고
+ * 그림 창은 모든 레시피·단계 공통: 이 레시피의 완성 음식 그림이 주인공(크게), 고른 캐릭터는 오른쪽 아래 고정 자리의 작은 안내자로
  * '어떤 재료를 + 조리 소리'(두부 넣고 보글보글 …)를 말풍선으로 말한다. 마지막 단계에서는 웃는 얼굴.
  */
 
@@ -173,6 +173,11 @@ function stepSpeech(step: string, used: { name: string; at: number }[], last: bo
   return verb ? `${n} ${verb[1]} ${hit.sound}` : `${n}${eul} ${hit.sound}`;
 }
 
+/** 담기·마무리 단계인지(캐릭터가 웃는 얼굴) */
+function isServing(step: string, last: boolean) {
+  return last || /담아|담고|곁들|올려|올리고(?!당)|얹|함께 먹/.test(step);
+}
+
 /** 문장이 길면 글씨를 조금 줄인다(카드 한 장에 다 들어가게) */
 const stepSize = (t: string) => (t.length > 60 ? { fontSize: 20, lineHeight: 30 } : t.length > 38 ? { fontSize: 22, lineHeight: 33 } : null);
 
@@ -186,13 +191,17 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
   const last = index === total - 1;
   const speech = stepSpeech(step, used, last);
   const scene = STEP_ILLUSTRATIONS[recipe.id]?.[index];
+  // 단계 전용 삽화를 못 불러오면(파일 없음·오류) 공통 장면으로 대신
+  const [failedSrc, setFailedSrc] = useState<number | null>(null);
   // 같은 재료가 앞 단계에도 나왔으면(썰기 → 넣기) 양은 처음 단계에만 — 두 번 넣는 것으로 오해하지 않게
   const again = (name: string) => recipe.steps.slice(0, index).some((st) => stepIngredients(recipe, st).some((u) => u.name === name));
   const [winH, setWinH] = useState(0);
   const [winW, setWinW] = useState(0);
-  const comboScale = winH && winW ? Math.min(1.15, (winW - 12) / 300, (winH - 8) / 250) : 1;
+  const comboScale = winH && winW ? Math.min(1.3, (winW - 12) / 300, (winH - 8) / 250) : 1;
   // 카드의 실제 크기(픽셀)로 무지갯빛 테두리를 그린다(웹·아이폰 모두 크기가 바뀌어도 끊기지 않게)
   const [frame, setFrame] = useState({ w: 0, h: 0 });
+  // 카드가 낮으면(작은 화면·타이머가 함께 있을 때) 재료 칩을 작게
+  const compact = frame.h > 0 && frame.h < 480;
 
   // 단계가 바뀌면 살짝 아래에서 올라오며 나타남
   const [appear] = useState(() => new Animated.Value(0));
@@ -282,10 +291,10 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
               <Rect width="100%" height="100%" fill="url(#win)" />
               <Rect width="100%" height="100%" fill="url(#dots)" />
             </Svg>
-            {scene ? (
+            {scene && failedSrc !== scene.src ? (
               /* 단계 삽화: 캐릭터가 음식과 함께 있는 한 장(비율 그대로, 잘리지 않게 창 안에 맞춤). 말풍선은 캐릭터 머리 왼쪽 빈자리에 */
               <View style={[styles.scene, { aspectRatio: scene.ratio }]} accessible={false}>
-                <Image source={scene.src} style={StyleSheet.absoluteFill} contentFit="contain" />
+                <Image source={scene.src} style={StyleSheet.absoluteFill} contentFit="contain" onError={() => setFailedSrc(scene.src)} />
                 <View style={styles.sceneBubble}>
                   <Text allowFontScaling={false} style={styles.bubbleText} numberOfLines={2} lineBreakStrategyIOS="hangul-word">{speech}</Text>
                   <View style={styles.sceneTail} />
@@ -296,8 +305,10 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
               <View style={[styles.combo, { transform: [{ scale: comboScale }] }]}>
                 {/* 같은 식탁: 냄비와 캐릭터 발밑을 그림자 하나로 묶는다 */}
                 <View style={styles.tableShadow} />
+                {/* 음식(주인공): 이 레시피의 완성 그림을 크게. 뒤에 은은한 복숭아색 원으로 자리를 잡아 준다 */}
+                <View style={styles.dishBackdrop} />
                 <View style={styles.dish} accessible={false}>
-                  <FoodPic id={recipe.id} name={recipe.name} emoji={recipe.emoji} size={176} />
+                  <FoodPic id={recipe.id} name={recipe.name} emoji={recipe.emoji} size={190} />
                 </View>
 
                 {/* 캐릭터(조수): 냄비 쪽으로 몸을 기울이고 단계 소리를 말한다 */}
@@ -307,7 +318,7 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
                     <View style={styles.bubbleTail} />
                   </View>
                   <View style={{ transform: [{ rotate: '-10deg' }] }}>
-                    <Character id={characterId} size={86} mood={last ? 'happy' : 'idle'} />
+                    <Character id={characterId} size={74} mood={isServing(step, last) ? 'happy' : 'idle'} />
                   </View>
                 </View>
               </View>
@@ -322,7 +333,7 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
 
           {/* 문장 */}
           <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} bounces={false}>
-            <Text style={[styles.step, stepSize(step)]} lineBreakStrategyIOS="hangul-word">
+            <Text style={[styles.step, stepSize(step), compact && styles.stepCompact]} lineBreakStrategyIOS="hangul-word">
               {scaleStepParts(step, scale).map((p, k) => (p.scaled ? <Text key={k} style={styles.stepScaled}>{p.t}</Text> : p.t))}
             </Text>
             {/* 이 단계에 넣을 재료와 양(요리 시작 전 고른 인분 기준) */}
@@ -330,12 +341,12 @@ export function StepCard({ recipe, index, scale = 1, characterId, onPress, onNex
               <View style={styles.useRow} accessibilityLabel={`넣을 재료: ${used.map((u) => `${u.name} ${again(u.name) ? '앞에서 준비한 것' : amountLabel(u.amount * scale, u.unit)}`).join(', ')}`}>
                 {used.map((u) => {
                   const prev = again(u.name);
-                  const handy = prev ? null : handyMeasure(u.amount * scale, u.unit);
+                  const handy = prev || compact ? null : handyMeasure(u.amount * scale, u.unit);
                   return (
-                    <View key={u.name} style={styles.useChip}>
-                      <IngPic name={u.name} emoji={u.emoji} size={30} />
+                    <View key={u.name} style={[styles.useChip, compact && styles.useChipCompact]}>
+                      <IngPic name={u.name} emoji={u.emoji} size={compact ? 22 : 30} />
                       <View style={{ flexShrink: 1 }}>
-                        <Text allowFontScaling={false} style={styles.useName}>{u.name} {prev ? <Text style={styles.usePrev}>준비한 것</Text> : <Text style={styles.useAmt}>{amountLabel(u.amount * scale, u.unit)}</Text>}</Text>
+                        <Text allowFontScaling={false} style={[styles.useName, compact && styles.useNameCompact]}>{u.name} {prev ? <Text style={styles.usePrev}>준비한 것</Text> : <Text style={styles.useAmt}>{amountLabel(u.amount * scale, u.unit)}</Text>}</Text>
                         {handy ? <Text allowFontScaling={false} style={styles.useHandy}>{handy}</Text> : null}
                       </View>
                     </View>
@@ -362,7 +373,7 @@ const styles = StyleSheet.create({
   frame: { flex: 1, borderRadius: 28, overflow: 'hidden', padding: 6, shadowColor: '#3A2E26', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   inner: { flex: 1, borderRadius: 22, overflow: 'hidden', backgroundColor: art.paper },
   // 그림 창: 남는 높이를 차지하되(설명 아래 큰 공백 없이) 너무 커지지 않게, 문장·재료가 길면 먼저 줄어든다
-  window: { backgroundColor: pastel.mint, flexGrow: 1, flexShrink: 1, flexBasis: 220, minHeight: 120, maxHeight: 390, alignItems: 'center', justifyContent: 'center', margin: 10, marginBottom: 0, borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(58,46,38,0.08)' },
+  window: { backgroundColor: pastel.mint, flexGrow: 1, flexShrink: 1, flexBasis: 220, minHeight: 120, maxHeight: 390, alignItems: 'center', justifyContent: 'center', margin: 10, marginBottom: 0, borderRadius: 18, overflow: 'hidden', borderWidth: 1.5, borderColor: 'rgba(58,46,38,0.28)' },
   stepTag: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.85)' },
   stepTagText: { ...tx({ fontSize: 11, lineHeight: 14, fontWeight: '800', color: color.brandDark, letterSpacing: 0.5 }) },
   // 단계 삽화 자리: 창 높이의 92%, 비율은 그림 그대로(가로가 모자라면 가로에 맞춤)
@@ -375,19 +386,24 @@ const styles = StyleSheet.create({
   bodyScroll: { flexGrow: 0, flexShrink: 1 },
   body: { gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm },
   combo: { width: 300, height: 250 },
-  dish: { position: 'absolute', left: 8, top: 34 },
+  // (300×250 장면) 음식은 왼쪽~가운데에 크게, 캐릭터는 오른쪽 아래 고정 자리 — 음식을 가리지 않게
+  dish: { position: 'absolute', left: 4, top: 22 },
+  dishBackdrop: { position: 'absolute', left: 20, top: 40, width: 158, height: 158, borderRadius: 79, backgroundColor: 'rgba(252,239,220,0.9)' },
   // (300×250 장면 안의 위치) 냄비 바닥 높이(약 200)에 맞춘 식탁 그림자
   tableShadow: { position: 'absolute', top: 196, left: 22, right: 6, height: 18, borderRadius: 999, backgroundColor: 'rgba(154,91,54,0.09)' },
   // 캐릭터 발(위 104 + 키 약 101)이 냄비 바닥·그림자와 같은 높이에 오게
   // 너비를 넉넉히(말풍선이 이 안에서 한 줄로 펼쳐지게), 캐릭터는 오른쪽 끝에
-  helper: { position: 'absolute', right: 0, top: 104, width: 230, alignItems: 'flex-end' },
+  helper: { position: 'absolute', right: 0, top: 118, width: 230, alignItems: 'flex-end' },
   // 말풍선은 캐릭터 머리 위에 떠 있다(길어지면 위로 자라고, 캐릭터 발 높이는 그대로)
-  bubble: { position: 'absolute', bottom: '100%', right: 8, marginBottom: 18, maxWidth: 150, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
-  bubbleText: { ...tx({ fontSize: 13, lineHeight: 17, fontWeight: '800', color: art.ink }) },
+  bubble: { position: 'absolute', bottom: '100%', right: 4, marginBottom: 14, maxWidth: 140, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14, backgroundColor: '#fff', borderWidth: 1.5, borderColor: art.ink },
+  bubbleText: { ...tx({ fontSize: 12, lineHeight: 16, fontWeight: '700', color: art.ink }) },
   bubbleTail: { position: 'absolute', bottom: -6, right: 30, width: 10, height: 10, backgroundColor: '#fff', borderRightWidth: 1.5, borderBottomWidth: 1.5, borderColor: art.ink, transform: [{ rotate: '45deg' }] },
+  stepCompact: { fontSize: 19, lineHeight: 27 },
   stepScaled: { color: color.brandDark, fontWeight: '800' },
   useRow: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   useChip: { maxWidth: '100%', flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 6, paddingRight: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: color.surfaceAlt },
+  useChipCompact: { paddingVertical: 3, paddingLeft: 4, paddingRight: 10, borderRadius: 12 },
+  useNameCompact: { fontSize: 13, lineHeight: 17 },
   useName: { ...tx({ fontSize: 15, lineHeight: 20, fontWeight: '700', color: color.text }) },
   useAmt: { color: color.brandDark, fontWeight: '800' },
   usePrev: { color: color.textSub, fontWeight: '600', fontSize: 13 },
