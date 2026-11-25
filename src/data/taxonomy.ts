@@ -28,11 +28,11 @@ export const MOODS: { key: MoodKey; label: string; emoji: string }[] = [
 ];
 
 const KIND_OF: Record<KindKey, string[]> = {
-  soup: ['kimchi-stew', 'doenjang-stew', 'bean-sprout-soup', 'soft-tofu-stew', 'seaweed-soup', 'radish-beef-soup', 'egg-soup', 'dumpling-soup', 'rice-cake-soup'],
-  stir: ['jeyuk', 'cabbage-stir', 'mackerel', 'mushroom-bulgogi', 'squid-stir', 'sprout-pork', 'broccoli-shrimp', 'tomato-egg', 'tofu-kimchi', 'mapo-tofu'],
-  rice: ['egg-fried-rice', 'kimchi-fried-rice', 'tuna-mayo', 'bibimbap', 'shrimp-garlic', 'curry-rice', 'salmon-bowl', 'tuna-riceball', 'frozen-rice-upgrade', 'mentaiko-avocado', 'pork-cutlet-bowl', 'chicken-teriyaki'],
+  soup: ['kimchi-stew', 'doenjang-stew', 'bean-sprout-soup', 'soft-tofu-stew', 'seaweed-soup', 'radish-beef-soup', 'egg-soup', 'dumpling-soup', 'rice-cake-soup', 'tuna-kimchi-stew', 'budae-stew'],
+  stir: ['jeyuk', 'cabbage-stir', 'mackerel', 'mushroom-bulgogi', 'squid-stir', 'sprout-pork', 'broccoli-shrimp', 'tomato-egg', 'tofu-kimchi', 'mapo-tofu', 'dakgalbi', 'sausage-stir', 'jjukkumi-stir'],
+  rice: ['egg-fried-rice', 'kimchi-fried-rice', 'tuna-mayo', 'bibimbap', 'shrimp-garlic', 'curry-rice', 'salmon-bowl', 'tuna-riceball', 'frozen-rice-upgrade', 'mentaiko-avocado', 'pork-cutlet-bowl', 'chicken-teriyaki', 'soy-egg-rice', 'spam-mayo-bowl', 'tuna-gimbap'],
   noodle: ['udon', 'janchi-noodle', 'spicy-noodle', 'pho', 'naengmyeon', 'ramen-upgrade', 'clam-kalguksu'],
-  side: ['tofu-braise', 'egg-roll', 'potato-stir', 'microwave-egg', 'eggplant-stir', 'fishcake-stir', 'potato-braise', 'spinach-namul', 'sprout-namul', 'quail-egg-braise'],
+  side: ['tofu-braise', 'egg-roll', 'potato-stir', 'microwave-egg', 'eggplant-stir', 'fishcake-stir', 'potato-braise', 'spinach-namul', 'sprout-namul', 'quail-egg-braise', 'zucchini-stir', 'tofu-pan'],
   easy: ['chicken-salad', 'egg-toast', 'oatmeal', 'french-toast', 'yogurt-bowl', 'spring-roll'],
   western: ['tomato-pasta', 'cream-pasta', 'tortilla-pizza', 'gambas', 'aglio-olio', 'mushroom-risotto', 'omurice', 'chicken-steak'],
   snack: ['tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake', 'eomuk-tang', 'potato-pancake', 'gun-mandu', 'tteok-kkochi'],
@@ -40,10 +40,10 @@ const KIND_OF: Record<KindKey, string[]> = {
 
 // quick(15분 이하)·challenge(난이도 보통 이상)는 자동. 나머지는 직접 정한다.
 const MOOD_OF: Partial<Record<MoodKey, string[]>> = {
-  lunchbox: ['omurice', 'chicken-steak', 'gun-mandu', 'tuna-riceball', 'egg-roll', 'kimchi-fried-rice', 'egg-fried-rice', 'chicken-teriyaki', 'tofu-braise', 'potato-stir', 'fishcake-stir', 'potato-braise', 'quail-egg-braise', 'eggplant-stir', 'spinach-namul', 'sprout-namul', 'curry-rice', 'mushroom-bulgogi', 'jeyuk', 'tomato-pasta'],
-  light: ['chicken-steak', 'eomuk-tang', 'chicken-salad', 'spring-roll', 'bibimbap', 'cabbage-stir', 'tomato-egg', 'oatmeal', 'yogurt-bowl', 'egg-soup', 'bean-sprout-soup', 'spinach-namul', 'sprout-namul', 'microwave-egg', 'doenjang-stew', 'seaweed-soup', 'broccoli-shrimp', 'eggplant-stir', 'naengmyeon'],
-  night: ['aglio-olio', 'eomuk-tang', 'potato-pancake', 'gun-mandu', 'tteok-kkochi', 'tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake', 'gambas', 'tofu-kimchi', 'squid-stir', 'ramen-upgrade', 'tortilla-pizza', 'sprout-pork', 'janchi-noodle', 'spicy-noodle'],
-  hearty: ['omurice', 'chicken-steak', 'mushroom-risotto', 'jeyuk', 'mushroom-bulgogi', 'curry-rice', 'pork-cutlet-bowl', 'chicken-teriyaki', 'chicken-salad', 'kimchi-stew', 'radish-beef-soup', 'sprout-pork', 'salmon-bowl', 'cream-pasta', 'shrimp-garlic', 'kimchi-fried-rice', 'bibimbap', 'mackerel', 'clam-kalguksu', 'dumpling-soup', 'rice-cake-soup', 'udon', 'pho', 'mapo-tofu'],
+  lunchbox: ['omurice', 'chicken-steak', 'gun-mandu', 'tuna-riceball', 'egg-roll', 'kimchi-fried-rice', 'egg-fried-rice', 'chicken-teriyaki', 'tofu-braise', 'potato-stir', 'fishcake-stir', 'potato-braise', 'quail-egg-braise', 'eggplant-stir', 'spinach-namul', 'sprout-namul', 'curry-rice', 'mushroom-bulgogi', 'jeyuk', 'tomato-pasta', 'spam-mayo-bowl', 'dakgalbi', 'sausage-stir', 'zucchini-stir', 'tofu-pan', 'tuna-gimbap'],
+  light: ['chicken-steak', 'eomuk-tang', 'chicken-salad', 'spring-roll', 'bibimbap', 'cabbage-stir', 'tomato-egg', 'oatmeal', 'yogurt-bowl', 'egg-soup', 'bean-sprout-soup', 'spinach-namul', 'sprout-namul', 'microwave-egg', 'doenjang-stew', 'seaweed-soup', 'broccoli-shrimp', 'eggplant-stir', 'naengmyeon', 'zucchini-stir'],
+  night: ['aglio-olio', 'eomuk-tang', 'potato-pancake', 'gun-mandu', 'tteok-kkochi', 'tteokbokki', 'rabokki', 'kimchi-pancake', 'chive-pancake', 'gambas', 'tofu-kimchi', 'squid-stir', 'ramen-upgrade', 'tortilla-pizza', 'sprout-pork', 'janchi-noodle', 'spicy-noodle', 'budae-stew', 'sausage-stir', 'jjukkumi-stir'],
+  hearty: ['omurice', 'chicken-steak', 'mushroom-risotto', 'jeyuk', 'mushroom-bulgogi', 'curry-rice', 'pork-cutlet-bowl', 'chicken-teriyaki', 'chicken-salad', 'kimchi-stew', 'radish-beef-soup', 'sprout-pork', 'salmon-bowl', 'cream-pasta', 'shrimp-garlic', 'kimchi-fried-rice', 'bibimbap', 'mackerel', 'clam-kalguksu', 'dumpling-soup', 'rice-cake-soup', 'udon', 'pho', 'mapo-tofu', 'spam-mayo-bowl', 'tuna-kimchi-stew', 'budae-stew', 'dakgalbi', 'jjukkumi-stir'],
   challenge: ['gambas', 'spring-roll', 'pho', 'quail-egg-braise'],
 };
 

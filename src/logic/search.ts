@@ -16,6 +16,9 @@ export const norm = (s: string) => s.replace(/[\s·,+\-_/]/g, '').toLowerCase();
 /** 같은 음식·재료의 다른 이름 → 앱에서 쓰는 이름 */
 const ALIASES: Record<string, string> = {
   달걀: '계란',
+  쭈꾸미: '주꾸미',
+  쏘세지: '소시지',
+  소세지: '소시지',
   돼지불고기: '제육볶음',
   고추장불고기: '제육볶음',
   제육: '제육볶음',
