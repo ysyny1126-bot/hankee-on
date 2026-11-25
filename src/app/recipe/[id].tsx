@@ -8,18 +8,20 @@ import { youtubeSearchUrl } from '@/ai/gemini';
 import { notify } from '@/components/dialog';
 import { Badge, Button, Chip, Empty, Field, Row, Screen, T } from '@/components/ui';
 import { clay, color, radius, space } from '@/constants/tokens';
-import { actions, findRecipe, useAppState } from '@/data/store';
+import { actions, findRecipe, useAllRecipes, useAppState } from '@/data/store';
 import { handyMeasure } from '@/logic/units';
 import { formatAmount, matchRecipe, planDeduction, round, type IngredientMatch } from '@/logic/inventory';
 import { euro } from '@/logic/dates';
 import type { Recipe } from '@/data/types';
 import { auditRecipe } from '@/logic/recipe-check';
+import { nextMeals, tasteTips } from '@/logic/recipe-extras';
 import { checkRecipe, restrictionsOf, safeSubstitutes, type Restrictions } from '@/logic/safety';
 
 /** 레시피: 큰 그림 + 재료 체크 → [부족한 것 장보기] [요리 시작] */
 export default function RecipeDetail() {
   const { id, prep: prepParam } = useLocalSearchParams<{ id: string; prep?: string }>();
   const s = useAppState();
+  const all = useAllRecipes();
   const fav = s.favorites.includes(id);
   const recipe = findRecipe(s, id);
   // 함께 먹는 사람 수를 기본 인분으로 (1~3)
@@ -121,6 +123,7 @@ export default function RecipeDetail() {
       {check.omit.length > 0 && (
         <T v="small" c={color.textSub}>💡 선택 재료({check.omit.join(', ')})는 빼고 만들어도 돼요.</T>
       )}
+      {tasteTips(recipe).map((t) => <T key={t} v="small" c={color.textSub}>{t}</T>)}
       {recipe.origin !== 'builtin' && (
         <T v="tiny" c={color.textMuted}>AI가 만든 레시피예요. 재료·분량·영양값은 추정이라 실제와 다를 수 있어요. 요리 완료 화면에서 쓴 양을 고칠 수 있어요.</T>
       )}
@@ -209,6 +212,7 @@ export default function RecipeDetail() {
 
       <KeepCard recipe={recipe} />
 
+      <NextMeals list={nextMeals(recipe, all.filter((r) => !checkRecipe(r, rs).allergy.length && !checkRecipe(r, rs).disliked.length))} />
       <SourceCard recipe={recipe} scale={scale} />
       <ReportRow recipeId={recipe.id} reported={(s.recipeReports ?? []).filter((x) => x.recipeId === recipe.id).map((x) => x.kind)} />
 
@@ -345,6 +349,26 @@ function ReportRow({ recipeId, reported }: { recipeId: string; reported: string[
           />
         ))}
       </Row>
+    </View>
+  );
+}
+
+/** R17: 장보기 한 번에 3끼 — 이 레시피 재료를 이어서 쓰는 메뉴 2개 */
+function NextMeals({ list }: { list: { recipe: Recipe; shared: string[] }[] }) {
+  if (!list.length) return null;
+  return (
+    <View style={{ ...clay, padding: space.md, gap: space.sm }}>
+      <T v="bodyBold">🛒 같은 재료로 두 끼 더</T>
+      {list.map(({ recipe: r, shared }) => (
+        <Pressable key={r.id} accessibilityRole="link" onPress={() => router.push(`/recipe/${r.id}`)} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: space.sm, opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ fontSize: 24 }}>{r.emoji}</Text>
+          <View style={{ flex: 1 }}>
+            <T v="bodyBold">{r.name}</T>
+            <T v="tiny" c={color.textSub}>{shared.join('·')} 이어서 써요</T>
+          </View>
+          <T c={color.textMuted}>›</T>
+        </Pressable>
+      ))}
     </View>
   );
 }
