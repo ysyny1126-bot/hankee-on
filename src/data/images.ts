@@ -218,7 +218,6 @@ export const INGREDIENT_IMAGES: Record<string, number> = {
  * 단계 삽화(캐릭터가 음식과 함께 있는 장면, 배경 투명). 레시피 id → 단계 번호(0부터) → 그림과 가로세로 비율.
  * 그 단계에만 쓰고, 다른 음식·단계에는 재사용하지 않는다(없으면 음식 그림 + 캐릭터 조합으로 대신).
  */
-export const STEP_ILLUSTRATIONS: Record<string, Record<number, { src: number; ratio: number }>> = {
-  // 된장찌개 1단계: '물에 된장을 풀어 끓여요' — 캐릭터가 된장찌개를 젓는 장면(1402×1122)
-  'doenjang-stew': { 0: { src: require('../../assets/images/steps/doenjang-stew-1.png'), ratio: 1402 / 1122 } },
-};
+// 지금은 모든 레시피가 공통 카드(완성 음식 + 공통 캐릭터)를 쓰므로 비워 둔다.
+// 예) 'doenjang-stew': { 0: { src: require('../../assets/images/steps/doenjang-stew-1.png'), ratio: 1402 / 1122 } }
+export const STEP_ILLUSTRATIONS: Record<string, Record<number, { src: number; ratio: number }>> = {};
