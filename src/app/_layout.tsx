@@ -64,7 +64,8 @@ export default function RootLayout() {
         <Stack.Screen name="settings" options={{ title: '설정' }} />
         <Stack.Screen name="fridge" options={{ title: '내 냉장고' }} />
         <Stack.Screen name="plan" options={{ title: '이번 주 식단' }} />
-        <Stack.Screen name="cook-mode/[id]" options={{ title: '요리 모드' }} />
+        {/* 요리 모드는 카드를 옆으로 밀어 단계를 넘기므로 화면 전체 '밀어서 뒤로'(iOS 26 기본)를 끈다. 왼쪽 끝에서 밀면 뒤로 가기는 그대로 */}
+        <Stack.Screen name="cook-mode/[id]" options={{ title: '요리 모드', fullScreenGestureEnabled: false }} />
         <Stack.Screen name="menu-deck" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
       </Stack>
       <UndoToast />

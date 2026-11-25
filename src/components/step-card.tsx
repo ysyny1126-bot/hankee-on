@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Pattern, Rect, Stop } from 'react-native-svg';
 
 import { FoodPic, IngPic } from '@/components/pics';
@@ -25,24 +25,73 @@ function stepIngredients(r: Recipe, step: string) {
     .map((ing) => ({ name: ing.name, emoji: findCatalog(ing.name)?.emoji ?? '🥄' }));
 }
 
-export function StepCard({ recipe, index, onPress }: { recipe: Recipe; index: number; onPress?: () => void }) {
+/** 이만큼(px) 넘게 밀면 다음·이전 단계로 */
+const SWIPE = 70;
+
+export function StepCard({ recipe, index, onPress, onNext, onPrev }: { recipe: Recipe; index: number; onPress?: () => void; onNext?: () => void; onPrev?: () => void }) {
   const step = recipe.steps[index];
   const total = recipe.steps.length;
   const used = stepIngredients(recipe, step);
 
   // 단계가 바뀌면 살짝 아래에서 올라오며 나타남
   const [appear] = useState(() => new Animated.Value(0));
+  // 손가락을 따라 옆으로 움직이는 거리
+  const [drag] = useState(() => new Animated.Value(0));
   useEffect(() => {
     appear.setValue(0);
+    drag.setValue(0);
     Animated.timing(appear, { toValue: 1, duration: 250, useNativeDriver: true }).start();
-  }, [index, appear]);
+  }, [index, appear, drag]);
+
+  // 손가락 동작은 화면이 다시 그려져도 같은 것을 쓰고, 넘길 함수만 최신으로 바꿔 둔다
+  const navRef = useRef({ onNext, onPrev });
+  useEffect(() => {
+    navRef.current = { onNext, onPrev };
+  }, [onNext, onPrev]);
+  // navRef는 손가락을 움직일 때(그리는 중이 아닐 때)만 읽는다. 타이머가 0.5초마다 화면을 다시 그려도 같은 동작을 써야 밀던 중에 끊기지 않는다.
+  // eslint-disable-next-line react-hooks/refs
+  const [pan] = useState(() =>
+    PanResponder.create({
+      // 옆으로 확실히 밀 때만 잡는다(살짝 누르는 건 '눌러서 다음'으로)
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderMove: (_, g) => {
+        const { onNext: n, onPrev: p } = navRef.current;
+        // 더 갈 곳이 없으면 조금만 따라오고 되돌아온다
+        const blocked = (g.dx < 0 && !n) || (g.dx > 0 && !p);
+        drag.setValue(blocked ? g.dx * 0.25 : g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        const { onNext: n, onPrev: p } = navRef.current;
+        const go = g.dx < -SWIPE || g.vx < -0.6 ? n : g.dx > SWIPE || g.vx > 0.6 ? p : undefined;
+        if (go) {
+          Animated.timing(drag, { toValue: g.dx < 0 ? -420 : 420, duration: 160, useNativeDriver: true }).start(() => go());
+        } else {
+          Animated.spring(drag, { toValue: 0, useNativeDriver: true, friction: 6 }).start();
+        }
+      },
+      onPanResponderTerminate: () => Animated.spring(drag, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  );
 
   return (
-    <Animated.View style={{ flex: 1, opacity: appear, transform: [{ translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
+    <Animated.View
+      {...pan.panHandlers}
+      accessibilityActions={[{ name: 'increment', label: '다음 단계' }, { name: 'decrement', label: '이전 단계' }]}
+      onAccessibilityAction={(e) => (e.nativeEvent.actionName === 'increment' ? onNext?.() : onPrev?.())}
+      style={{
+        flex: 1,
+        opacity: appear,
+        transform: [
+          { translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+          { translateX: drag },
+          { rotate: drag.interpolate({ inputRange: [-300, 0, 300], outputRange: ['-6deg', '0deg', '6deg'] }) },
+        ],
+      }}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${index + 1}단계. ${step}${onPress ? ' 눌러서 다음 단계' : ''}`}
+        accessibilityHint="옆으로 밀어서 이전·다음 단계로 넘길 수 있어요"
         style={({ pressed }) => [styles.frame, pressed && { transform: [{ scale: 0.99 }] }]}>
         {/* 무지갯빛 테두리 */}
         <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 100 100">
@@ -57,7 +106,7 @@ export function StepCard({ recipe, index, onPress }: { recipe: Recipe; index: nu
         <View style={styles.inner}>
           {/* 그림 창 */}
           <View style={styles.window}>
-            <Svg style={StyleSheet.absoluteFill}>
+            <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
               <Defs>
                 <LinearGradient id="win" x1="0" y1="0" x2="0" y2="1">
                   <Stop offset="0" stopColor={pastel.peach} />
