@@ -15,6 +15,7 @@ import { euro } from '@/logic/dates';
 import type { Recipe } from '@/data/types';
 import { auditRecipe } from '@/logic/recipe-check';
 import { nextMeals, tasteTips } from '@/logic/recipe-extras';
+import { TWICE, TWICE_KEEP } from '@/data/twice';
 import { checkRecipe, restrictionsOf, safeSubstitutes, type Restrictions } from '@/logic/safety';
 
 /** 레시피: 큰 그림 + 재료 체크 → [부족한 것 장보기] [요리 시작] */
@@ -212,6 +213,17 @@ export default function RecipeDetail() {
 
       <KeepCard recipe={recipe} />
 
+      {TWICE[recipe.id] ? (
+        <View style={{ ...clay, padding: space.md, gap: space.sm }}>
+          <T v="bodyBold">🍱 두 번 먹기 · 내일은 {TWICE[recipe.id].next}</T>
+          <T v="small" c={color.textSub}>2인분 만들어 1인분은 오늘, 내일은 {TWICE[recipe.id].how}.</T>
+          <T v="tiny" c={color.textMuted}>{TWICE_KEEP}</T>
+          <Row gap={space.sm}>
+            {scale !== 2 ? <Button title="2인분으로 보기" kind="secondary" small onPress={() => { setScale(2); setTaken(new Set()); }} /> : <T v="small" c={color.brandDark} style={{ fontWeight: '700' }}>✓ 2인분으로 보는 중</T>}
+            {TWICE[recipe.id].recipeId ? <Button title={`${TWICE[recipe.id].next} 레시피`} kind="ghost" small onPress={() => router.push(`/recipe/${TWICE[recipe.id].recipeId}`)} /> : null}
+          </Row>
+        </View>
+      ) : null}
       <NextMeals list={nextMeals(recipe, all.filter((r) => !checkRecipe(r, rs).allergy.length && !checkRecipe(r, rs).disliked.length))} />
       <SourceCard recipe={recipe} scale={scale} />
       <ReportRow recipeId={recipe.id} reported={(s.recipeReports ?? []).filter((x) => x.recipeId === recipe.id).map((x) => x.kind)} />
